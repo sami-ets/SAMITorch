@@ -13,22 +13,101 @@ SAMITorch is a deep learning framework for *Shape Analysis in Medical Imaging* l
 It implements an extensive set of loaders, transformers, models and data sets suited for deep learning in medical imaging.
 Our objective is to build a tested, standard framework for quickly producing results in deep learning reasearch applied to medical imaging. 
 
+# Table Of Contents
+
+-  [Authors](#authors)
+-  [References](#references)
+-  [Project architecture](#project-architecture)
+    -  [Folder structure](#folder-structure)
+    -  [Main Components](#main-components)
+        -  [Models](#models)
+        -  [Trainers](#trainers)
+        -  [Transformers](#transformers)
+        -  [Logger](#logger)
+        -  [Configuration](#configs)
+        -  [Main](#main)
+ -  [Contributing](#contributing)
+ -  [Branch naming](#branch-naming)
+ -  [Commits syntax](#commits-syntax)
+ -  [Acknowledgments](#acknowledgments)
+ 
+ 
 ## Authors
 
 * Pierre-Luc Delisle - [pldelisle](https://github.com/pldelisle) 
-* Benoit Anctil-Robitaille [banctilrobitaille](https://github.com/banctilrobitaille)
+* Benoit Anctil-Robitaille - [banctilrobitaille](https://github.com/banctilrobitaille)
 
 ## References
 
 #### Segmentation
 
+#### Diffusion imaging
 
 #### Application
 
-## Setup
-> pip install -r [path/to/requirements.txt]
 
-## How to contribute ?
+## Setup
+> pip install -r [path/to/requirements.txt]  
+> python3 <main_script>.py
+
+
+## Project architecture
+### Folder structure
+
+```
+├── configs                 - This folder contains the YAML configuration files.
+│   ├── train.yaml                  - This file contains your training configuration. MUST be a YAML file.
+│   └── test.yaml                   - OPTIONAL. This file contains the testing configuration. MUST be a YAML file.
+|
+├── docker                  - Contains Dockerfile needed to provide a functional Docker environment for your publication.
+|   └── dockerfile
+|
+├── icons                   - Contains project's artwork.
+|
+├── initializers            - This folder contains custom layer/op initializers.  
+|   └── base_initializer.py
+|
+├── experiments             - This folder contains Python scripts to launch automated experiments.
+│
+├── inputs                  - This folder contains anything relative to inputs to a network.
+|   └── transformers.py  
+|
+├── metrics                  - This folder contains various metrics used to measure a training session of a model.
+|   ├── gauges.py 
+|   └── metrics.py
+|   
+├── models                  - This folder contains any standard model.
+│   └── base_model.py                   
+│
+├── notebooks               - This folder contains various Jupyter Notebook a user could create.   
+|
+├── preprocessing           - This folder contains anything relative to input preprocessing, and scripts that must be executed prior training.
+|
+├── tests                   - Folder containing unit tests of the standard framework api and functions.
+|   
+├── training                - This folder contains trainers.
+│   ├── base_trainer.py 
+|   ├── losses.py  
+|   └── trainer.py
+│  
+└── utils                   - This folder contains any utils you need.
+     └── utils.py
+```
+
+### Main components
+#### Models
+
+#### Trainers
+
+#### Transformers
+
+#### Logger
+
+#### Configs
+
+#### Main
+
+## Contributing
 - [X] Create a branch by feature and/or bug fix
 - [X] Get the code
 - [X] Commit and push
@@ -43,7 +122,7 @@ Our objective is to build a tested, standard framework for quickly producing res
 | Features/Issues | feature/ [Short feature description] [Issue number] | Always branch off HEAD or dev/                     |
 | Hotfix          | fix/ [Short feature description] [Issue number]     | Always branch off Stable                           |
 
-#### Commits syntax:
+## Commits syntax
 
 ##### Adding code:
 > \+ Added [Short Description] [Issue Number]
@@ -56,5 +135,8 @@ Our objective is to build a tested, standard framework for quickly producing res
 
 ##### Merging branches:
 > Y Merged [Short Description]
+
+## Acknowledgment
+Thanks to École de technologie supérieure, [Hervé Lombaert](https://profs.etsmtl.ca/hlombaert/) and [Christian Desrosiers](https://www.etsmtl.ca/Professeurs/cdesrosiers/Accueil) for providing us a lab and helping us in our research activities.
 
 Icons made by <a href="http://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="http://www.flaticon.com" title="Flaticon">www.flaticon.com</a> is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a>
