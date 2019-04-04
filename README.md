@@ -2,6 +2,13 @@
 
 ## Welcome to SAMITorch
 
+[![Build Status](https://travis-ci.com/sami-ets/SamiTorch.svg?branch=master)](https://travis-ci.com/sami-ets/SamiTorch)
+![GitHub All Releases](https://img.shields.io/github/downloads/sami-ets/SamiTorch/total.svg)
+![GitHub issues](https://img.shields.io/github/issues/sami-ets/SamiTorch.svg)
+![GitHub](https://img.shields.io/github/license/sami-ets/SamiTorch.svg)
+![GitHub contributors](https://img.shields.io/github/contributors/sami-ets/SamiTorch.svg)
+
+
 SAMITorch is a deep learning framework for *Shape Analysis in Medical Imaging* laboratory of École de technologie supérieure using PyTorch library.
 It implements an extensive set of loaders, transformers, models and data sets suited for deep learning in medical imaging.
 Our objective is to build a tested, standard framework for quickly producing results in deep learning reasearch applied to medical imaging. 
