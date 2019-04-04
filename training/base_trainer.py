@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright 2019 SAMITorch Authors. All Rights Reserved.
 #
 # Licensed under the MIT License;
