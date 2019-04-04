@@ -36,11 +36,12 @@ Our objective is to build a tested, standard framework for quickly producing res
 
 ## Branch naming
 
-##### Feature branch
-> feature/ [Short feature description] [Issue number]
-
-##### Bug branch
-> fix/ [Short fix description] [Issue number]
+| Instance        | Branch                                              | Description, Instructions, Notes                   |
+|-----------------|-----------------------------------------------------|----------------------------------------------------|
+| Stable          | stable                                              | Accepts merges from Working and Hotfixes           |
+| Dev             | dev/ [Short feature description] [Issue number]     | Accepts merges from Features / Issues and Hotfixes |
+| Features/Issues | feature/ [Short feature description] [Issue number] | Always branch off HEAD or dev/                     |
+| Hotfix          | fix/ [Short feature description] [Issue number]     | Always branch off Stable                           |
 
 #### Commits syntax:
 
