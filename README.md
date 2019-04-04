@@ -38,8 +38,8 @@ Our objective is to build a tested, standard framework for quickly producing res
 
 | Instance        | Branch                                              | Description, Instructions, Notes                   |
 |-----------------|-----------------------------------------------------|----------------------------------------------------|
-| Stable          | stable                                              | Accepts merges from Working and Hotfixes           |
-| Development     | dev/ [Short feature description] [Issue number]     | Accepts merges from Features / Issues and Hotfixes |
+| Stable          | stable                                              | Accepts merges from Development and Hotfixes       |
+| Development     | dev/ [Short description] [Issue number]             | Accepts merges from Features / Issues and Hotfixes |
 | Features/Issues | feature/ [Short feature description] [Issue number] | Always branch off HEAD or dev/                     |
 | Hotfix          | fix/ [Short feature description] [Issue number]     | Always branch off Stable                           |
 
