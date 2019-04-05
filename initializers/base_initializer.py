@@ -13,3 +13,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+
+"""A base initializer class.
+
+Declares methods an Initializer must have.
+"""
+
+from abc import abstractmethod
+
+
+class BaseInitializer(object):
+
+    def __init__(self):
+        """Class initializer.
+        """
+        pass
+
+    @abstractmethod
+    def initialize(self, *args, **kwargs):
+        """Initialize a PyTorch torch.nn layer/operation.
+
+        Raises:
+            NotImplementedError: If not overwritten by subclass.
+        """
+        raise NotImplementedError()
