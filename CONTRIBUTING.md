@@ -6,24 +6,11 @@ Before sending your pull requests, make sure you followed this list.
 
 - Read [contributing guidelines](CONTRIBUTING.md).
 - Read [Code of Conduct](CODE_OF_CONDUCT.md).
-- Check if my changes are consistent with the [guidelines](https://github.com/sami-ets/SamiTorch/master/CONTRIBUTING.md#general-guidelines-and-philosophy-for-contribution).
-- Changes are consistent with the [Coding Style](https://github.com/sami-ets/SamiTorch/master/CONTRIBUTING.md#c-coding-style).
+- Check if my changes are consistent with the [guidelines](https://github.com/sami-ets/SAMITorch/blob/master/CONTRIBUTING.md#general-guidelines-and-philosophy-for-contribution).
+- Changes are consistent with the [Coding Style](https://github.com/sami-ets/SAMITorch/blob/master/CONTRIBUTING.md#python-coding-style).
 - Run [Unit Tests](https://github.com/sami-ets/SamiTorch/master/CONTRIBUTING.md#running-unit-tests).
 
 ## How to become a contributor and submit your own code
-
-### Contributor License Agreements
-
-We'd love to accept your patches! Before we can take them, we have to jump a couple of legal hurdles.
-
-Please fill out either the individual or corporate Contributor License Agreement (CLA).
-
-  * If you are an individual writing original source code and you're sure you own the intellectual property, then you'll need to sign an [individual CLA](https://code.google.com/legal/individual-cla-v1.0.html).
-  * If you work for a company that wants to allow you to contribute your work, then you'll need to sign a [corporate CLA](https://code.google.com/legal/corporate-cla-v1.0.html).
-
-Follow either of the two links above to access the appropriate CLA and instructions for how to sign and return it. Once we receive it, we'll be able to accept your pull requests.
-
-***NOTE***: Only original source code from you and other people that have signed the CLA can be accepted into the main repository.
 
 ### Contributing code
 
@@ -38,7 +25,7 @@ the change has been submitted internally, your pull request will be merged
 automatically on GitHub.
 
 If you want to contribute but you're not sure where to start, take a look at the
-[issues with the "contributions welcome" label](https://github.com/sami-ets/SamiTorch/labels/contributions%20welcome).
+[issues with the "contributions welcome" label](https://github.com/sami-ets/SAMITorch/labels/contributions%20welcome).
 These are issues that we believe are particularly well suited for outside
 contributions, often because we probably won't get to them right now. If you
 decide to start on an issue, leave a comment so that other people know that
@@ -48,7 +35,7 @@ comment thread to coordinate.
 ### Contribution guidelines and standards
 
 Before sending your pull request for
-[review](https://github.com/sami-ets/SamiTorch/pulls),
+[review](https://github.com/sami-ets/SAMITorch/pulls),
 make sure your changes are consistent with the guidelines and follow the
 SAMITorch coding style.
 
@@ -70,7 +57,7 @@ SAMITorch coding style.
 
 Include a license at the top of new files.
 
-* [Python license example](https://github.com/sami-ets/SamiTorch/)
+* [Python license example](https://github.com/sami-ets/SAMITorch/blob/master/models/base_model.py#L1)
 
 #### Python coding style
 
@@ -108,9 +95,9 @@ There are two ways to run SAMITorch unit tests.
 1.  Using tools and libraries installed directly on your system.
 
     Refer to the
-    [CPU-only developer Dockerfile](https://github.com/sami-ets/SamiTorch/tree/master/docker/Dockerfile.devel)
+    [CPU-only developer Dockerfile](https://github.com/sami-ets/SAMITorch/tree/master/docker/Dockerfile.devel)
     and
-    [GPU developer Dockerfile](https://github.com/sami-ets/SamiTorch/tree/master/configs/docker/Dockerfile.devel-gpu)
+    [GPU developer Dockerfile](https://github.com/sami-ets/SAMITorch/tree/master/configs/docker/Dockerfile.devel-gpu)
     for the required packages. Alternatively, Docker images on Docker Hub will be deployed in near future.
 
     Once you have the packages installed, you can run a specific unit test by doing as follows:
@@ -120,7 +107,6 @@ There are two ways to run SAMITorch unit tests.
 
     ```bash
     export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64:$LD_LIBRARY_PATH"
-
     export flags="--config=opt --config=cuda -k"
     ```
 
