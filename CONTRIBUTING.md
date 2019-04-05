@@ -27,11 +27,11 @@ Follow either of the two links above to access the appropriate CLA and instructi
 
 ### Contributing code
 
-If you have improvements to TensorFlow, send us your pull requests! For those
+If you have improvements to SAMITorch, send us your pull requests! For those
 just getting started, Github has a [howto](https://help.github.com/articles/using-pull-requests/).
 
-TensorFlow team members will be assigned to review your pull requests. Once the
-pull requests are approved and pass continuous integration checks, a TensorFlow
+SAMITorch team members will be assigned to review your pull requests. Once the
+pull requests are approved and pass continuous integration checks, a SAMITorch
 team member will apply `ready to pull` label to your change. This means we are
 working on getting your pull request submitted to our internal repository. After
 the change has been submitted internally, your pull request will be merged
@@ -50,7 +50,7 @@ comment thread to coordinate.
 Before sending your pull request for
 [review](https://github.com/sami-ets/SamiTorch/pulls),
 make sure your changes are consistent with the guidelines and follow the
-TensorFlow coding style.
+SAMITorch coding style.
 
 #### General guidelines and philosophy for contribution
 
@@ -62,7 +62,7 @@ TensorFlow coding style.
 *   Keep API compatibility in mind when you change code in core SAMITorch.
     Reviewers of your pull request will comment on any API compatibility issues.
 *   When you contribute a new feature to SAMITorch, the maintenance burden is
-    (by default) transferred to the TensorFlow team. This means that benefit of
+    (by default) transferred to the SAMITorch team. This means that benefit of
     the contribution must be compared against the cost of maintaining the
     feature.
 
@@ -74,15 +74,15 @@ Include a license at the top of new files.
 
 #### Python coding style
 
-Changes to TensorFlow Python code should conform to
+Changes to SAMITorch Python code should conform to
 [Google Python Style Guide](https://github.com/google/styleguide/blob/gh-pages/pyguide.md)
 
 Use `pylint` to check your Python changes. To install `pylint` and
-retrieve TensorFlow's custom style definition:
+retrieve SAMITorch's custom style definition:
 
 ```bash
 pip install pylint
-wget -O /tmp/pylintrc https://raw.githubusercontent.com/tensorflow/tensorflow/master/tensorflow/tools/ci_build/pylintrc
+#wget -O /tmp/pylintrc https://raw.githubusercontent.com/tensorflow/tensorflow/master/tensorflow/tools/ci_build/pylintrc
 ```
 
 To check a file with `pylint`:
@@ -127,16 +127,12 @@ There are two ways to run SAMITorch unit tests.
 
     For example, to run all tests under tests/, do:
 
-    ```python tests.py
+    ```python tests/tests.py
     ```
 
 2.  Using [Docker](https://www.docker.com) and SAMITorch's CI scripts.
 
     ```bash
     # Install Docker first, then this will build and run cpu tests
-    python tests.py
+    python tests/tests.py
     ```
-
-    See
-    [TensorFlow Builds](https://github.com/tensorflow/tensorflow/tree/master/tensorflow/tools/ci_build)
-    for details.
