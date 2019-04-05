@@ -2,11 +2,11 @@
 
 ## Welcome to SAMITorch
 
-[![Build Status](https://travis-ci.com/sami-ets/SamiTorch.svg?branch=master)](https://travis-ci.com/sami-ets/SamiTorch)
-![GitHub All Releases](https://img.shields.io/github/downloads/sami-ets/SamiTorch/total.svg)
-![GitHub issues](https://img.shields.io/github/issues/sami-ets/SamiTorch.svg)
-![GitHub](https://img.shields.io/github/license/sami-ets/SamiTorch.svg)
-![GitHub contributors](https://img.shields.io/github/contributors/sami-ets/SamiTorch.svg)
+[![Build Status](https://travis-ci.com/sami-ets/SAMITorch.svg?branch=master)](https://travis-ci.com/sami-ets/SAMITorch)
+![GitHub All Releases](https://img.shields.io/github/downloads/sami-ets/SAMITorch/total.svg)
+![GitHub issues](https://img.shields.io/github/issues/sami-ets/SAMITorch.svg)
+![GitHub](https://img.shields.io/github/license/sami-ets/SAMITorch.svg)
+![GitHub contributors](https://img.shields.io/github/contributors/sami-ets/SAMITorch.svg)
 
 
 SAMITorch is a deep learning framework for *Shape Analysis in Medical Imaging* laboratory of [École de technologie supérieure](https://www.etsmtl.ca/) using [PyTorch](https://github.com/pytorch) library.
@@ -66,8 +66,6 @@ Our objective is to build a tested, standard framework for quickly producing res
 |
 ├── initializers            - This folder contains custom layer/op initializers.  
 |   └── base_initializer.py
-|
-├── experiments             - This folder contains Python scripts to launch automated experiments.
 │
 ├── inputs                  - This folder contains anything relative to inputs to a network.
 |   └── transformers.py  
@@ -77,9 +75,7 @@ Our objective is to build a tested, standard framework for quickly producing res
 |   └── metrics.py
 |   
 ├── models                  - This folder contains any standard model.
-│   └── base_model.py                   
-│
-├── notebooks               - This folder contains various Jupyter Notebook a user could create.   
+│   └── base_model.py                      
 |
 ├── preprocessing           - This folder contains anything relative to input preprocessing, and scripts that must be executed prior training.
 |
