@@ -112,7 +112,8 @@ There are two ways to run SAMITorch unit tests.
 
     For example, to run all tests under tests/, do:
 
-    ```python tests/tests.py
+    ```
+    python tests/tests.py
     ```
 
 2.  Using [Docker](https://www.docker.com) and SAMITorch's CI scripts.
