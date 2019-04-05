@@ -8,7 +8,7 @@ Before sending your pull requests, make sure you followed this list.
 - Read [Code of Conduct](CODE_OF_CONDUCT.md).
 - Check if my changes are consistent with the [guidelines](https://github.com/sami-ets/SAMITorch/blob/master/CONTRIBUTING.md#general-guidelines-and-philosophy-for-contribution).
 - Changes are consistent with the [Coding Style](https://github.com/sami-ets/SAMITorch/blob/master/CONTRIBUTING.md#python-coding-style).
-- Run [Unit Tests](https://github.com/sami-ets/SamiTorch/master/CONTRIBUTING.md#running-unit-tests).
+- Run [Unit Tests](https://github.com/sami-ets/SAMITorch/master/CONTRIBUTING.md#running-unit-tests).
 
 ## How to become a contributor and submit your own code
 
