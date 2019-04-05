@@ -19,7 +19,7 @@
 Declares methods a Trainer object must have.
 """
 
-from abc import abstractmethod
+import abc
 from callbacks.base_callback import BaseCallback
 
 
@@ -36,38 +36,79 @@ class BaseTrainer(object):
         for cbck in callbacks:
             self.register_callback(cbck)
 
-    @abstractmethod
-    def train(self, *args, **kwargs):
+    @abc.abstractmethod
+    def train(self):
         """Main training loop.
-
-        Args:
-            *args: positional arguments
-            **kwargs: keyword arguments
 
         Raises:
             NotImplementedError: if not overwritten by subclass.
         """
         raise NotImplementedError()
 
-    @abstractmethod
-    def train_one_epoch(self, *args, **kwargs):
+    @abc.abstractmethod
+    def train_epoch(self, epoch_num, **kwargs):
         """Train a model for one epoch.
 
         Args:
-            *args: positional arguments
-            **kwargs: keyword arguments
+            *epoch_num: current epoch number.
+            **kwargs: keyword arguments.
 
         Raises:
             NotImplementedError: if not overwritten by subclass.
         """
         raise NotImplementedError()
 
-    @abstractmethod
-    def validate(self, *args, **kwargs):
+    @abc.abstractmethod
+    def train_batch(self, data_dict: dict, optimizers: dict, criterions={}, metrics={}, fold=0, **kwargs):
+        """Function which handles prediction from batch, logging, loss calculation and optimizer step.
+
+        This function is needed for the framework to provide a generic trainer function which works with all kind of
+        networks and loss functions. The closure function must implement all steps from forwarding, over loss
+        calculation, metric calculation, logging, and the actual backpropagation. It is called with an empty
+        optimizer-dict to evaluate and should thus work with optional optimizers.
+
+        Args:
+            model: (:class:`Model`) model to forward data through.
+            data_dict: (dict) dictionary containing the data.
+            optimizers: (dict) dictionary containing all optimizers to perform parameter update.
+            criterions: (dict) Functions or classes to calculate criterions.
+            metrics: (dict) Functions or classes to calculate other metrics.
+            fold: (int) Current Fold in Crossvalidation (default: 0).
+            kwargs : (dict) additional keyword arguments.
+
+        Returns:
+            dict: Metric values (with same keys as input dict metrics).
+            dict: Loss values (with same keys as input dict criterions).
+            list: Arbitrary number of predictions.
+
+        Raises:
+            NotImplementedError: If not overwritten by subclass.
+        """
+        raise NotImplementedError()
+
+    @staticmethod
+    def prepare_batch(batch: dict, input_device, output_device):
+        """Converts a numpy batch of data and labels to suitable datatype and pushes them to correct devices
+
+        Args
+            batch: (dict) dictionary containing the batch (must have keys 'data' and 'label'
+            input_device: device for network inputs
+            output_device: device for network outputs
+
+        Returns:
+            dict: dictionary containing all necessary data in right format and type and on the correct device
+
+        Raises:
+            NotImplementedError: If not overwritten by subclass.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def validate_epoch(self, epoch_num, **kwargs):
         """Run validation phase.
 
          Args:
-            *args: positional arguments
+            epoch_num: current epoch number.
             **kwargs: keyword arguments
 
         Raises:
@@ -75,7 +116,7 @@ class BaseTrainer(object):
         """
         raise NotImplementedError()
 
-    @abstractmethod
+    @abc.abstractmethod
     def finalize(self, *args, **kwargs):
         """Finalize all operations (e.g. save checkpoint, finalize Data Loaders and close logger if required).
 
@@ -88,7 +129,7 @@ class BaseTrainer(object):
         """
         raise NotImplementedError()
 
-    @abstractmethod
+    @abc.abstractmethod
     def _setup(self, *args, **kwargs):
         """Defines the actual Trainer Setup.
 
@@ -101,7 +142,7 @@ class BaseTrainer(object):
         """
         raise NotImplementedError()
 
-    @abstractmethod
+    @abc.abstractmethod
     def _at_training_begin(self, *args, **kwargs):
         """Defines the behaviour at beginnig of the training.
 
@@ -114,7 +155,7 @@ class BaseTrainer(object):
         """
         raise NotImplementedError()
 
-    @abstractmethod
+    @abc.abstractmethod
     def _at_training_end(self, *args, **kwargs):
         """Defines the behaviour at the end of the training.
 
@@ -127,7 +168,7 @@ class BaseTrainer(object):
         """
         raise NotImplementedError()
 
-    @abstractmethod
+    @abc.abstractmethod
     def _at_epoch_begin(self, *args, **kwargs):
         """Defines the behaviour at beginnig of each epoch.
 
@@ -140,7 +181,7 @@ class BaseTrainer(object):
         """
         raise NotImplementedError()
 
-    @abstractmethod
+    @abc.abstractmethod
     def _at_epoch_end(self, *args, **kwargs):
         """
         Defines the behaviour at the end of each epoch.
