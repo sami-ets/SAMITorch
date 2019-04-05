@@ -9,7 +9,7 @@
 ![GitHub contributors](https://img.shields.io/github/contributors/sami-ets/SamiTorch.svg)
 
 
-SAMITorch is a deep learning framework for *Shape Analysis in Medical Imaging* laboratory of École de technologie supérieure using PyTorch library.
+SAMITorch is a deep learning framework for *Shape Analysis in Medical Imaging* laboratory of École de technologie supérieure using [PyTorch](https://github.com/pytorch) library.
 It implements an extensive set of loaders, transformers, models and data sets suited for deep learning in medical imaging.
 Our objective is to build a tested, standard framework for quickly producing results in deep learning reasearch applied to medical imaging. 
 
