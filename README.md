@@ -108,6 +108,7 @@ Our objective is to build a tested, standard framework for quickly producing res
 #### Main
 
 ## Contributing
+If you find a bug or have an idea for an improvement, please first have a look at our [contribution guideline](https://github.com/sami-ets/SAMITorch/blob/master/CONTRIBUTING.md). Then,
 - [X] Create a branch by feature and/or bug fix
 - [X] Get the code
 - [X] Commit and push
