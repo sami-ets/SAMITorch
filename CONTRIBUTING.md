@@ -82,7 +82,6 @@ retrieve SAMITorch's custom style definition:
 
 ```bash
 pip install pylint
-#wget -O /tmp/pylintrc https://raw.githubusercontent.com/tensorflow/tensorflow/master/tensorflow/tools/ci_build/pylintrc
 ```
 
 To check a file with `pylint`:
