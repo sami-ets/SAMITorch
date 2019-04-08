@@ -118,7 +118,17 @@ class CheckpointStrategy(TrainingStrategy):
         """
         super(CheckpointStrategy).__init__(trainer)
 
+    @abc.abstractmethod
     def __call__(self, *args, **kwargs):
+        """Call method.
+
+        Args:
+            *args:
+            **kwargs:
+
+        Raises:
+            NotImplementedError: if not overwritten by subclass.
+        """
         raise NotImplementedError()
 
 
