@@ -40,6 +40,22 @@ class Trainer(object):
         self._callbacks = list()
         for cbck in callbacks:
             self._register_callback(cbck)
+        self._epoch = 0
+
+    @property
+    def epoch(self):
+        """int: The current epoch count."""
+        return self._epoch
+
+    @property
+    def configs(self):
+        """:obj:`list` of :obj:`TrainingConfig`: A list of registered training configuration, one per model."""
+        return self._configs
+
+    @property
+    def callbacks(self):
+        """:obj:`list` of :obj:`Callback`: A list of registered callbacks."""
+        return self._callbacks
 
     @abc.abstractmethod
     def train(self):
