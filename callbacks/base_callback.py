@@ -18,6 +18,7 @@
 
 Declare methods a Callback must have.
 """
+import abc
 
 from training.base_trainer import Trainer
 
@@ -39,6 +40,7 @@ class Callback(object):
         """
         pass
 
+    @abc.abstractmethod
     def at_epoch_begin(self, trainer: Trainer, **kwargs):
         """Function which will be executed at begin of each epoch
 
@@ -51,6 +53,7 @@ class Callback(object):
         """
         return {}
 
+    @abc.abstractmethod
     def at_epoch_end(self, trainer: Trainer, **kwargs):
         """Function which will be executed at end of each epoch
 

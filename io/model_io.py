@@ -27,10 +27,10 @@ def save(file_name: str, model=None, epoch_num=None, optimizers={}, **kwargs):
     """Save a checkpoint.
 
     Args:
-        file_name: (str) the file name to save a PyTorch model checkpoint.
-        model: (:class: `torch.nn.Module`) A PyTorch model.
-        epoch_num: (int) Current epoch number.
-        optimizers: (dict) dictionary containing all optimizers
+        file_name (str): the file name to save a PyTorch model checkpoint.
+        model (:class: `torch.nn.Module`): A PyTorch model.
+        epoch_num (int): Current epoch number.
+        optimizers (dict): dictionary containing all optimizers
     """
 
     if isinstance(model, torch.nn.DataParallel):
@@ -66,7 +66,7 @@ def load(file_name: str, **kwargs):
     """Load a checkpoint.
 
     Args:
-        file_name: the file name from which to load a PyTorch model checkpoint.
+        file_name (str): the file name from which to load a PyTorch model checkpoint.
 
     Returns:
         OrderedDict: checkpoint state_dict
