@@ -16,25 +16,30 @@
 
 """A base trainer class.
 
-Declares methods a Trainer object must have.
+Declare methods a Trainer object must have.
 """
 
 import abc
-from callbacks.base_callback import BaseCallback
+import torch
+
+from callbacks.base_callback import Callback
+from training.training_config import TrainingConfig
 
 
-class BaseTrainer(object):
-    def __init__(self, config, callbacks=[]):
+class Trainer(object):
+    def __init__(self, configs: list, callbacks: list):
         """Class initializer.
 
         Args:
-            config: a dictionary containing configuration.
-            callbacks: list of callbacks to register.
+            configs (:obj:`list` of :obj:`TrainingConfig`): A dictionary containing configuration.
+            callbacks (:obj:`list` of :obj:`Callback`): A list of callbacks to register.
         """
-        self._config = config
-        self._callbacks = callbacks
+        self._configs = list()
+        for config in configs:
+            self._register_config(config)
+        self._callbacks = list()
         for cbck in callbacks:
-            self.register_callback(cbck)
+            self._register_callback(cbck)
 
     @abc.abstractmethod
     def train(self):
@@ -46,7 +51,7 @@ class BaseTrainer(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def train_epoch(self, epoch_num, **kwargs):
+    def train_epoch(self, epoch_num: int, **kwargs):
         """Train a model for one epoch.
 
         Args:
@@ -59,7 +64,7 @@ class BaseTrainer(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def train_batch(self, data_dict: dict, optimizers: dict, criterions={}, metrics={}, fold=0, **kwargs):
+    def train_batch(self, data_dict: dict, fold=0, **kwargs):
         """Function which handles prediction from batch, logging, loss calculation and optimizer step.
 
         This function is needed for the framework to provide a generic trainer function which works with all kind of
@@ -68,13 +73,9 @@ class BaseTrainer(object):
         optimizer-dict to evaluate and should thus work with optional optimizers.
 
         Args:
-            model: (:class:`Model`) model to forward data through.
-            data_dict: (dict) dictionary containing the data.
-            optimizers: (dict) dictionary containing all optimizers to perform parameter update.
-            criterions: (dict) Functions or classes to calculate criterions.
-            metrics: (dict) Functions or classes to calculate other metrics.
-            fold: (int) Current Fold in Crossvalidation (default: 0).
-            kwargs : (dict) additional keyword arguments.
+            data_dict (dict): dictionary containing the data.
+            fold (int): Current Fold in Cross Validation (default: 0).
+            kwargs (dict): additional keyword arguments.
 
         Returns:
             dict: Metric values (with same keys as input dict metrics).
@@ -87,13 +88,13 @@ class BaseTrainer(object):
         raise NotImplementedError()
 
     @staticmethod
-    def prepare_batch(batch: dict, input_device, output_device):
+    def prepare_batch(batch: dict, input_device: torch.device, output_device: torch.device):
         """Converts a numpy batch of data and labels to suitable datatype and pushes them to correct devices
 
         Args
-            batch: (dict) dictionary containing the batch (must have keys 'data' and 'label'
-            input_device: device for network inputs
-            output_device: device for network outputs
+            batch (dict): dictionary containing the batch (must have keys 'data' and 'label'
+            input_device (:obj:`torch.device`): device for network inputs
+            output_device (:obj:`torch.device`): device for network outputs
 
         Returns:
             dict: dictionary containing all necessary data in right format and type and on the correct device
@@ -104,11 +105,11 @@ class BaseTrainer(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def validate_epoch(self, epoch_num, **kwargs):
+    def validate_epoch(self, epoch_num: int, **kwargs):
         """Run validation phase.
 
          Args:
-            epoch_num: current epoch number.
+            epoch_num (int): current epoch number.
             **kwargs: keyword arguments
 
         Raises:
@@ -196,36 +197,14 @@ class BaseTrainer(object):
 
         raise NotImplementedError()
 
-    def register_callback(self, callback: BaseCallback):
-        """Register Callback to Trainer.
-
-        Args:
-            callback: :class:`BaseCallback` the callback to register
-
-        Raises:
-            AssertionError: `callback` is not an instance of :class:`AbstractCallback` and has not both methods
-            ['at_epoch_begin', 'at_epoch_end'].
-        """
-
-        assertion_str = "Given callback is not valid; Must be instance of " \
-                        "BasetCallback or provide functions " \
-                        "'at_epoch_begin' and 'at_epoch_end'"
-
-        assert isinstance(callback, BaseCallback) or \
-               (hasattr(callback, "at_epoch_begin")
-                and hasattr(callback, "at_epoch_end")), assertion_str
-
-        self._callbacks.append(callback)
-
     @staticmethod
-    def _is_better_val_scores(old_val_score, new_val_score, mode='highest'):
+    def _is_better_val_scores(old_val_score: float, new_val_score: float, mode='highest'):
         """Check whether the new val score is better than the old one with respect to the optimization goal.
 
         Args:
-
-            old_val_score : old validation score
-            new_val_score : new validation score
-            mode: String to specify whether a higher or lower validation score is optimal;
+            old_val_score (float): old validation score
+            new_val_score (float): new validation score
+            mode (str): String to specify whether a higher or lower validation score is optimal;
                 must be in ['highest', 'lowest']
 
         Returns:
@@ -238,3 +217,41 @@ class BaseTrainer(object):
             return new_val_score > old_val_score
         elif mode == 'lowest':
             return new_val_score < old_val_score
+
+    def _register_callback(self, callback: Callback):
+        """Register Callback to Trainer.
+
+        Args:
+            callback (:class:`Callback`): the callback to register
+
+        Raises:
+            AssertionError: `callback` is not an instance of :class:`Callback` and has not both methods
+            ['at_epoch_begin', 'at_epoch_end'].
+        """
+
+        assertion_str = "Given callback is not valid; Must be instance of " \
+                        "Callback or provide functions " \
+                        "'at_epoch_begin' and 'at_epoch_end'"
+
+        assert \
+            isinstance(callback, Callback) \
+            or (hasattr(callback, "at_epoch_begin")
+                and hasattr(callback, "at_epoch_end")), assertion_str
+
+        self._callbacks.append(callback)
+
+    def _register_config(self, config: TrainingConfig):
+        """Register a TrainingConfig to Trainer.
+
+        Args:
+            config (:obj:`TrainingConfig`): the training configuration to register.
+
+        Raises:
+             AssertionError: `config` is not an instance of :class:`TrainingConfig`.
+
+        """
+        assertion_str = "Given config is not valid; Must be instance of 'TrainingConfig'"
+
+        assert isinstance(config, TrainingConfig), assertion_str
+
+        self._configs.append(config)
