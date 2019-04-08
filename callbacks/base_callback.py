@@ -16,43 +16,47 @@
 
 """A base callback class.
 
-Declares methods a Callback must have.
+Declare methods a Callback must have.
 """
 
+from training.base_trainer import Trainer
 
-class BaseCallback(object):
+
+class Callback(object):
     """Implements abstract callback interface.
+
     All callbacks should be derived from this class
+
     See Also:
-        class:`AbstractNetworkTrainer`
+        class:`Trainer`
     """
 
     def __init__(self, *args, **kwargs):
         """ Class initializer.
         Args:
-            *args : positional arguments
-            **kwargs : keyword arguments
+            *args: positional arguments
+            **kwargs: keyword arguments
         """
         pass
 
-    def at_epoch_begin(self, trainer, **kwargs):
+    def at_epoch_begin(self, trainer: Trainer, **kwargs):
         """Function which will be executed at begin of each epoch
 
         Args:
-            trainer : :class:`AbstractNetworkTrainer`
-            **kwargs : additional keyword arguments
+            trainer (:obj:`Trainer`): A trainer.
+            **kwargs: additional keyword arguments
 
         Returns:
             dict: modified trainer attributes, where the name must correspond to the trainer's attribute name
         """
         return {}
 
-    def at_epoch_end(self, trainer, **kwargs):
+    def at_epoch_end(self, trainer: Trainer, **kwargs):
         """Function which will be executed at end of each epoch
 
         Args:
-            trainer : :class:`AbstractNetworkTrainer`
-            **kwargs : additional keyword arguments
+            trainer (:obj:`Trainer`): A trainer.
+            **kwargs: additional keyword arguments
 
         Returns:
             dict: modified trainer attributes, where the name must correspond to the trainer's attribute name

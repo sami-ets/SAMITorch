@@ -16,20 +16,20 @@
 
 """A base initializer class.
 
-Declares methods an Initializer must have.
+Declare methods an Initializer must have.
 """
 
-from abc import abstractmethod
+import abc
 
 
-class BaseInitializer(object):
+class Initializer(object):
 
     def __init__(self):
-        """Class initializer.
+        """Class constructor.
         """
         pass
 
-    @abstractmethod
+    @abc.abstractmethod
     def initialize(self, *args, **kwargs):
         """Initialize a PyTorch torch.nn layer/operation.
 
