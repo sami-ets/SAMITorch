@@ -18,6 +18,9 @@
 
 import abc
 import torch
+import math
+
+from torch.nn.functional import pairwise_distance
 
 
 class Metric(object):
@@ -30,7 +33,7 @@ class Metric(object):
         self._is_multilabel = is_multilabel
 
     @abc.abstractmethod
-    def compute(self, predictions: torch.Tensor, targets: torch.Tensor, **kwargs) -> float:
+    def compute(self, predictions: torch.Tensor, targets: torch.Tensor) -> float:
         """Compute a specific metric.
 
         Args:
@@ -126,7 +129,7 @@ class Metric(object):
 
 
 class Accuracy(Metric):
-    """Metric defining accuracy."""
+    """Calculate Accuracy."""
 
     def __init__(self, is_multilabel=False):
         """Class constructor."""
@@ -166,3 +169,158 @@ class Accuracy(Metric):
             raise ValueError('Accuracy metric must have at least one example before it can be computed.')
 
         return _num_correct / correct.shape[0]
+
+
+class TopKCategoricalAccuracy(Metric):
+    """Calculate the top-k categorical accuracy."""
+
+    def __init__(self, k=5):
+        super(TopKCategoricalAccuracy, self).__init__()
+        self._k = k
+
+    def compute(self, predictions: torch.Tensor, targets: torch.Tensor) -> float:
+        """Calculate Top-K Accuracy.
+
+        Args:
+            predictions (:obj:`torch.Tensor`): The model's predictions on which the metric has to be computed.
+            targets (:obj:`torch.Tensor`): The ground truth.
+
+        Returns:
+            float: The batch's accuracy.
+        """
+        sorted_indices = torch.topk(predictions, self._k, dim=1)[1]
+        expanded_targets = targets.view(-1, 1).expand(-1, self._k)
+        correct = torch.sum(torch.eq(sorted_indices, expanded_targets), dim=1)
+        _num_correct = torch.sum(correct).item()
+        _num_examples = correct.shape[0]
+
+        if _num_examples == 0:
+            raise ValueError("TopKCategoricalAccuracy must have at"
+                             "least one example before it can be computed.")
+        return _num_correct / _num_examples
+
+
+class MeanSquaredError(Metric):
+    """Calculate the Mean Squared Error."""
+
+    def __init__(self):
+        """Class constructor."""
+        super().__init__()
+
+    def compute(self, predictions: torch.Tensor, targets: torch.Tensor) -> float:
+        """Compute Mean Squared Error.
+
+              Args:
+                  predictions (:obj:`torch.Tensor`): The model's predictions on which the metric has to be computed.
+                  targets (:obj:`torch.Tensor`): The ground truth.
+
+              Returns:
+                  float: The batch's accuracy.
+        """
+        squared_errors = torch.pow(predictions - targets.view_as(predictions), 2)
+        _sum_of_squared_errors = torch.sum(squared_errors).item()
+        _num_examples = targets.shape[0]
+
+        if _num_examples == 0:
+            raise ValueError('MeanSquaredError must have at least one example before it can be computed.')
+
+        return _sum_of_squared_errors / _num_examples
+
+
+class RootMeanSquaredError(MeanSquaredError):
+    """Calculate the Root Mean Squared Error."""
+
+    def __init__(self):
+        """Class constructor."""
+        super().__init__()
+
+    def compute(self, predictions: torch.Tensor, targets: torch.Tensor) -> float:
+        """Compute Root Mean Squared Error.
+
+        Args:
+            predictions (:obj:`torch.Tensor`): The model's predictions on which the metric has to be computed.
+            targets (:obj:`torch.Tensor`): The ground truth.
+
+        Returns:
+            float: The batch's accuracy.
+        """
+        mse = super(RootMeanSquaredError, self).compute(predictions, targets)
+        return math.sqrt(mse)
+
+
+class MeanAbsoluteError(Metric):
+    """Calculate the Mean Absolute Error."""
+
+    def __init__(self):
+        """Class constructor."""
+        super().__init__()
+
+    def compute(self, predictions: torch.Tensor, targets: torch.Tensor) -> float:
+        """Compute Mean Absolute Error.
+
+        Args:
+            predictions (:obj:`torch.Tensor`): The model's predictions on which the metric has to be computed.
+            targets (:obj:`torch.Tensor`): The ground truth.
+
+        Returns:
+            float: The batch's accuracy.
+        """
+        absolute_errors = torch.abs(predictions - targets.view_as(predictions))
+        _sum_of_absolute_errors = torch.sum(absolute_errors).item()
+        _num_examples = targets.shape[0]
+
+        if _num_examples == 0:
+            raise ValueError('MeanAbsoluteError must have at least one example before it can be computed.')
+
+        return _sum_of_absolute_errors / _num_examples
+
+
+class MeanPairwiseDistance(Metric):
+    """Calculate the Mean Pairwise Distance."""
+
+    def __init__(self, p=2, epsilon=1e-6):
+        """Class constructor."""
+        super(MeanPairwiseDistance, self).__init__()
+        self._p = p
+        self._epsilon = epsilon
+
+    def compute(self, predictions: torch.Tensor, targets: torch.Tensor) -> float:
+        """Compute Mean Pairwise Distance.
+
+        Args:
+            predictions (:obj:`torch.Tensor`): The model's predictions on which the metric has to be computed.
+            targets (:obj:`torch.Tensor`): The ground truth.
+
+        Returns:
+            float: The batch's accuracy.
+        """
+        distances = pairwise_distance(predictions, targets, p=self._p, eps=self._epsilon)
+        _sum_of_distances = torch.sum(distances).item()
+        _num_examples = targets.shape[0]
+
+        if _num_examples == 0:
+            raise ValueError('MeanAbsoluteError must have at least one example before it can be computed.')
+
+        return _sum_of_distances / _num_examples
+
+
+class DiceCoefficient(Metric):
+    """Metric defining the commonly used Dice Coefficient."""
+
+    def __init__(self, epsilon=1e-6, ignore_index=None):
+        """Class constructor."""
+        super().__init__()
+        self._epsilon = epsilon
+        self._ignore_index = ignore_index
+
+    def compute(self, predictions: torch.Tensor, targets: torch.Tensor) -> float:
+        """Compute Dice coefficient.
+
+       Args:
+            predictions (:obj:`torch.Tensor`): The model's predictions on which the metric has to be computed.
+            targets (:obj:`torch.Tensor`): The ground truth.
+
+        Returns:
+            float: The batch's Dice coefficient.
+        """
+        pass

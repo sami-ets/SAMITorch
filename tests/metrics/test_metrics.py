@@ -18,7 +18,8 @@ import unittest
 import torch
 
 from hamcrest import *
-from metrics.metrics import Accuracy
+from metrics.metrics import Accuracy, MeanSquaredError, MeanAbsoluteError, RootMeanSquaredError, MeanPairwiseDistance, \
+    TopKCategoricalAccuracy
 from sklearn.metrics import accuracy_score
 
 
@@ -650,6 +651,115 @@ class AccuracyMetricTest(unittest.TestCase):
         targets = torch.ones(4).type(torch.LongTensor)
 
         assert_that(calling(the_metric.compute).with_args(predictions, targets), raises(RuntimeError))
+
+
+class MeanSquareErrorMetricTest(unittest.TestCase):
+
+    def setUp(self):
+        pass
+
+    @staticmethod
+    def test_compute():
+        the_metric = MeanSquaredError()
+        predictions = torch.Tensor([[2.0], [-2.0]])
+        target = torch.zeros(2)
+        mse = the_metric.compute(predictions, target)
+        assert_that(mse, is_(float))
+        assert_that(mse, close_to(4.0, delta=1e-5))
+
+        the_metric = MeanSquaredError()
+        predictions = torch.Tensor([[3.0], [-3.0]])
+        target = torch.zeros(2)
+        mse = the_metric.compute(predictions, target)
+        assert_that(mse, is_(float))
+        assert_that(mse, close_to(9.0, delta=1e-5))
+
+
+class RootMeanSquareErrorMetricTest(unittest.TestCase):
+
+    def setUp(self):
+        pass
+
+    @staticmethod
+    def test_compute():
+        the_metric = RootMeanSquaredError()
+        predictions = torch.Tensor([[2.0], [-2.0]])
+        targets = torch.zeros(2)
+        rmse = the_metric.compute(predictions, targets)
+        assert_that(rmse, is_(float))
+        assert_that(rmse, close_to(2.0, delta=1e-5))
+
+        the_metric = RootMeanSquaredError()
+        predictions = torch.Tensor([[3.0], [-3.0]])
+        targets = torch.zeros(2)
+        rmse = the_metric.compute(predictions, targets)
+        assert_that(rmse, is_(float))
+        assert_that(rmse, close_to(3.0, delta=1e-5))
+
+
+class MeanAbsoluteErrorMetricTest(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    @staticmethod
+    def test_compute():
+        the_metric = MeanAbsoluteError()
+        predictions = torch.Tensor([[2.0], [-2.0]])
+        targets = torch.zeros(2)
+        mae = the_metric.compute(predictions, targets)
+        assert_that(mae, is_(float))
+        assert_that(mae, close_to(2.0, delta=1e-5))
+
+        the_metric = MeanAbsoluteError()
+        predictions = torch.Tensor([[3.0], [-3.0]])
+        targets = torch.zeros(2)
+        mae = the_metric.compute(predictions, targets)
+        assert_that(mae, is_(float))
+        assert_that(mae, close_to(3.0, delta=1e-5))
+
+
+class MeanPairwiseDistanceMetricTest(unittest.TestCase):
+
+    def setUp(self):
+        pass
+
+    @staticmethod
+    def test_compute():
+        the_metric = MeanPairwiseDistance()
+        predictions = torch.Tensor([[3.0, 4.0], [-3.0, -4.0]])
+        targets = torch.zeros(2, 2)
+        mpd = the_metric.compute(predictions, targets)
+        assert_that(mpd, is_(float))
+        assert_that(mpd, close_to(5.0, delta=1e-5))
+
+        the_metric = MeanPairwiseDistance()
+        predictions = torch.Tensor([[4.0, 4.0, 4.0, 4.0], [-4.0, -4.0, -4.0, -4.0]])
+        targets = torch.zeros(2, 4)
+        mpd = the_metric.compute(predictions, targets)
+        assert_that(mpd, is_(float))
+        assert_that(mpd, close_to(8.0, delta=1e-5))
+
+
+class TopKCategoritcalAccuracyTestMetric(unittest.TestCase):
+
+    def setUp(self):
+        pass
+
+    @staticmethod
+    def test_compute():
+        the_metric = TopKCategoricalAccuracy(2)
+        predictions = torch.FloatTensor([[0.2, 0.4, 0.6, 0.8], [0.8, 0.6, 0.4, 0.2]])
+        targets = torch.ones(2).type(torch.LongTensor)
+        top_k_accuracy = the_metric.compute(predictions, targets)
+        assert_that(top_k_accuracy, is_(float))
+        assert_that(top_k_accuracy, close_to(0.50, delta=1e-5))
+
+        the_metric = TopKCategoricalAccuracy(2)
+        predictions = torch.FloatTensor([[0.4, 0.8, 0.2, 0.6], [0.8, 0.6, 0.4, 0.2]])
+        target = torch.ones(2).type(torch.LongTensor)
+        top_k_accuracy = the_metric.compute(predictions, target)
+        assert_that(top_k_accuracy, is_(float))
+        assert_that(top_k_accuracy, close_to(1.0, delta=1e-5))
 
 
 if __name__ == 'main':
