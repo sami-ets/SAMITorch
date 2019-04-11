@@ -21,6 +21,7 @@ import torch
 import math
 
 from torch.nn.functional import pairwise_distance
+from utils.utils import to_onehot
 
 
 class Metric(object):
@@ -39,7 +40,6 @@ class Metric(object):
         Args:
             predictions (:obj:`torch.Tensor`): The model's predictions on which the metric has to be computed.
             targets (:obj:`torch.Tensor`): The ground truth.
-            **kwargs (dict): keyword arguments.
 
         Raises:
             NotImplementedError: if not overwritten by subclass.
@@ -128,6 +128,28 @@ class Metric(object):
                                  .format(self._num_classes, num_classes))
 
 
+class PrecisionRecall(Metric):
+    def __init__(self, average=False, is_multilabel=False):
+        self._average = average
+        self._true_positives = None
+        self._positives = None
+        self._epsilon = 1e-20
+        super(PrecisionRecall, self).__init__(is_multilabel=is_multilabel)
+
+    @abc.abstractmethod
+    def compute(self, predictions: torch.Tensor, targets: torch.Tensor) -> float:
+        """Compute a Precision or Recall metric.
+
+         Args:
+             predictions (:obj:`torch.Tensor`): The model's predictions on which the metric has to be computed.
+             targets (:obj:`torch.Tensor`): The ground truth.
+
+         Raises:
+             NotImplementedError: if not overwritten by subclass.
+        """
+        raise NotImplementedError()
+
+
 class Accuracy(Metric):
     """Calculate Accuracy."""
 
@@ -186,8 +208,10 @@ class TopKCategoricalAccuracy(Metric):
             targets (:obj:`torch.Tensor`): The ground truth.
 
         Returns:
-            float: The batch's accuracy.
+            float: The batch's top K categorical accuracy.
         """
+        predictions, targets = self._check_shapes(predictions, targets)
+
         sorted_indices = torch.topk(predictions, self._k, dim=1)[1]
         expanded_targets = targets.view(-1, 1).expand(-1, self._k)
         correct = torch.sum(torch.eq(sorted_indices, expanded_targets), dim=1)
@@ -215,8 +239,10 @@ class MeanSquaredError(Metric):
                   targets (:obj:`torch.Tensor`): The ground truth.
 
               Returns:
-                  float: The batch's accuracy.
+                  float: The batch's mean squared error.
         """
+        predictions, targets = self._check_shapes(predictions, targets)
+
         squared_errors = torch.pow(predictions - targets.view_as(predictions), 2)
         _sum_of_squared_errors = torch.sum(squared_errors).item()
         _num_examples = targets.shape[0]
@@ -242,7 +268,7 @@ class RootMeanSquaredError(MeanSquaredError):
             targets (:obj:`torch.Tensor`): The ground truth.
 
         Returns:
-            float: The batch's accuracy.
+            float: The batch's root mean squared error.
         """
         mse = super(RootMeanSquaredError, self).compute(predictions, targets)
         return math.sqrt(mse)
@@ -263,8 +289,10 @@ class MeanAbsoluteError(Metric):
             targets (:obj:`torch.Tensor`): The ground truth.
 
         Returns:
-            float: The batch's accuracy.
+            float: The batch's mean absolute error..
         """
+        predictions, targets = self._check_shapes(predictions, targets)
+
         absolute_errors = torch.abs(predictions - targets.view_as(predictions))
         _sum_of_absolute_errors = torch.sum(absolute_errors).item()
         _num_examples = targets.shape[0]
@@ -294,6 +322,8 @@ class MeanPairwiseDistance(Metric):
         Returns:
             float: The batch's accuracy.
         """
+        predictions, targets = self._check_shapes(predictions, targets)
+
         distances = pairwise_distance(predictions, targets, p=self._p, eps=self._epsilon)
         _sum_of_distances = torch.sum(distances).item()
         _num_examples = targets.shape[0]
@@ -323,4 +353,153 @@ class DiceCoefficient(Metric):
         Returns:
             float: The batch's Dice coefficient.
         """
-        pass
+        predictions, targets = self._check_shapes(predictions, targets)
+
+
+class MeanIOU(Metric):
+    """Calculate the Mean IOU"""
+
+    def __init__(self, skip_channels=None, ignore_index=None):
+        """Class constructor."""
+        super().__init__()
+        self._skip_channels = skip_channels
+        self._ignore_index = ignore_index
+
+    def compute(self, predictions: torch.Tensor, targets: torch.Tensor) -> float:
+        """Compute Dice coefficient.
+
+        Args:
+            predictions (:obj:`torch.Tensor`): The model's predictions on which the metric has to be computed.
+            targets (:obj:`torch.Tensor`): The ground truth.
+
+        Returns:
+            float: The batch's mean IOU.
+        """
+        predictions, targets = self._check_shapes(predictions, targets)
+
+
+class Precision(PrecisionRecall):
+    def __init__(self, average=False, is_multilabel=False):
+        super(Precision, self).__init__(average=average, is_multilabel=is_multilabel)
+
+    def compute(self, predictions: torch.Tensor, targets: torch.Tensor) -> float:
+        predictions, targets = self._check_shapes(predictions, targets)
+
+        self._select_metric_type(predictions, targets)
+
+        if self._type == "binary":
+            predictions = predictions.view(-1)
+            targets = targets.view(-1)
+        elif self._type == "multiclass":
+            num_classes = predictions.size(1)
+            if targets.max() + 1 > num_classes:
+                raise ValueError("predictions contains less classes than targets. Number of predicted classes is {}"
+                                 " and element in targets has invalid class = {}.".format(num_classes,
+                                                                                          targets.max().item() + 1))
+            targets = to_onehot(targets.view(-1), num_classes=num_classes)
+            indices = torch.argmax(predictions, dim=1).view(-1)
+            predictions = to_onehot(indices, num_classes=num_classes)
+        elif self._type == "multilabel":
+            # if targets, predictions shape is (N, C, ...) -> (C, N x ...)
+            num_classes = predictions.size(1)
+            predictions = torch.transpose(predictions, 1, 0).reshape(num_classes, -1)
+            targets = torch.transpose(targets, 1, 0).reshape(num_classes, -1)
+
+        targets = targets.type_as(predictions)
+        correct = targets * predictions
+        all_positives = predictions.sum(dim=0).type(torch.DoubleTensor)  # Convert from int cuda/cpu to double cpu
+
+        if correct.sum() == 0:
+            true_positives = torch.zeros_like(all_positives)
+        else:
+            true_positives = correct.sum(dim=0)
+        # Convert from int cuda/cpu to double cpu
+        # We need double precision for the division true_positives / all_positives
+        true_positives = true_positives.type(torch.DoubleTensor)
+
+        if self._type == "multilabel":
+            if not self._average:
+                self._true_positives = torch.cat([self._true_positives, true_positives], dim=0)
+                self._positives = torch.cat([self._positives, all_positives], dim=0)
+            else:
+                self._true_positives += torch.sum(true_positives / (all_positives + self.eps))
+                self._positives += len(all_positives)
+        else:
+            self._true_positives = true_positives
+            self._positives = all_positives
+
+        self._true_positives = torch.DoubleTensor(0) if (self._is_multilabel and not self._average) else 0
+        self._positives = torch.DoubleTensor(0) if (self._is_multilabel and not self._average) else 0
+
+        if not (isinstance(self._positives, torch.Tensor) or self._positives > 0):
+            raise ValueError("{} must have at least one example before"
+                             " it can be computed.".format(self.__class__.__name__))
+
+        result = self._true_positives / (self._positives + self._epsilon)
+
+        if self._average:
+            return result.mean().item()
+        else:
+            return result
+
+
+class Recall(PrecisionRecall):
+    def __init__(self, average=False, is_multilabel=False):
+        super(Recall, self).__init__(average=average, is_multilabel=is_multilabel)
+
+    def compute(self, predictions: torch.Tensor, targets: torch.Tensor) -> float:
+        predictions, targets = self._check_shapes(predictions, targets)
+        self._select_metric_type(predictions, targets)
+
+        if self._type == "binary":
+            predictions = predictions.view(-1)
+            targets = targets.view(-1)
+        elif self._type == "multiclass":
+            num_classes = predictions.size(1)
+            if targets.max() + 1 > num_classes:
+                raise ValueError("predictions contains less classes than targets. Number of predicted classes is {}"
+                                 " and element in targets has invalid class = {}.".format(num_classes,
+                                                                                          targets.max().item() + 1))
+            targets = to_onehot(targets.view(-1), num_classes=num_classes)
+            indices = torch.argmax(predictions, dim=1).view(-1)
+            predictions = to_onehot(indices, num_classes=num_classes)
+        elif self._type == "multilabel":
+            # if targets, predictions shape is (N, C, ...) -> (C, N x ...)
+            num_classes = predictions.size(1)
+            predictions = torch.transpose(predictions, 1, 0).reshape(num_classes, -1)
+            targets = torch.transpose(targets, 1, 0).reshape(num_classes, -1)
+
+        targets = targets.type_as(predictions)
+        correct = targets * predictions
+        actual_positives = targets.sum(dim=0).type(torch.DoubleTensor)  # Convert from int cuda/cpu to double cpu
+
+        if correct.sum() == 0:
+            true_positives = torch.zeros_like(actual_positives)
+        else:
+            true_positives = correct.sum(dim=0)
+
+        # Convert from int cuda/cpu to double cpu
+        # We need double precision for the division true_positives / actual_positives
+        true_positives = true_positives.type(torch.DoubleTensor)
+
+        if self._type == "multilabel":
+            if not self._average:
+                self._true_positives = torch.cat([self._true_positives, true_positives], dim=0)
+                self._positives = torch.cat([self._positives, actual_positives], dim=0)
+            else:
+                self._true_positives += torch.sum(true_positives / (actual_positives + self.eps))
+                self._positives += len(actual_positives)
+        else:
+            self._true_positives += true_positives
+            self._positives += actual_positives
+
+        if not (isinstance(self._positives, torch.Tensor) or self._positives > 0):
+            raise ValueError("{} must have at least one example before"
+                                     " it can be computed.".format(self.__class__.__name__))
+
+        result = self._true_positives / (self._positives + self.eps)
+
+        if self._average:
+            return result.mean().item()
+        else:
+            return result
