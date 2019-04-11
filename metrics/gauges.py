@@ -13,3 +13,63 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+
+import abc
+
+
+class Gauge(object):
+    """Base class for all Metrics."""
+
+    def __init__(self):
+        """Class constructor."""
+        self.reset()
+
+    @abc.abstractmethod
+    def update(self, value: float, **kwargs):
+        """Update the gauge's state.
+
+        Args:
+            value (float): The value with which to update the gauge.
+            **kwargs (dict): keyword arguments.
+
+        Raises:
+            NotImplementedError: if not overwritten by subclass.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def reset(self):
+        """Reset gauge's data.
+
+        Raises:
+            NotImplementedError: if not overwritten by subclass.
+        """
+        raise NotImplementedError()
+
+
+class AccuracyGauge(Gauge):
+    """A moving accuracy gauge."""
+
+    def __init__(self):
+        """Class constructor."""
+        self.count = 0
+        self.sum = 0
+        self.average = 0
+        super(AccuracyGauge).__init__()
+
+    def update(self, value: float, n_data: int):
+        """Update the moving average.
+
+        Args:
+            value (float): The value with which to update the average.
+            n_data (int): The number of data passed to this moving average.
+        """
+        self.count += n_data
+        self.sum += value * n_data
+        self.average = self.sum / self.count
+
+    def reset(self):
+        """Reset the moving average."""
+        self.count = 0
+        self.sum = 0
+        self.average = 0
