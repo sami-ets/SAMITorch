@@ -128,13 +128,13 @@ class Metric(object):
                                  .format(self._num_classes, num_classes))
 
 
-class PrecisionRecall(Metric):
+class BasePrecisionRecall(Metric):
     def __init__(self, average=False, is_multilabel=False):
         self._average = average
         self._true_positives = None
         self._positives = None
         self._epsilon = 1e-20
-        super(PrecisionRecall, self).__init__(is_multilabel=is_multilabel)
+        super(BasePrecisionRecall, self).__init__(is_multilabel=is_multilabel)
 
     @abc.abstractmethod
     def compute(self, predictions: torch.Tensor, targets: torch.Tensor) -> float:
@@ -366,7 +366,7 @@ class MeanIOU(Metric):
         self._ignore_index = ignore_index
 
     def compute(self, predictions: torch.Tensor, targets: torch.Tensor) -> float:
-        """Compute Dice coefficient.
+        """Compute Mean Intersection Over Union.
 
         Args:
             predictions (:obj:`torch.Tensor`): The model's predictions on which the metric has to be computed.
@@ -378,11 +378,20 @@ class MeanIOU(Metric):
         predictions, targets = self._check_shapes(predictions, targets)
 
 
-class Precision(PrecisionRecall):
+class Precision(BasePrecisionRecall):
     def __init__(self, average=False, is_multilabel=False):
         super(Precision, self).__init__(average=average, is_multilabel=is_multilabel)
 
     def compute(self, predictions: torch.Tensor, targets: torch.Tensor) -> float:
+        """Compute Precision.
+
+        Args:
+            predictions (:obj:`torch.Tensor`): The model's predictions on which the metric has to be computed.
+            targets (:obj:`torch.Tensor`): The ground truth.
+
+        Returns:
+            float: The batch's precision.
+        """
         predictions, targets = self._check_shapes(predictions, targets)
 
         self._select_metric_type(predictions, targets)
@@ -428,9 +437,6 @@ class Precision(PrecisionRecall):
             self._true_positives = true_positives
             self._positives = all_positives
 
-        self._true_positives = torch.DoubleTensor(0) if (self._is_multilabel and not self._average) else 0
-        self._positives = torch.DoubleTensor(0) if (self._is_multilabel and not self._average) else 0
-
         if not (isinstance(self._positives, torch.Tensor) or self._positives > 0):
             raise ValueError("{} must have at least one example before"
                              " it can be computed.".format(self.__class__.__name__))
@@ -443,11 +449,20 @@ class Precision(PrecisionRecall):
             return result
 
 
-class Recall(PrecisionRecall):
+class Recall(BasePrecisionRecall):
     def __init__(self, average=False, is_multilabel=False):
         super(Recall, self).__init__(average=average, is_multilabel=is_multilabel)
 
     def compute(self, predictions: torch.Tensor, targets: torch.Tensor) -> float:
+        """Compute Recall.
+
+        Args:
+            predictions (:obj:`torch.Tensor`): The model's predictions on which the metric has to be computed.
+            targets (:obj:`torch.Tensor`): The ground truth.
+
+        Returns:
+            float: The batch's recall.
+        """
         predictions, targets = self._check_shapes(predictions, targets)
         self._select_metric_type(predictions, targets)
 
@@ -495,7 +510,7 @@ class Recall(PrecisionRecall):
 
         if not (isinstance(self._positives, torch.Tensor) or self._positives > 0):
             raise ValueError("{} must have at least one example before"
-                                     " it can be computed.".format(self.__class__.__name__))
+                             " it can be computed.".format(self.__class__.__name__))
 
         result = self._true_positives / (self._positives + self.eps)
 
