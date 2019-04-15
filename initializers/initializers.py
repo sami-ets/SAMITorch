@@ -27,7 +27,8 @@ class Initializer(object):
     def __init__(self):
         """Class constructor.
         """
-        pass
+
+    pass
 
     @abc.abstractmethod
     def initialize(self, *args, **kwargs):
