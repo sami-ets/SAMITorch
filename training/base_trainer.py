@@ -71,8 +71,8 @@ class Trainer(object):
         """Train a model for one epoch.
 
         Args:
-            *epoch_num: current epoch number.
-            **kwargs: keyword arguments.
+            epoch_num (int): current epoch number.
+            **kwargs (dict): additional keyword arguments.
 
         Raises:
             NotImplementedError: if not overwritten by subclass.
@@ -91,7 +91,7 @@ class Trainer(object):
         Args:
             data_dict (dict): dictionary containing the data.
             fold (int): Current Fold in Cross Validation (default: 0).
-            kwargs (dict): additional keyword arguments.
+            **kwargs (dict): additional keyword arguments.
 
         Returns:
             dict: Metric values (with same keys as input dict metrics).
@@ -139,7 +139,7 @@ class Trainer(object):
 
         Args:
             *args: positional arguments
-            **kwargs: keyword arguments
+            **kwargs (dict): additional keyword arguments.
 
         Raises:
             NotImplementedError: if not overwritten by subclass.
@@ -152,7 +152,7 @@ class Trainer(object):
 
         Args:
             *args: positional arguments
-            **kwargs: keyword arguments
+            **kwargs (dict): additional keyword arguments.
 
         Raises:
             NotImplementedError: If not overwritten by subclass.
@@ -165,7 +165,7 @@ class Trainer(object):
 
         Args:
             *args: positional arguments
-            **kwargs: keyword arguments
+            **kwargs (dict): additional keyword arguments.
 
         Raises:
             NotImplementedError: If not overwritten by subclass.
@@ -178,7 +178,7 @@ class Trainer(object):
 
         Args:
             *args: positional arguments
-            **kwargs: keyword arguments
+            **kwargs (dict): additional keyword arguments.
 
         Raises:
             NotImplementedError: If not overwritten by subclass.
@@ -191,7 +191,7 @@ class Trainer(object):
 
         Args:
             *args: positional arguments
-            **kwargs: keyword arguments
+            **kwargs (dict): additional keyword arguments.
 
         Raises:
             NotImplementedError: If not overwritten by subclass.
@@ -205,7 +205,7 @@ class Trainer(object):
 
         Args:
             *args: positional arguments
-            **kwargs: keyword arguments
+            **kwargs(dict): additional keyword arguments.
 
         Raises:
             NotImplementedError: If not overwritten by subclass.

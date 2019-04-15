@@ -14,12 +14,26 @@
 # limitations under the License.
 # ==============================================================================
 
+import unittest
 
-import torch
+from hamcrest import *
+from metrics.gauges import AccuracyGauge
 
 
-def to_onehot(indices, num_classes):
-    """Convert a tensor of indices of any shape `(N, ...)` to a tensor of one-hot indicators of shape
-    `(N, num_classes, ...)`."""
-    onehot = torch.zeros(indices.shape[0], num_classes, *indices.shape[1:], device=indices.device)
-    return onehot.scatter_(1, indices.unsqueeze(1), 1)
+class AccuracyGaugeTest(unittest.TestCase):
+
+    def setUp(self):
+        self.the_gauge = AccuracyGauge()
+        self.the_gauge.reset()
+
+    def testEquals(self):
+        self.the_gauge.reset()
+        self.the_gauge.update(0.50, 2)
+        self.the_gauge.update(0.70, 2)
+        self.the_gauge.update(0.90, 2)
+
+        assert_that(round(self.the_gauge.average, 2), equal_to(0.70))
+
+
+if __name__ == 'main':
+    unittest.main()

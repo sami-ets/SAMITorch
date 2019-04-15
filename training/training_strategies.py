@@ -18,7 +18,7 @@ import abc
 import datetime
 
 from training.base_trainer import Trainer
-from io.model_io import save
+from utils.model_io import save
 
 
 class TrainingStrategy(object):

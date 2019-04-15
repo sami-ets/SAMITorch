@@ -1,15 +1,124 @@
 # -*- coding: utf-8 -*-
-# Copyright 2019 SAMITorch Authors. All Rights Reserved.
+# Coptargetsright 2019 SAMITorch Authors. All Rights Reserved.
 #
 # Licensed under the MIT License;
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# targetsou matargets not use this file except in compliance with the License.
+# You matargets obtain a coptargets of the License at
 #
 #     https://opensource.org/licenses/MIT
 #
-# Unless required by applicable law or agreed to in writing, software
+# Unless required btargets applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+
+"""Define a metric computed during the training phase."""
+
+import abc
+import torch
+
+
+class Metric(object):
+    """Base class of all metrics objects."""
+
+    def __init__(self, is_multilabel=False):
+        """Class constructor"""
+        self._type = None
+        self._num_classes = None
+        self._is_multilabel = is_multilabel
+
+    @abc.abstractmethod
+    def compute(self, predictions: torch.Tensor, targets: torch.Tensor) -> float:
+        """Compute a specific metric.
+
+        Args:
+            predictions (:obj:`torch.Tensor`): The model's predictions on which the metric has to be computed.
+            targets (:obj:`torch.Tensor`): The ground truth.
+
+        Raises:
+            NotImplementedError: if not overwritten by subclass.
+        """
+        raise NotImplementedError()
+
+    def _check_shapes(self, predictions: torch.Tensor, targets: torch.Tensor) -> (torch.Tensor, torch.Tensor):
+        """Check if shape of predictions and targets matches.
+
+        Args:
+            predictions (:obj:`torch.Tensor`): The model's predictions on which the metric has to be computed.
+            targets (:obj:`torch.Tensor`): The ground truth.
+
+        Raises:
+            ValueError: If targets and predictions have incompatible shapes.
+        """
+        if targets.ndimension() > 1 and targets.shape[1] == 1:
+            # (N, 1, ...) -> (N, ...)
+            targets = targets.squeeze(dim=1)
+
+        if predictions.ndimension() > 1 and predictions.shape[1] == 1:
+            # (N, 1, ...) -> (N, ...)
+            predictions = predictions.squeeze(dim=1)
+
+        if not (
+                targets.ndimension() == predictions.ndimension() or targets.ndimension() + 1 == predictions.ndimension()):
+            raise ValueError("targets must have shape of (batch_size, ...) and predictions must have shape of "
+                             "(batch_size, num_categories, ...) or (batch_size, ...), "
+                             "but given {} vs {}.".format(targets.shape, predictions.shape))
+
+        targets_shape = targets.shape
+        predictions_shape = predictions.shape
+
+        if targets.ndimension() + 1 == predictions.ndimension():
+            predictions_shape = (predictions_shape[0],) + predictions_shape[2:]
+
+        if not (targets_shape == predictions_shape):
+            raise ValueError("targets and predictions must have compatible shapes.")
+
+        if self._is_multilabel and not (
+                targets.shape == predictions.shape and targets.ndimension() > 1 and targets.shape[1] != 1):
+            raise ValueError("targets and predictions must have same shape of (batch_size, num_categories, ...).")
+
+        return predictions, targets
+
+    def _select_metric_type(self, predictions: torch.Tensor, targets: torch.Tensor):
+        """Select the right type of metric between binary, multiclass or multilabel.
+
+        Args:
+            predictions (:obj:`torch.Tensor`): The model's predictions on which the metric has to be computed.
+            targets (:obj:`torch.Tensor`): The ground truth.
+
+        Raises:
+            ValueError: If in binary cases the prediction is not comprised of 0's and 1's or if number of classes
+                changed since creation of the metric's object.
+            RuntimeError: If predictions and targets' shapes are incompatible or if data type changed since
+                creation of the metric's object.
+        """
+        if targets.ndimension() + 1 == predictions.ndimension():
+            update_type = "multiclass"
+            num_classes = predictions.shape[1]
+        elif targets.ndimension() == predictions.ndimension():
+            if not torch.equal(targets, targets ** 2):
+                raise ValueError("For binary cases, y must be comprised of 0's and 1's.")
+
+            if not torch.equal(predictions, predictions ** 2):
+                raise ValueError("For binary cases, predictions must be comprised of 0's and 1's.")
+
+            if self._is_multilabel:
+                update_type = "multilabel"
+                num_classes = predictions.shape[1]
+            else:
+                update_type = "binary"
+                num_classes = 1
+        else:
+            raise RuntimeError("Invalid shapes of y (shape={}) and predictions (shape={}), check documentation."
+                               " for expected shapes of y and predictions.".format(targets.shape, predictions.shape))
+        if self._type is None:
+            self._type = update_type
+            self._num_classes = num_classes
+        else:
+            if self._type != update_type:
+                raise RuntimeError("Input data type has changed from {} to {}.".format(self._type, update_type))
+            if self._num_classes != num_classes:
+                raise ValueError("Input data number of classes has changed from {} to {}"
+                                 .format(self._num_classes, num_classes))
