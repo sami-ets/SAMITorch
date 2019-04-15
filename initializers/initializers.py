@@ -25,8 +25,7 @@ import abc
 class Initializer(object):
 
     def __init__(self):
-        """Class constructor.
-        """
+        """Class constructor."""
 
     pass
 
