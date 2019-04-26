@@ -21,7 +21,7 @@ import numpy as np
 import pytest
 
 from hamcrest import *
-from metrics.metrics import dice_coefficient, mean_dice
+from metrics.metrics import dice_coefficient, mean_dice_coefficient
 from ignite.metrics.confusion_matrix import ConfusionMatrix
 
 
@@ -121,7 +121,7 @@ class DiceMetricTest(unittest.TestCase):
         true_res_ = np.mean(true_res)
 
         cm = ConfusionMatrix(num_classes=3)
-        mean_dice_metric = mean_dice(cm)
+        mean_dice_metric = mean_dice_coefficient(cm)
 
         output = (th_y_logits, th_y_true)
         cm.update(output)
@@ -132,7 +132,7 @@ class DiceMetricTest(unittest.TestCase):
 
         for ignore_index in range(3):
             cm = ConfusionMatrix(num_classes=3)
-            mean_dice_metric = mean_dice(cm, ignore_index=ignore_index)
+            mean_dice_metric = mean_dice_coefficient(cm, ignore_index=ignore_index)
             # Update metric
             output = (th_y_logits, th_y_true)
             cm.update(output)

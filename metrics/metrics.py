@@ -23,6 +23,16 @@ from ignite.metrics import MetricsLambda
 
 
 def dice_coefficient(cm, ignore_index=None):
+    """
+    Computes the Sørensen–Dice Coefficient (https://en.wikipedia.org/wiki/Sørensen–Dice_coefficient)
+    Args:
+        cm (:obj:`ignite.metrics.ConfusionMatrix`): A confusion matrix representing the classification of data.
+        ignore_index (int): An index to ignore for computation.
+
+    Returns:
+        float: The Sørensen–Dice Coefficient.
+    """
+
     if not isinstance(cm, ConfusionMatrix):
         raise TypeError("Argument cm should be instance of ConfusionMatrix, but given {}".format(type(cm)))
 
@@ -37,7 +47,7 @@ def dice_coefficient(cm, ignore_index=None):
 
         def ignore_index_fn(dice_vector):
             if ignore_index >= len(dice_vector):
-                raise ValueError("ignore_index {} is larger than the length of IoU vector {}"
+                raise ValueError("ignore_index {} is larger than the length of dice vector {}"
                                  .format(ignore_index, len(dice_vector)))
             indices = list(range(len(dice_vector)))
             indices.remove(ignore_index)
@@ -48,5 +58,5 @@ def dice_coefficient(cm, ignore_index=None):
         return dice
 
 
-def mean_dice(cm, ignore_index=None):
+def mean_dice_coefficient(cm, ignore_index=None):
     return dice_coefficient(cm=cm, ignore_index=ignore_index).mean()
