@@ -30,8 +30,7 @@ class DiceLoss(torch.nn.Module):
     def forward(self, inputs, targets):
         """
         Computes the Sørensen–Dice loss.
-        Note that PyTorch optimizers minimize a loss. In this
-        case, we would like to maximize the dice loss so we
+        Note that PyTorch optimizers minimize a loss. In this case, we would like to maximize the dice loss so we
         return the negated dice loss.
 
         Args:

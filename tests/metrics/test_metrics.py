@@ -15,12 +15,10 @@
 # ==============================================================================
 
 
-import unittest
 import torch
 import numpy as np
 import pytest
 
-from hamcrest import *
 from metrics.metrics import dice_coefficient, mean_dice_coefficient
 from ignite.metrics.confusion_matrix import ConfusionMatrix
 
@@ -50,96 +48,85 @@ def compute_th_y_true_y_logits(y_true, y_pred):
     return th_y_true, th_y_logits
 
 
-class DiceMetricTest(unittest.TestCase):
+def test_dice_wrong_input():
+    with pytest.raises(TypeError, match="Argument cm should be instance of ConfusionMatrix"):
+        dice_coefficient(None)
 
-    def setUp(self):
-        pass
+    cm = ConfusionMatrix(num_classes=10)
+    with pytest.raises(ValueError, match="ignore_index should be non-negative integer"):
+        dice_coefficient(cm, ignore_index=-1)
 
-    @staticmethod
-    def test_dice_wrong_input():
+    with pytest.raises(ValueError, match="ignore_index should be non-negative integer"):
+        dice_coefficient(cm, ignore_index="a")
 
-        with pytest.raises(TypeError, match="Argument cm should be instance of ConfusionMatrix"):
-            dice_coefficient(None)
+    with pytest.raises(ValueError, match="ignore_index should be non-negative integer"):
+        dice_coefficient(cm, ignore_index=10)
 
-        cm = ConfusionMatrix(num_classes=10)
-        with pytest.raises(ValueError, match="ignore_index should be non-negative integer"):
-            dice_coefficient(cm, ignore_index=-1)
+    with pytest.raises(ValueError, match="ignore_index should be non-negative integer"):
+        dice_coefficient(cm, ignore_index=11)
 
-        with pytest.raises(ValueError, match="ignore_index should be non-negative integer"):
-            dice_coefficient(cm, ignore_index="a")
 
-        with pytest.raises(ValueError, match="ignore_index should be non-negative integer"):
-            dice_coefficient(cm, ignore_index=10)
+def test_dice():
+    y_true, y_pred = get_y_true_y_pred()
+    th_y_true, th_y_logits = compute_th_y_true_y_logits(y_true, y_pred)
 
-        with pytest.raises(ValueError, match="ignore_index should be non-negative integer"):
-            dice_coefficient(cm, ignore_index=11)
+    true_res = [0, 0, 0]
+    for index in range(3):
+        bin_y_true = y_true == index
+        bin_y_pred = y_pred == index
+        intersection = bin_y_true & bin_y_pred
+        true_res[index] = 2 * intersection.sum() / (bin_y_pred.sum() + bin_y_true.sum())
 
-    @staticmethod
-    def test_dice():
-        y_true, y_pred = get_y_true_y_pred()
-        th_y_true, th_y_logits = compute_th_y_true_y_logits(y_true, y_pred)
+    cm = ConfusionMatrix(num_classes=3)
+    dice_metric = dice_coefficient(cm)
 
-        true_res = [0, 0, 0]
-        for index in range(3):
-            bin_y_true = y_true == index
-            bin_y_pred = y_pred == index
-            intersection = bin_y_true & bin_y_pred
-            true_res[index] = 2 * intersection.sum() / (bin_y_pred.sum() + bin_y_true.sum())
+    output = (th_y_logits, th_y_true)
+    cm.update(output)
 
+    res = dice_metric.compute().numpy()
+
+    assert np.all(res == true_res)
+
+    for ignore_index in range(3):
         cm = ConfusionMatrix(num_classes=3)
-        dice_metric = dice_coefficient(cm)
-
+        dice_metric = dice_coefficient(cm, ignore_index=ignore_index)
+        # Update metric
         output = (th_y_logits, th_y_true)
         cm.update(output)
-
         res = dice_metric.compute().numpy()
+        true_res_ = true_res[:ignore_index] + true_res[ignore_index + 1:]
+        assert np.all(res == true_res_), "{}: {} vs {}".format(ignore_index, res, true_res_)
 
-        assert np.all(res == true_res)
 
-        for ignore_index in range(3):
-            cm = ConfusionMatrix(num_classes=3)
-            dice_metric = dice_coefficient(cm, ignore_index=ignore_index)
-            # Update metric
-            output = (th_y_logits, th_y_true)
-            cm.update(output)
-            res = dice_metric.compute().numpy()
-            true_res_ = true_res[:ignore_index] + true_res[ignore_index + 1:]
-            assert np.all(res == true_res_), "{}: {} vs {}".format(ignore_index, res, true_res_)
+def test_mean_dice():
+    y_true, y_pred = get_y_true_y_pred()
+    th_y_true, th_y_logits = compute_th_y_true_y_logits(y_true, y_pred)
 
-    @staticmethod
-    def test_mean_dice():
-        y_true, y_pred = get_y_true_y_pred()
-        th_y_true, th_y_logits = compute_th_y_true_y_logits(y_true, y_pred)
+    true_res = [0, 0, 0]
+    for index in range(3):
+        bin_y_true = y_true == index
+        bin_y_pred = y_pred == index
+        intersection = bin_y_true & bin_y_pred
+        true_res[index] = 2 * intersection.sum() / (bin_y_pred.sum() + bin_y_true.sum())
 
-        true_res = [0, 0, 0]
-        for index in range(3):
-            bin_y_true = y_true == index
-            bin_y_pred = y_pred == index
-            intersection = bin_y_true & bin_y_pred
-            true_res[index] = 2 * intersection.sum() / (bin_y_pred.sum() + bin_y_true.sum())
+    true_res_ = np.mean(true_res)
 
-        true_res_ = np.mean(true_res)
+    cm = ConfusionMatrix(num_classes=3)
+    mean_dice_metric = mean_dice_coefficient(cm)
 
+    output = (th_y_logits, th_y_true)
+    cm.update(output)
+
+    res = mean_dice_metric.compute().numpy()
+
+    assert res == true_res_
+
+    for ignore_index in range(3):
         cm = ConfusionMatrix(num_classes=3)
-        mean_dice_metric = mean_dice_coefficient(cm)
-
+        mean_dice_metric = mean_dice_coefficient(cm, ignore_index=ignore_index)
+        # Update metric
         output = (th_y_logits, th_y_true)
         cm.update(output)
-
         res = mean_dice_metric.compute().numpy()
-
-        assert res == true_res_
-
-        for ignore_index in range(3):
-            cm = ConfusionMatrix(num_classes=3)
-            mean_dice_metric = mean_dice_coefficient(cm, ignore_index=ignore_index)
-            # Update metric
-            output = (th_y_logits, th_y_true)
-            cm.update(output)
-            res = mean_dice_metric.compute().numpy()
-            true_res_ = np.mean(true_res[:ignore_index] + true_res[ignore_index + 1:])
-            assert np.all(res == true_res_), "{}: {} vs {}".format(ignore_index, res, true_res_)
-
-
-if __name__ == 'main':
-    unittest.main()
+        true_res_ = np.mean(true_res[:ignore_index] + true_res[ignore_index + 1:])
+        assert np.all(res == true_res_), "{}: {} vs {}".format(ignore_index, res, true_res_)

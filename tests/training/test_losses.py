@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-import unittest
+import pytest
 import torch
 import numpy as np
 
@@ -46,33 +46,27 @@ def compute_th_y_true_y_logits(y_true, y_pred):
     return th_y_true, th_y_logits
 
 
-class DiceMetricTest(unittest.TestCase):
+def test_dice_loss():
+    y_true, y_pred = get_y_true_y_pred()
+    th_y_true, th_y_logits = compute_th_y_true_y_logits(y_true, y_pred)
 
-    def setUp(self):
-        pass
+    true_res = [0, 0, 0]
+    for index in range(3):
+        bin_y_true = y_true == index
+        bin_y_pred = y_pred == index
+        intersection = bin_y_true & bin_y_pred
+        true_res[index] = 2 * intersection.sum() / (bin_y_pred.sum() + bin_y_true.sum())
 
-    @staticmethod
-    def test_dice_loss():
-        y_true, y_pred = get_y_true_y_pred()
-        th_y_true, th_y_logits = compute_th_y_true_y_logits(y_true, y_pred)
+    true_res_ = 1.0 - np.mean(true_res)
 
-        true_res = [0, 0, 0]
-        for index in range(3):
-            bin_y_true = y_true == index
-            bin_y_pred = y_pred == index
-            intersection = bin_y_true & bin_y_pred
-            true_res[index] = 2 * intersection.sum() / (bin_y_pred.sum() + bin_y_true.sum())
+    dice_loss = DiceLoss()
+    loss = dice_loss.forward(th_y_logits, th_y_true)
 
-        true_res_ = 1.0 - np.mean(true_res)
+    assert loss == true_res_
 
-        dice_loss = DiceLoss()
-        loss = dice_loss.forward(th_y_logits, th_y_true)
-
-        assert loss == true_res_
-
-        for ignore_index in range(3):
-            dice_loss = DiceLoss(ignore_index=ignore_index)
-            res = dice_loss.forward(th_y_logits, th_y_true)
-            # Update metric
-            true_res_ = 1.0 - np.mean(true_res[:ignore_index] + true_res[ignore_index + 1:])
-            assert np.all(res == true_res_), "{}: {} vs {}".format(ignore_index, res, true_res_)
+    for ignore_index in range(3):
+        dice_loss = DiceLoss(ignore_index=ignore_index)
+        res = dice_loss.forward(th_y_logits, th_y_true)
+        # Update metric
+        true_res_ = 1.0 - np.mean(true_res[:ignore_index] + true_res[ignore_index + 1:])
+        assert np.all(res == true_res_), "{}: {} vs {}".format(ignore_index, res, true_res_)
