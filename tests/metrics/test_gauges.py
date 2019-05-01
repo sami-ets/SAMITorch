@@ -16,23 +16,46 @@
 
 import unittest
 
+import numpy as np
 from hamcrest import *
+
 from metrics.gauges import AccuracyGauge
 
 
 class AccuracyGaugeTest(unittest.TestCase):
+    VALID_VALUE_1 = 0.50
+    VALID_VALUE_2 = 0.70
+    VALID_VALUE_3 = 0.90
+    INVALID_VALUE = "DARTH VADER"
 
     def setUp(self):
-        self.the_gauge = AccuracyGauge()
-        self.the_gauge.reset()
+        self.gauge = AccuracyGauge()
+        self.gauge.reset()
 
-    def testEquals(self):
-        self.the_gauge.reset()
-        self.the_gauge.update(0.50, 2)
-        self.the_gauge.update(0.70, 2)
-        self.the_gauge.update(0.90, 2)
+    def tearDown(self):
+        self.gauge.reset()
 
-        assert_that(round(self.the_gauge.average, 2), equal_to(0.70))
+    def test_should_keep_a_valid_average_and_reset(self):
+        expected_average = np.array([self.VALID_VALUE_1, self.VALID_VALUE_2, self.VALID_VALUE_3]).mean()
+        expected_reset_average = 0
+
+        self.gauge.update(self.VALID_VALUE_1, 1)
+        self.gauge.update(self.VALID_VALUE_2, 2)
+        self.gauge.update(self.VALID_VALUE_3, 1)
+
+        assert_that(self.gauge.average, close_to(expected_average, 0.00001))
+
+        self.gauge.reset()
+
+        assert_that(self.gauge.average, equal_to(expected_reset_average))
+
+    def test_average_should_be_zero_for_empty_gauge(self):
+        expected_average = 0
+
+        assert_that(self.gauge.average, equal_to(expected_average))
+
+    def test_should_reset(self):
+        assert_that(calling(self.gauge.update).with_args(self.INVALID_VALUE, 1), raises(TypeError))
 
 
 if __name__ == 'main':
