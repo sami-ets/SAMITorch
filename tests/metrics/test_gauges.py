@@ -39,9 +39,9 @@ class AccuracyGaugeTest(unittest.TestCase):
         expected_average = np.array([self.VALID_VALUE_1, self.VALID_VALUE_2, self.VALID_VALUE_3]).mean()
         expected_reset_average = 0
 
-        self.gauge.update(self.VALID_VALUE_1, 1)
+        self.gauge.update(self.VALID_VALUE_1)
         self.gauge.update(self.VALID_VALUE_2, 2)
-        self.gauge.update(self.VALID_VALUE_3, 1)
+        self.gauge.update(self.VALID_VALUE_3)
 
         assert_that(self.gauge.average, close_to(expected_average, 0.00001))
 
