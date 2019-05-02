@@ -140,7 +140,7 @@ class WeightedCrossEntropyLoss(torch.nn.Module):
                                                  ignore_index=ignore_index).numpy()
 
     @staticmethod
-    def _compute_class_weights(inputs):
+    def _compute_class_weights(inputs: torch.Tensor):
         """
         Compute weights for each class as described in https://arxiv.org/pdf/1707.03237.pdf
         Args:
