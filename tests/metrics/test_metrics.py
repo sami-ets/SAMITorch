@@ -17,10 +17,11 @@
 
 import torch
 import numpy as np
-import pytest
+import unittest
 
 from metrics.metrics import dice_coefficient, mean_dice_coefficient
 from ignite.metrics.confusion_matrix import ConfusionMatrix
+from hamcrest import *
 
 
 def get_y_true_y_pred():
@@ -36,97 +37,85 @@ def get_y_true_y_pred():
     return y_true, y_pred
 
 
-def compute_th_y_true_y_logits(y_true, y_pred):
+def compute_tensor_y_true_y_logits(y_true, y_pred):
     # Create torch.tensor from numpy
-    th_y_true = torch.from_numpy(y_true).unsqueeze(0)
+    y_true_tensor = torch.from_numpy(y_true).unsqueeze(0)
     # Create logits torch.tensor:
     num_classes = max(np.max(y_true), np.max(y_pred)) + 1
     y_probas = np.ones((num_classes,) + y_true.shape) * -10
     for i in range(num_classes):
         y_probas[i, (y_pred == i)] = 720
-    th_y_logits = torch.from_numpy(y_probas).unsqueeze(0)
-    return th_y_true, th_y_logits
+    y_logits = torch.from_numpy(y_probas).unsqueeze(0)
+    return y_true_tensor, y_logits
 
 
-def test_dice_wrong_input():
-    with pytest.raises(TypeError, match="Argument cm should be instance of ConfusionMatrix"):
-        dice_coefficient(None)
-
-    cm = ConfusionMatrix(num_classes=10)
-    with pytest.raises(ValueError, match="ignore_index should be non-negative integer"):
-        dice_coefficient(cm, ignore_index=-1)
-
-    with pytest.raises(ValueError, match="ignore_index should be non-negative integer"):
-        dice_coefficient(cm, ignore_index="a")
-
-    with pytest.raises(ValueError, match="ignore_index should be non-negative integer"):
-        dice_coefficient(cm, ignore_index=10)
-
-    with pytest.raises(ValueError, match="ignore_index should be non-negative integer"):
-        dice_coefficient(cm, ignore_index=11)
-
-
-def test_dice():
-    y_true, y_pred = get_y_true_y_pred()
-    th_y_true, th_y_logits = compute_th_y_true_y_logits(y_true, y_pred)
-
+def compute_dice_truth(y_true, y_pred):
     true_res = [0, 0, 0]
     for index in range(3):
         bin_y_true = y_true == index
         bin_y_pred = y_pred == index
         intersection = bin_y_true & bin_y_pred
         true_res[index] = 2 * intersection.sum() / (bin_y_pred.sum() + bin_y_true.sum())
+    return true_res
 
-    cm = ConfusionMatrix(num_classes=3)
-    dice_metric = dice_coefficient(cm)
 
-    output = (th_y_logits, th_y_true)
-    cm.update(output)
+class TestDiceMetric(unittest.TestCase):
+    INVALID_VALUE_1 = -1
+    INVALID_VALUE_2 = "STEVE JOBS"
+    INVALID_VALUE_3 = 10
+    INVALID_VALUE_4 = 11
 
-    res = dice_metric.compute().numpy()
+    def setUp(self):
+        self.y_true, self.y_pred = get_y_true_y_pred()
+        self.y_true_tensor, self.y_logits = compute_tensor_y_true_y_logits(self.y_true, self.y_pred)
+        self.dice = compute_dice_truth(self.y_true, self.y_pred)
+        self.mean_dice = np.mean(self.dice)
 
-    assert np.all(res == true_res)
+    def test_should_raise_exception(self):
+        confusion_matrix = ConfusionMatrix(num_classes=10)
 
-    for ignore_index in range(3):
+        assert_that(calling(dice_coefficient).with_args(cm=None), raises(AttributeError))
+        assert_that(calling(dice_coefficient).with_args(cm=confusion_matrix, ignore_index=self.INVALID_VALUE_1),
+                    raises(AssertionError))
+        assert_that(calling(dice_coefficient).with_args(cm=confusion_matrix, ignore_index=self.INVALID_VALUE_2),
+                    raises(TypeError))
+        assert_that(calling(dice_coefficient).with_args(cm=confusion_matrix, ignore_index=self.INVALID_VALUE_3),
+                    raises(AssertionError))
+        assert_that(calling(dice_coefficient).with_args(cm=confusion_matrix, ignore_index=self.INVALID_VALUE_4),
+                    raises(AssertionError))
+
+    def test_should_equal_dice_for_each_class(self):
         cm = ConfusionMatrix(num_classes=3)
-        dice_metric = dice_coefficient(cm, ignore_index=ignore_index)
-        # Update metric
-        output = (th_y_logits, th_y_true)
-        cm.update(output)
+        dice_metric = dice_coefficient(cm)
+        cm.update((self.y_logits, self.y_true_tensor))
         res = dice_metric.compute().numpy()
-        true_res_ = true_res[:ignore_index] + true_res[ignore_index + 1:]
-        assert np.all(res == true_res_), "{}: {} vs {}".format(ignore_index, res, true_res_)
+        assert np.all(res == self.dice)
 
+    def test_should_equal_dice_for_each_class_with_ignored_index(self):
+        for ignore_index in range(3):
+            cm = ConfusionMatrix(num_classes=3)
+            dice_metric = dice_coefficient(cm, ignore_index=ignore_index)
+            cm.update((self.y_logits, self.y_true_tensor))
+            res = dice_metric.compute().numpy()
+            true_res = self.dice[:ignore_index] + self.dice[ignore_index + 1:]
+            assert np.all(res == true_res), "{}: {} vs {}".format(ignore_index, res, true_res)
 
-def test_mean_dice():
-    y_true, y_pred = get_y_true_y_pred()
-    th_y_true, th_y_logits = compute_th_y_true_y_logits(y_true, y_pred)
-
-    true_res = [0, 0, 0]
-    for index in range(3):
-        bin_y_true = y_true == index
-        bin_y_pred = y_pred == index
-        intersection = bin_y_true & bin_y_pred
-        true_res[index] = 2 * intersection.sum() / (bin_y_pred.sum() + bin_y_true.sum())
-
-    true_res_ = np.mean(true_res)
-
-    cm = ConfusionMatrix(num_classes=3)
-    mean_dice_metric = mean_dice_coefficient(cm)
-
-    output = (th_y_logits, th_y_true)
-    cm.update(output)
-
-    res = mean_dice_metric.compute().numpy()
-
-    assert res == true_res_
-
-    for ignore_index in range(3):
+    def test_should_equal_mean_dice(self):
         cm = ConfusionMatrix(num_classes=3)
-        mean_dice_metric = mean_dice_coefficient(cm, ignore_index=ignore_index)
-        # Update metric
-        output = (th_y_logits, th_y_true)
-        cm.update(output)
+        mean_dice_metric = mean_dice_coefficient(cm)
+        cm.update((self.y_logits, self.y_true_tensor))
         res = mean_dice_metric.compute().numpy()
-        true_res_ = np.mean(true_res[:ignore_index] + true_res[ignore_index + 1:])
-        assert np.all(res == true_res_), "{}: {} vs {}".format(ignore_index, res, true_res_)
+        assert_that(res, equal_to(self.mean_dice))
+
+    def test_should_equal_mean_dice_with_ignored_index(self):
+        for ignore_index in range(3):
+            cm = ConfusionMatrix(num_classes=3)
+            mean_dice_metric = mean_dice_coefficient(cm, ignore_index=ignore_index)
+            cm.update((self.y_logits, self.y_true_tensor))
+            res = mean_dice_metric.compute().numpy()
+            true_res = np.mean(self.dice[:ignore_index] + self.dice[ignore_index + 1:])
+            assert_that(res, equal_to(true_res)), "{}: {} vs {}".format(ignore_index, res, true_res)
+
+
+if __name__ == 'main':
+    unittest.main()
