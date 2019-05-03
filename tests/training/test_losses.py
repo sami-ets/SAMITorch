@@ -19,7 +19,6 @@ import torch
 import numpy as np
 
 from training.losses import DiceLoss, GeneralizedDiceLoss, WeightedCrossEntropyLoss
-from utils.utils import to_onehot
 from hamcrest import *
 
 
@@ -82,7 +81,7 @@ class TestDiceLoss(unittest.TestCase):
         self.dice = compute_dice_truth(self.y_true, self.y_pred)
         self.mean_dice_loss = np.subtract(1.0, np.mean(self.dice))
 
-    def test_should_raise_exception(self):
+    def test_should_raise_exception_with_bad_values(self):
         assert_that(calling(DiceLoss).with_args(reduction=self.INVALID_REDUCTION), raises(AssertionError))
 
         dice_loss = DiceLoss()
@@ -102,13 +101,13 @@ class TestDiceLoss(unittest.TestCase):
         assert_that(calling(dice_loss.forward).with_args(inputs=self.y_logits, targets=self.y_true_tensor,
                                                          ignore_index=self.INVALID_VALUE_4), raises(AssertionError))
 
-    def test_should_equal_dice(self):
+    def test_should_compute_dice(self):
         dice_loss = DiceLoss()
         loss = dice_loss.forward(self.y_logits, self.y_true_tensor)
 
         assert_that(loss, equal_to(self.mean_dice_loss))
 
-    def test_should_equal_dice_for_each_class_with_ignored_index(self):
+    def test_should_compute_dice_for_multiclass_with_ignored_index(self):
         for ignore_index in range(3):
             dice_loss = DiceLoss()
             res = dice_loss.forward(self.y_logits, self.y_true_tensor, ignore_index=ignore_index)
@@ -129,7 +128,7 @@ class TestGeneralizedDiceLoss(unittest.TestCase):
         self.generalized_dice_loss = compute_generalized_dice_loss_truth(self.y_true, self.y_pred)
         self.mean_generalized_dice_loss = np.subtract(1.0, np.mean(self.generalized_dice_loss))
 
-    def test_should_raise_exception(self):
+    def test_should_raise_exception_with_bad_values(self):
         assert_that(calling(GeneralizedDiceLoss).with_args(reduction=self.INVALID_REDUCTION), raises(AssertionError))
 
         generalized_dice_loss = GeneralizedDiceLoss()
@@ -153,12 +152,12 @@ class TestGeneralizedDiceLoss(unittest.TestCase):
                                                                      ignore_index=self.INVALID_VALUE_4),
                     raises(AssertionError))
 
-    def test_should_equal_dice(self):
+    def test_should_compute_dice(self):
         generalized_dice_loss = GeneralizedDiceLoss()
         loss = generalized_dice_loss.forward(self.y_logits, self.y_true_tensor)
         assert_that(loss, equal_to(self.mean_generalized_dice_loss))
 
-    def test_should_equal_dice_for_each_class_with_ignored_index(self):
+    def test_should_compute_dice_for_multiclass_with_ignored_index(self):
         for ignore_index in range(3):
             generalized_dice_loss = GeneralizedDiceLoss()
             res = generalized_dice_loss.forward(self.y_logits, self.y_true_tensor, ignore_index=ignore_index)
@@ -166,7 +165,7 @@ class TestGeneralizedDiceLoss(unittest.TestCase):
                 self.generalized_dice_loss[:ignore_index] + self.generalized_dice_loss[ignore_index + 1:]))
             assert np.all(res == true_res), "{}: {} vs {}".format(ignore_index, res, true_res)
 
-    def test_should_equal_generalized_dice(self):
+    def test_should_compute_generalized_dice(self):
         generalized_dice_loss = GeneralizedDiceLoss()
         loss = generalized_dice_loss.forward(self.y_logits, self.y_true_tensor)
         assert_that(loss, equal_to(self.mean_generalized_dice_loss))
@@ -183,7 +182,7 @@ class TestWeightedCrossEntropy(unittest.TestCase):
         self.y_true, self.y_pred = get_y_true_y_pred()
         self.y_true_tensor, self.y_logits = compute_tensor_y_true_y_logits(self.y_true, self.y_pred)
 
-    def test_should_raise_exception(self):
+    def test_should_raise_exception_with_bad_values(self):
         assert_that(calling(WeightedCrossEntropyLoss).with_args(reduction=self.INVALID_REDUCTION),
                     raises(AssertionError))
 
@@ -212,7 +211,7 @@ class TestWeightedCrossEntropy(unittest.TestCase):
                                                                    ignore_index=self.INVALID_VALUE_4),
             raises(AssertionError))
 
-    def test_should_equal_weights(self):
+    def test_should_compute_weights(self):
         weighted_cross_entropy_loss = WeightedCrossEntropyLoss()
         weights = weighted_cross_entropy_loss._compute_class_weights(self.y_logits)
-        np.testing.assert_almost_equal(weights.numpy(), np.array([0.3043478, 6.8947377, 6.8947353]), decimal=5)
+        np.testing.assert_almost_equal(weights.numpy(), np.array([0.3043478, 6.8947377, 6.8947353]), decimal=7)

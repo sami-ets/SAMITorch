@@ -16,8 +16,7 @@
 
 import torch.nn
 
-from metrics.metrics import mean_dice_coefficient, mean_generalized_dice_coefficient
-from exceptions.exceptions import ReductionTypeError
+from metrics.metrics import compute_mean_dice_coefficient, compute_mean_generalized_dice_coefficient
 from ignite.metrics.confusion_matrix import ConfusionMatrix
 from utils.utils import flatten, to_onehot
 from torch.autograd import Variable
@@ -55,9 +54,9 @@ class DiceLoss(torch.nn.Module):
                                                   "confusion matrix, but given {}".format(ignore_index)
 
         if self._reduction == "mean":
-            dice_coefficient = mean_dice_coefficient(cm, ignore_index=ignore_index)
+            dice_coefficient = compute_mean_dice_coefficient(cm, ignore_index=ignore_index)
         else:
-            raise ReductionTypeError("Reduction type not supported.")
+            raise Exception("Reduction type not supported.")
 
         cm.update((inputs, targets))
 
@@ -99,9 +98,9 @@ class GeneralizedDiceLoss(torch.nn.Module):
             torch.float64)
 
         if self._reduction == "mean":
-            generalized_dice = mean_generalized_dice_coefficient(cm, weights, ignore_index=ignore_index)
+            generalized_dice = compute_mean_generalized_dice_coefficient(cm, weights, ignore_index=ignore_index)
         else:
-            raise ReductionTypeError("Reduction type not supported.")
+            raise Exception("Reduction type not supported.")
 
         cm.update((inputs, targets))
 
