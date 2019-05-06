@@ -19,7 +19,7 @@ import unittest
 import numpy as np
 from hamcrest import *
 
-from samitorch.metrics import AccuracyGauge
+from samitorch.metrics.gauges import AccuracyGauge
 
 
 class AccuracyGaugeTest(unittest.TestCase):
