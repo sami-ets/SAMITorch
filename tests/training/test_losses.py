@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-import pytest
 import torch
 import numpy as np
 
