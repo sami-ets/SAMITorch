@@ -7,7 +7,7 @@ README_CONTENT = (pathlib.Path(__file__).parent / "DESCRIPTION.md").read_text()
 
 setup(
     name='SAMITorch',
-    version='0.0.1',
+    version='0.1',
     description='Deep Learning Framework For Medical Image Analysis',
     long_description=README_CONTENT,
     long_description_content_type='text/markdown',
