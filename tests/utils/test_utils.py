@@ -20,7 +20,7 @@ import torch
 from utils.utils import to_onehot, flatten
 
 
-class ToOneHotTest(unittest.TestCase):
+class UtilsTest(unittest.TestCase):
 
     def setUp(self):
         pass
