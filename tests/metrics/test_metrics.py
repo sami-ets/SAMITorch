@@ -20,7 +20,8 @@ import numpy as np
 import unittest
 
 from metrics.metrics import compute_dice_coefficient, compute_mean_dice_coefficient, \
-    compute_generalized_dice_coefficient, compute_mean_generalized_dice_coefficient
+    compute_generalized_dice_coefficient, compute_mean_generalized_dice_coefficient, validate_weights_size, \
+    validate_num_classes, validate_ignore_index
 from ignite.metrics.confusion_matrix import ConfusionMatrix
 from hamcrest import *
 
@@ -71,6 +72,24 @@ def compute_generalized_dice_truth(y_true, y_pred):
         true_res[index] = 2 * intersection.sum() * weights[index] / (
                 ((bin_y_pred.sum() + bin_y_true.sum()) * weights[index]) + 1e-15)
     return true_res, weights
+
+
+class TestValidationMethods(unittest.TestCase):
+    INVALID_VALUE_1 = -1
+    INVALID_VALUE_2 = 10
+    INVALID_VALUE_3 = 11
+    NUM_CLASSES = 5
+
+    def setUp(self):
+        pass
+
+    def test_should_raise_assertion_error_with_bad_values(self):
+        assert_that(calling(validate_ignore_index).with_args(self.INVALID_VALUE_1), raises(AssertionError))
+        assert_that(
+            calling(validate_num_classes).with_args(ignore_index=self.INVALID_VALUE_2, num_classes=self.NUM_CLASSES),
+            raises(AssertionError))
+        assert_that(calling(validate_weights_size).with_args(weights_size=self.INVALID_VALUE_2,
+                                                             num_classes=self.INVALID_VALUE_3), raises(AssertionError))
 
 
 class TestDiceMetric(unittest.TestCase):

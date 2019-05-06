@@ -23,16 +23,35 @@ from ignite.metrics import MetricsLambda
 EPSILON = 1e-15
 
 
-def _check_ignore_index_is_valid(cm: ConfusionMatrix, ignore_index: int):
+def validate_ignore_index(ignore_index: int):
     """
     Check whether the ignore index is valid or not.
     Args:
-        cm (:obj:`ignite.metrics.ConfusionMatrix`): A confusion matrix representing the classification of data.
         ignore_index (int): An index of a class to ignore for computation.
     """
     assert ignore_index >= 0, "ignore_index must be non-negative, but given {}".format(ignore_index)
-    assert ignore_index < cm.num_classes, "ignore index must be lower than the number of classes in confusion matrix, but given {}".format(
-        ignore_index)
+
+
+def validate_num_classes(ignore_index: int, num_classes: int):
+    """
+    Check whether the num_classes is valid or not.
+    Args:
+        ignore_index (int): An index of a class to ignore for computation.
+        num_classes (int): The number of classes in the problem (number of rows in the
+    """
+    assert ignore_index < num_classes, "ignore index must be lower than the number of classes in confusion matrix, " \
+                                       "but {} was given".format(ignore_index)
+
+
+def validate_weights_size(weights_size: int, num_classes: int):
+    """
+    Check whether if the size of given weights matches the number of classes of the problem.
+    Args:
+        weights_size (int): The size of a weight vector used in the loss computation.
+        num_classes (int): The number of classes of the problem.
+    """
+    assert weights_size == num_classes, "Weights vector must be the same length than the number of " \
+                                        "classes, but a size of {} was given".format(weights_size)
 
 
 def compute_dice_coefficient(cm: ConfusionMatrix, ignore_index: int = None):
@@ -46,7 +65,8 @@ def compute_dice_coefficient(cm: ConfusionMatrix, ignore_index: int = None):
         array: The Sørensen–Dice Coefficient for each class.
     """
     if ignore_index is not None:
-        _check_ignore_index_is_valid(cm, ignore_index)
+        validate_ignore_index(ignore_index)
+        validate_num_classes(ignore_index, cm.num_classes)
 
     # Increase floating point precision
     cm = cm.type(torch.float64)
@@ -76,9 +96,9 @@ def compute_generalized_dice_coefficient(cm: ConfusionMatrix, weights: torch.Ten
         array: The Generalized Dice Coefficient for each class.
     """
     if ignore_index is not None:
-        _check_ignore_index_is_valid(cm, ignore_index)
-        assert weights.size()[0] == cm.num_classes, "weights vector must be the same length than the number of " \
-                                                    "classes, but given {}".format(weights.size()[0])
+        validate_ignore_index(ignore_index)
+        validate_num_classes(ignore_index, cm.num_classes)
+        validate_weights_size(weights.size()[0], cm.num_classes)
 
     # Increase floating point precision
     cm = cm.type(torch.float64)

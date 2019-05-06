@@ -17,7 +17,7 @@
 import unittest
 import torch
 
-from utils.utils import to_onehot
+from utils.utils import to_onehot, flatten
 
 
 class ToOneHotTest(unittest.TestCase):
@@ -46,3 +46,9 @@ class ToOneHotTest(unittest.TestCase):
         y_ohe = to_onehot(y, num_classes=21)
         y2 = torch.argmax(y_ohe, dim=1)
         assert y.equal(y2)
+
+    @staticmethod
+    def test_flatten():
+        x = torch.randint(0, 255, size=(15, 3, 10, 10))
+        flattened_x = flatten(x)
+        assert flattened_x.size() == torch.Size([3, 1500])

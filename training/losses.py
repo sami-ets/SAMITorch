@@ -16,7 +16,8 @@
 
 import torch.nn
 
-from metrics.metrics import compute_mean_dice_coefficient, compute_mean_generalized_dice_coefficient
+from metrics.metrics import compute_mean_dice_coefficient, compute_mean_generalized_dice_coefficient, \
+    validate_ignore_index, validate_num_classes
 from ignite.metrics.confusion_matrix import ConfusionMatrix
 from utils.utils import flatten, to_onehot
 from torch.autograd import Variable
@@ -48,15 +49,8 @@ class DiceLoss(torch.nn.Module):
 
         cm = ConfusionMatrix(num_classes=inputs.shape[1])
 
-        if ignore_index is not None:
-            assert ignore_index >= 0, "ignore_index must be non-negative, but given {}".format(ignore_index)
-            assert ignore_index < cm.num_classes, "ignore index must be lower than the number of classes in " \
-                                                  "confusion matrix, but given {}".format(ignore_index)
-
         if self._reduction == "mean":
             dice_coefficient = compute_mean_dice_coefficient(cm, ignore_index=ignore_index)
-        else:
-            raise Exception("Reduction type not supported.")
 
         cm.update((inputs, targets))
 
@@ -84,23 +78,17 @@ class GeneralizedDiceLoss(torch.nn.Module):
        Returns:
            float: the Generalized Dice Loss.
         """
+        num_classes = inputs.shape[1]
 
-        cm = ConfusionMatrix(num_classes=inputs.shape[1])
+        cm = ConfusionMatrix(num_classes)
 
-        if ignore_index is not None:
-            assert ignore_index >= 0, "ignore_index must be non-negative, but given {}".format(ignore_index)
-            assert ignore_index < cm.num_classes, "ignore index must be lower than the number of classes in " \
-                                                  "confusion matrix, but given {}".format(ignore_index)
+        flattened_targets = flatten(to_onehot(targets, num_classes))
 
-        targets_flatten = flatten(to_onehot(targets, num_classes=inputs.shape[1]))
-
-        weights = Variable(1.0 / torch.pow(targets_flatten.sum(-1), 2).clamp(min=1e-15), requires_grad=False).type(
+        weights = Variable(1.0 / torch.pow(flattened_targets.sum(-1), 2).clamp(min=1e-15), requires_grad=False).type(
             torch.float64)
 
         if self._reduction == "mean":
             generalized_dice = compute_mean_generalized_dice_coefficient(cm, weights, ignore_index=ignore_index)
-        else:
-            raise Exception("Reduction type not supported.")
 
         cm.update((inputs, targets))
 
@@ -113,6 +101,17 @@ class WeightedCrossEntropyLoss(torch.nn.Module):
         super(WeightedCrossEntropyLoss, self).__init__()
         assert reduction in SUPPORTED_REDUCTIONS, "Reduction is not supported."
         self._reduction = reduction
+
+    def _validate_ignore_index(self, ignore_index: int, input_shape: int):
+        """
+        Validate the `ignore_index` variable.
+        Args:
+            ignore_index (int): An index of a class to ignore for computation.
+            input_shape (int): Input tensor.
+        """
+        assert ignore_index >= 0, "ignore_index must be non-negative, but given {}".format(ignore_index)
+        assert ignore_index < input_shape, "ignore index must be lower than the number of classes in " \
+                                           "confusion matrix, but {} was given.".format(ignore_index)
 
     def forward(self, inputs: torch.Tensor, targets: torch.Tensor, ignore_index: int = None):
         """
@@ -127,9 +126,7 @@ class WeightedCrossEntropyLoss(torch.nn.Module):
 
         """
         if ignore_index is not None:
-            assert ignore_index >= 0, "ignore_index must be non-negative, but given {}".format(ignore_index)
-            assert ignore_index < inputs.shape[1], "ignore index must be lower than the number of classes in " \
-                                                   "confusion matrix, but given {}".format(ignore_index)
+            self._validate_ignore_index(ignore_index, inputs.shape[1])
         else:
             ignore_index = -100
 
@@ -148,6 +145,7 @@ class WeightedCrossEntropyLoss(torch.nn.Module):
         Returns:
             :obj:`torch.Variable`): A variable containing class weights.
         """
-        flattened = flatten(inputs)
-        class_weights = Variable((flattened.shape[1] - flattened.sum(-1)) / flattened.sum(-1), requires_grad=False)
+        flattened_inputs = flatten(inputs)
+        class_weights = Variable((flattened_inputs.shape[1] - flattened_inputs.sum(-1)) / flattened_inputs.sum(-1),
+                                 requires_grad=False)
         return class_weights
