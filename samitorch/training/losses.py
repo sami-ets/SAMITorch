@@ -17,7 +17,7 @@
 import torch.nn
 
 from ignite.metrics.confusion_matrix import ConfusionMatrix
-from metrics.metrics import mean_dice_coefficient, dice_coefficient
+from samitorch.metrics.metrics import mean_dice_coefficient, dice_coefficient
 
 
 class DiceLoss(torch.nn.Module):

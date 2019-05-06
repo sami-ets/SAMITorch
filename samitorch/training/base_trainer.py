@@ -22,8 +22,8 @@ Declare methods a Trainer object must have.
 import abc
 import torch
 
-from callbacks.base_callback import Callback
-from training.training_config import TrainingConfig
+from samitorch.callbacks.base_callback import Callback
+from samitorch.training.training_config import TrainingConfig
 
 
 class Trainer(object):
