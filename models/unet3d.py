@@ -17,6 +17,27 @@
 import torch
 
 SUPPORTED_POOL_TYPE = ["max", "avg"]
+SUPPORTED_ACTIVATIONS = ["relu", "leaky_relu"]
+
+
+def validate_config(config):
+    """
+    Validate model configuration parameters.
+    Args:
+        config (dict): The model's configuration dictionary.
+    """
+    assert isinstance(config["feature_maps"], int), "'feature_maps' must be an instance of int."
+    assert isinstance(config["num_levels"], int), "'num_levels' must be an instance of int."
+    assert isinstance(config["in_channels"], int), "'num_levels' must be an instance of int."
+
+
+def get_activation_fn(function: str):
+    assert function in SUPPORTED_ACTIVATIONS
+
+    if function == "relu":
+        return torch.nn.ReLU(inplace=True)
+    elif function == "leaky_relu":
+        return torch.nn.LeakyReLU(inplace=True)
 
 
 class UNet3D(torch.nn.Module):
@@ -28,40 +49,52 @@ class UNet3D(torch.nn.Module):
         config (dict): Dictionary containing the various model's configuration.
     """
 
-    def __init__(self, config: dict):
-        super(UNet3D, self).__init__()
+    @staticmethod
+    def _get_feature_maps(starting_feature_maps, num_levels):
+        return [starting_feature_maps * 2 ** k for k in range(num_levels)]
 
-        assert isinstance(config["feature_maps"], int), "'feature_maps' must be an instance of int."
-        assert isinstance(config["num_levels"], int), "'num_levels' must be an instance of int."
-
-        f_maps = [config["feature_maps"] * 2 ** k for k in range(config["n_levels"])]
-
+    @staticmethod
+    def _build_encoder(in_channels, feature_maps, config_encoder):
         encoders = []
-        for i, num_out_features in enumerate(f_maps):
+        for i, num_out_features in enumerate(feature_maps):
             if i == 0:
-                encoder = Encoder(config["in_channels"], num_out_features, DoubleConv, config["encoder"],
+                encoder = Encoder(in_channels, num_out_features, DoubleConv, config_encoder,
                                   apply_pooling=False)
             else:
-                encoder = Encoder(f_maps[i - 1], num_out_features, DoubleConv, config["encoder"], apply_pooling=True)
+                encoder = Encoder(feature_maps[i - 1], num_out_features, DoubleConv, config_encoder,
+                                  apply_pooling=True)
             encoders.append(encoder)
-        self.encoders = torch.nn.ModuleList(encoders)
+        return encoders
 
+    @staticmethod
+    def _build_decoder(feature_maps):
         decoders = []
-        reversed_f_maps = list(reversed(f_maps))
+        reversed_f_maps = list(reversed(feature_maps))
         for i in range(len(reversed_f_maps) - 1):
             in_feature_num = reversed_f_maps[i] + reversed_f_maps[i + 1]
             out_feature_num = reversed_f_maps[i + 1]
             decoder = Decoder(in_feature_num, out_feature_num)
             decoders.append(decoder)
-        self.decoders = torch.nn.ModuleList(decoders)
+        return decoders
 
-        self.final_conv = torch.nn.Conv3d(f_maps[0], config["out_channels"], 1)
+    def __init__(self, config: dict):
+        super(UNet3D, self).__init__()
+
+        validate_config(config)
+
+        feature_maps = self._get_feature_maps(config["feature_maps"], config["num_levels"])
+
+        self.encoder = torch.nn.ModuleList(self._build_encoder(config, feature_maps, config["encoder"]))
+
+        self.decoders = torch.nn.ModuleList(self._build_decoder(feature_maps))
+
+        self.final_conv = torch.nn.Conv3d(feature_maps[0], config["out_channels"], 1)
 
         self.final_activation = torch.nn.Softmax(dim=1)
 
     def forward(self, x):
         encoders_features = []
-        for encoder in self.encoders:
+        for encoder in self.encoder:
             x = encoder(x)
             # reverse the encoder outputs to be aligned with the decoder
             encoders_features.insert(0, x)
@@ -139,32 +172,64 @@ class DoubleConv(torch.nn.Module):
     """
 
     def __init__(self, in_channels: int, out_channels: int, is_in_encoder: bool, kernel_size: int = 3,
-                 num_groups: int = 8):
+                 num_groups: int = 8, padding: str = "replicate"):
         super(DoubleConv, self).__init__()
+        self._num_groups = num_groups
+        self._padding = padding
+
         if is_in_encoder:
-            # we're in the encoder path
             conv1_in_channels = in_channels
             conv1_out_channels = out_channels // 2
+
             if conv1_out_channels < in_channels:
                 conv1_out_channels = in_channels
+
             conv2_in_channels, conv2_out_channels = conv1_out_channels, out_channels
+
         else:
-            # we're in the decoder path, decrease the number of channels in the 1st convolution
             conv1_in_channels, conv1_out_channels = in_channels, out_channels
             conv2_in_channels, conv2_out_channels = out_channels, out_channels
 
-        self.conv1 = torch.nn.Conv3d()
-
-        self.conv2 = torch.nn.Conv3d()
-
-        # conv1
-        self.add_module('SingleConv1',
-                        SingleConv(conv1_in_channels, conv1_out_channels, kernel_size, order, num_groups))
-        # conv2
-        self.add_module('SingleConv2',
-                        SingleConv(conv2_in_channels, conv2_out_channels, kernel_size, order, num_groups))
+        self.conv1 = torch.nn.Conv3d(conv1_in_channels, conv1_out_channels, kernel_size)
+        self.conv2 = torch.nn.Conv3d(conv2_in_channels, conv2_out_channels, kernel_size)
 
     def forward(self, x):
+        x = torch.nn.functional.pad(x, (1, 1, 1), self._padding)
         x = self.conv1(x)
         x = self.conv2(x)
+        return x
+
+
+class SingleConv(torch.nn.Module):
+
+    def __init__(self, in_channels: int, out_channels: int, kernel_size: int = 3, num_groups: int = None,
+                 padding: tuple = None, activation: str = None):
+        super(SingleConv, self).__init__()
+        self._padding = padding
+        self._activation = activation
+
+        if padding is not None:
+            self.padding = torch.nn.ReplicationPad3d(padding)
+
+        self.conv = torch.nn.Conv3d(in_channels, out_channels, kernel_size)
+
+        if num_groups is not None:
+            self.norm = torch.nn.GroupNorm(num_groups, out_channels)
+        else:
+            self.norm = torch.nn.BatchNorm3d(out_channels)
+
+        if activation is not None:
+            self.activation = get_activation_fn(activation)
+
+    def forward(self, x):
+
+        if self._padding is not None:
+            x = self.padding(x)
+
+        x = self.conv(x)
+        x = self.norm(x)
+
+        if self.activation is not None:
+            x = self.activation(x)
+
         return x

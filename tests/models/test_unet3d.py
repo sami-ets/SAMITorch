@@ -18,7 +18,7 @@ import torch
 import yaml
 import unittest
 
-from models.unet3d import UNet3D
+from models.unet3d import UNet3D, SingleConv
 
 
 def load_test_config():
@@ -27,8 +27,43 @@ def load_test_config():
 
 class Unet3DTest(unittest.TestCase):
 
-    def init(self):
+    def setUp(self):
         self._config = load_test_config()
 
-    def model_should_be_created_with_config(self, config):
-        model = UNet3D(config)
+    def test_model_should_be_created_with_config(self):
+        # model = UNet3D(self._config["model"])
+        pass
+
+
+class SingleConvTest(unittest.TestCase):
+
+    def setUp(self):
+        self.in_channels = 1
+        self.out_channels = 32
+        self.kernel_size = 3
+        self.num_groups = 8
+        self.padding = (1, 1, 1, 1, 1, 1)
+        self.relu_activation = "relu"
+        self.leaky_relu_activation = "leaky_relu"
+
+    def test_should_give_correct_dimensions(self):
+        block = SingleConv(self.in_channels, self.out_channels, self.kernel_size, self.num_groups, self.padding,
+                           self.relu_activation)
+        input = torch.rand((2, 1, 32, 32, 32))
+        output = block(input)
+        assert output.size() == torch.Size([2, 32, 32, 32, 32])
+
+    def test_should_give_correct_instances(self):
+        block = SingleConv(self.in_channels, self.out_channels, self.kernel_size, self.num_groups, self.padding,
+                           self.relu_activation)
+
+        assert isinstance(block.padding, torch.nn.ReplicationPad3d)
+        assert isinstance(block.norm, torch.nn.GroupNorm)
+        assert isinstance(block.activation, torch.nn.ReLU)
+
+        block = SingleConv(self.in_channels, self.out_channels, self.kernel_size, None, None,
+                           self.leaky_relu_activation)
+
+        assert block.padding is None
+        assert isinstance(block.norm, torch.nn.BatchNorm3d)
+        assert isinstance(block.activation, torch.nn.LeakyReLU)
