@@ -3,11 +3,11 @@ import pathlib
 from setuptools import find_packages, setup
 
 # The text of the README file
-README_CONTENT = (pathlib.Path(__file__).parent / "DESCRIPTION.md").read_text()
+README_CONTENT = (pathlib.Path(__file__).parent / "README.md").read_text()
 
 setup(
     name='SAMITorch',
-    version='0.1',
+    version='0.1.1',
     description='Deep Learning Framework For Medical Image Analysis',
     long_description=README_CONTENT,
     long_description_content_type='text/markdown',
