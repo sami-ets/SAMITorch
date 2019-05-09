@@ -17,7 +17,7 @@
 import unittest
 import torch
 
-from utils.utils import to_onehot
+from samitorch.utils.utils import to_onehot
 
 
 class ToOneHotTest(unittest.TestCase):

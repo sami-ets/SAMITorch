@@ -17,8 +17,8 @@
 import abc
 import datetime
 
-from training.base_trainer import Trainer
-from utils.model_io import save
+from samitorch.training.base_trainer import Trainer
+from samitorch.utils.model_io import save
 
 
 class TrainingStrategy(object):

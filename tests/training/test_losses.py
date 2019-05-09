@@ -17,7 +17,7 @@
 import torch
 import numpy as np
 
-from training.losses import DiceLoss
+from samitorch.training.losses import DiceLoss
 
 
 def get_y_true_y_pred():

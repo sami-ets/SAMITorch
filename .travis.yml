@@ -1,10 +1,15 @@
-dist: xenial   # required for Python >= 3.7
+dist: xenial
 language: python
 python:
-  - "3.7"
-# command to install dependencies
+  - '3.7'
 install:
   - pip install -r requirements.txt
-# command to run tests
 script:
   - pytest
+deploy:
+  provider: pypi
+  user: benrobi
+  password:
+    secure: LYd33rMwW4iLuDk5a9HOMfKtDypQmp11a/9YMLWeJIYrFT56y0iXet/9ViuZAuO3jzA7wlt1Z8J8ABfZlE0If+OwQdmu9VXjqY+3nCIENV4wYBo/+wOsJwQTIa+yPMyzE5zArnn84r7DYFRsu3YmR+marRpSrqRAGJV7NP3FCOtWIKCIy7E5usbx4EEWZ4tC4dPc2xCtH8gD5Gjv05Elyd9RARczh/Cnbpy33drTq74pH7eBwkNVX3zOayDtZMGMFPRS8Yqc2MVS3w2+GY/URrHoX8PQEebgA3lfuMNlWE4zyWClGdq2SX0UtqH3Kc7yXPDP4wnopXRqM0hlVS9m5gLF2VLafxMjz3GcuqcSykiSdrhnz9hFQGUXbPankNuPShH6e2AzrlvReknb4WJLQ0Rw3eX/KNLOuxnucKoWX/R2s6gvLghCiMxYP8nU7AuQxyssc/tk/0bjgbUOtHcDBfrbFoCk9Sp5PVPuteeoYu9BH3uCaqmtPvqBWXW3pRvMryKUCgKyH4cONecbYFWwzQsa0gEsPP/QXjDZGiilnyFnJA0qmlS0WC9JnTksKQIwXSKY3SjDyXzFian5gaFFRR+WIzTHKO5lk0ethvHcjjF3LtcMfzxXfTDj8MGzwfPVZ2lxKobMDhiWQrny6CFncG9TvbbLHqU57C515ZVN538=
+  on:
+    branch: master

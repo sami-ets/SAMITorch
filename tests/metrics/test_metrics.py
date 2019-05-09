@@ -19,7 +19,7 @@ import torch
 import numpy as np
 import pytest
 
-from metrics.metrics import dice_coefficient, mean_dice_coefficient
+from samitorch.metrics.metrics import dice_coefficient, mean_dice_coefficient
 from ignite.metrics.confusion_matrix import ConfusionMatrix
 
 
