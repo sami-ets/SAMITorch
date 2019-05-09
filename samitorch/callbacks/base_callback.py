@@ -20,7 +20,7 @@ Declare methods a Callback must have.
 """
 import abc
 
-from training.base_trainer import Trainer
+from samitorch.training.base_trainer import Trainer
 
 
 class Callback(object):

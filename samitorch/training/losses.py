@@ -16,11 +16,11 @@
 
 import torch.nn
 
-from metrics.metrics import compute_mean_dice_coefficient, compute_mean_generalized_dice_coefficient, \
-    validate_ignore_index, validate_num_classes
 from ignite.metrics.confusion_matrix import ConfusionMatrix
-from utils.utils import flatten, to_onehot
 from torch.autograd import Variable
+
+from samitorch.metrics.metrics import compute_mean_dice_coefficient, compute_mean_generalized_dice_coefficient
+from samitorch.utils.utils import flatten, to_onehot
 
 SUPPORTED_REDUCTIONS = ["mean"]
 

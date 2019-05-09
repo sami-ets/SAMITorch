@@ -19,7 +19,7 @@ import torch
 import numpy as np
 import unittest
 
-from metrics.metrics import compute_dice_coefficient, compute_mean_dice_coefficient, \
+from samitorch.metrics.metrics import compute_dice_coefficient, compute_mean_dice_coefficient, \
     compute_generalized_dice_coefficient, compute_mean_generalized_dice_coefficient, validate_weights_size, \
     validate_num_classes, validate_ignore_index
 from ignite.metrics.confusion_matrix import ConfusionMatrix

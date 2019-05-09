@@ -57,7 +57,7 @@ class AccuracyGauge(Gauge):
         self.average = 0
         super(AccuracyGauge).__init__()
 
-    def update(self, value: float, n_data: int):
+    def update(self, value: float, n_data: int = 1):
         """Update the moving average.
 
         Args:

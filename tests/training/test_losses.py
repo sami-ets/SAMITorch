@@ -14,12 +14,13 @@
 # limitations under the License.
 # ==============================================================================
 
+
 import unittest
 import torch
 import numpy as np
 
-from training.losses import DiceLoss, GeneralizedDiceLoss, WeightedCrossEntropyLoss
 from hamcrest import *
+from samitorch.training.losses import DiceLoss, GeneralizedDiceLoss, WeightedCrossEntropyLoss
 
 
 def get_y_true_y_pred():
