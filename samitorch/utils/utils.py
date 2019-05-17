@@ -23,3 +23,17 @@ def to_onehot(indices, num_classes):
     `(N, num_classes, ...)`."""
     onehot = torch.zeros(indices.shape[0], num_classes, *indices.shape[1:], device=indices.device)
     return onehot.scatter_(1, indices.unsqueeze(1), 1)
+
+
+def flatten(tensor):
+    """Flattens a given tensor such that the channel axis is first.
+    The shapes are transformed as follows:
+       (N, C, D, H, W) -> (C, N * D * H * W)
+    """
+    C = tensor.size(1)
+    # new axis order
+    axis_order = (1, 0) + tuple(range(2, tensor.dim()))
+    # Transpose: (N, C, D, H, W) -> (C, N, D, H, W)
+    transposed = tensor.permute(axis_order).contiguous()
+    # Flatten: (C, N, D, H, W) -> (C, N * D * H * W)
+    return transposed.view(C, -1)
