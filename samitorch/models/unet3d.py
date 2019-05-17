@@ -16,7 +16,7 @@
 
 import torch
 
-from samitorch.configs.model import UNetModelConfiguration
+from samitorch.configs.model import ModelConfiguration
 from samitorch.factories.factories import ActivationFunctionsFactory, PaddingFactory, PoolingFactory, \
     NormalizationLayerFactory
 
@@ -30,12 +30,25 @@ class UNet3D(torch.nn.Module):
         config (dict): Dictionary containing the various model's configuration.
     """
 
+    def __init__(self, config: ModelConfiguration):
+        super(UNet3D, self).__init__()
+
+        feature_maps = self._get_feature_maps(config.feature_maps, config.num_levels)
+
+        self.encoders = torch.nn.ModuleList(self._build_encoder(feature_maps, config))
+
+        self.decoders = torch.nn.ModuleList(self._build_decoder(feature_maps, config))
+
+        self.final_conv = torch.nn.Conv3d(feature_maps[0], config.out_channels, 1)
+
+        self.final_activation = torch.nn.Softmax(dim=1)
+
     @staticmethod
     def _get_feature_maps(starting_feature_maps, num_levels):
         return [starting_feature_maps * 2 ** k for k in range(num_levels)]
 
     @staticmethod
-    def _build_encoder(feature_maps: list, config: UNetModelConfiguration):
+    def _build_encoder(feature_maps: list, config: ModelConfiguration):
         encoders = []
         for i, num_out_features in enumerate(feature_maps):
             if i == 0:
@@ -57,19 +70,6 @@ class UNet3D(torch.nn.Module):
             decoder = Decoder(in_feature_num, out_feature_num, DoubleConv, config_decoder)
             decoders.append(decoder)
         return decoders
-
-    def __init__(self, config: UNetModelConfiguration):
-        super(UNet3D, self).__init__()
-
-        feature_maps = self._get_feature_maps(config.feature_maps, config.num_levels)
-
-        self.encoders = torch.nn.ModuleList(self._build_encoder(feature_maps, config))
-
-        self.decoders = torch.nn.ModuleList(self._build_decoder(feature_maps, config))
-
-        self.final_conv = torch.nn.Conv3d(feature_maps[0], config.out_channels, 1)
-
-        self.final_activation = torch.nn.Softmax(dim=1)
 
     def forward(self, x):
         encoders_features = []
@@ -215,7 +215,7 @@ class Encoder(torch.nn.Module):
     """
 
     def __init__(self, in_channels: int, out_channels: int, basic_module: torch.nn.Module,
-                 config: UNetModelConfiguration, apply_pooling: bool = True):
+                 config: ModelConfiguration, apply_pooling: bool = True):
         super(Encoder, self).__init__()
         self._pooling_factory = PoolingFactory()
 
@@ -259,7 +259,7 @@ class Decoder(torch.nn.Module):
     """
 
     def __init__(self, in_channels: int, out_channels: int, basic_module: torch.nn.Module,
-                 config: UNetModelConfiguration):
+                 config: ModelConfiguration):
         super(Decoder, self).__init__()
 
         if config.interpolation:

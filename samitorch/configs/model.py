@@ -14,10 +14,20 @@
 # limitations under the License.
 # ==============================================================================
 
+import abc
 
-class UNetModelConfiguration(object):
+
+class ModelConfiguration(metaclass=abc.ABCMeta):
 
     def __init__(self, config):
+        pass
+
+
+class UNetModelConfiguration(ModelConfiguration):
+
+    def __init__(self, config: dict):
+        super(UNetModelConfiguration, self).__init__(config)
+
         self._feature_maps = config["feature_maps"]
         self._in_channels = config["in_channels"]
         self._out_channels = config["out_channels"]
