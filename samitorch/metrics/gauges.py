@@ -47,7 +47,7 @@ class Gauge(object):
         raise NotImplementedError()
 
 
-class AccuracyGauge(Gauge):
+class RunningAverageGauge(Gauge):
     """A moving accuracy gauge."""
 
     def __init__(self):
@@ -55,7 +55,7 @@ class AccuracyGauge(Gauge):
         self.count = 0
         self.sum = 0
         self.average = 0
-        super(AccuracyGauge).__init__()
+        super(RunningAverageGauge).__init__()
 
     def update(self, value: float, n_data: int = 1):
         """Update the moving average.
