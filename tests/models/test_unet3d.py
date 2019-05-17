@@ -15,15 +15,15 @@
 # ==============================================================================
 
 import torch
-import yaml
 import unittest
 import numpy as np
 
+from samitorch.utils.parsers import UNetYamlConfigurationParser
 from samitorch.models.unet3d import UNet3D, SingleConv, DoubleConv, Encoder, Decoder
 
 
 def load_test_config():
-    return yaml.load(open("configs/unet3d.yaml"))
+    return UNetYamlConfigurationParser.parse("samitorch/configs/unet3d.yaml")
 
 
 class Unet3DTest(unittest.TestCase):
@@ -33,17 +33,17 @@ class Unet3DTest(unittest.TestCase):
         self.input = torch.rand((2, 1, 32, 32, 32))
 
     def test_model_should_be_created_with_config(self):
-        model = UNet3D(self.config["model"])
+        model = UNet3D(self.config)
         assert isinstance(model, UNet3D)
 
     def test_model_should_complete_one_forward_pass(self):
-        model = UNet3D(self.config["model"])
+        model = UNet3D(self.config)
         output = model(self.input)
         assert isinstance(output, torch.Tensor)
 
     def test_model_output_should_have_same_dimensions_than_input(self):
         input_dim = np.array(list(self.input.size()))
-        model = UNet3D(self.config["model"])
+        model = UNet3D(self.config)
         output = model(self.input)
         output_dim = np.array(list(output.size()))
         np.testing.assert_array_equal(input_dim, output_dim)
@@ -103,16 +103,16 @@ class UNet3DModulesTest(unittest.TestCase):
         assert output.size() == torch.Size([2, 64, 32, 32, 32])
 
     def test_encoder_should_give_correct_pooling(self):
-        encoder = Encoder(self.in_channels, self.out_channels, DoubleConv, self.config["model"]["encoder"])
+        encoder = Encoder(self.in_channels, self.out_channels, DoubleConv, self.config)
         assert hasattr(encoder, "pooling")
         assert isinstance(encoder.pooling, torch.nn.MaxPool3d)
 
     def test_encoder_should_give_correct_dimension(self):
-        encoder = Encoder(self.in_channels, self.out_channels, DoubleConv, self.config["model"]["encoder"])
+        encoder = Encoder(self.in_channels, self.out_channels, DoubleConv, self.config)
         output = encoder(self.input)
         assert output.size() == torch.Size([2, 64, 16, 16, 16])
 
     def test_decoder_should_use_upsampling(self):
-        decoder = Decoder(self.out_channels, self.in_channels, DoubleConv, self.config["model"]["decoder"])
+        decoder = Decoder(self.out_channels, self.in_channels, DoubleConv, self.config)
         assert hasattr(decoder, "upsample")
         assert decoder.upsample is None
