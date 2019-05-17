@@ -18,9 +18,8 @@ import torch
 import yaml
 import unittest
 import numpy as np
-from hamcrest import *
 
-from models.unet3d import UNet3D, SingleConv, DoubleConv, Encoder, Decoder
+from samitorch.models.unet3d import UNet3D, SingleConv, DoubleConv, Encoder, Decoder
 
 
 def load_test_config():
