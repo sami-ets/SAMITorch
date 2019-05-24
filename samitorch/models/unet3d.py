@@ -17,7 +17,7 @@
 import torch
 
 from samitorch.configs.model import ModelConfiguration
-from samitorch.factories.factories import ActivationFunctionsFactory, PaddingFactory, PoolingFactory, \
+from samitorch.factories.layer_factories import ActivationFunctionsFactory, PaddingFactory, PoolingFactory, \
     NormalizationLayerFactory
 
 
@@ -27,7 +27,7 @@ class UNet3D(torch.nn.Module):
         <https://arxiv.org/pdf/1606.06650.pdf>`.
 
     Args:
-        config (dict): Dictionary containing the various model's configuration.
+        config (ModelConfiguration): Object containing the various model's configuration.
     """
 
     def __init__(self, config: ModelConfiguration):
@@ -40,8 +40,6 @@ class UNet3D(torch.nn.Module):
         self.decoders = torch.nn.ModuleList(self._build_decoder(feature_maps, config))
 
         self.final_conv = torch.nn.Conv3d(feature_maps[0], config.out_channels, 1)
-
-        self.final_activation = torch.nn.Softmax(dim=1)
 
     @staticmethod
     def _get_feature_maps(starting_feature_maps, num_levels):
@@ -74,7 +72,7 @@ class UNet3D(torch.nn.Module):
     def forward(self, x):
         encoders_features = []
         for encoder in self.encoders:
-            x = encoder(x)
+            x = encoder.forward(x)
             # reverse the encoder outputs to be aligned with the decoder
             encoders_features.insert(0, x)
 
@@ -82,11 +80,9 @@ class UNet3D(torch.nn.Module):
         encoders_features = encoders_features[1:]
 
         for decoder, encoder_features in zip(self.decoders, encoders_features):
-            x = decoder(encoder_features, x)
+            x = decoder.forward(encoder_features, x)
 
         x = self.final_conv(x)
-
-        x = self.final_activation(x)
 
         return x
 
@@ -109,7 +105,7 @@ class SingleConv(torch.nn.Module):
                  padding: tuple = None, activation: str = None):
         super(SingleConv, self).__init__()
         self._padding_factory = PaddingFactory()
-        self._activation_factory = ActivationFunctionsFactory()
+        self._activation_function_factory = ActivationFunctionsFactory()
         self._normalization_factory = NormalizationLayerFactory()
 
         if padding is not None:
@@ -126,7 +122,10 @@ class SingleConv(torch.nn.Module):
             self.norm = self._normalization_factory.get_layer("BatchNorm3d", out_channels)
 
         if activation is not None:
-            self.activation = self._activation_factory.get_layer(activation, True)
+            if activation == "PReLU":
+                self.activation = self._activation_function_factory.get_layer(activation)
+            else:
+                self.activation = self._activation_function_factory.get_layer(activation, True)
         else:
             self.activation = None
 
@@ -197,8 +196,8 @@ class DoubleConv(torch.nn.Module):
         Returns:
             :obj:`torch.Tensor`: The transformed tensor.
         """
-        x = self.conv1(x)
-        x = self.conv2(x)
+        x = self.conv1.forward(x)
+        x = self.conv2.forward(x)
         return x
 
 
@@ -241,8 +240,8 @@ class Encoder(torch.nn.Module):
              :obj:`torch.Tensor`: The transformed tensor.
          """
         if self.pooling is not None:
-            x = self.pooling(x)
-        x = self.basic_module(x)
+            x = self.pooling.forward(x)
+        x = self.basic_module.forward(x)
         return x
 
 
@@ -306,5 +305,5 @@ class Decoder(torch.nn.Module):
             x = self.upsample(x)
             x += encoder_features
 
-        x = self.basic_module(x)
+        x = self.basic_module.forward(x)
         return x

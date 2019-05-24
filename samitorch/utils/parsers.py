@@ -18,7 +18,7 @@
 import yaml
 import logging
 
-from samitorch.configs.model import UNetModelConfiguration
+from samitorch.configs.model import UNetModelConfiguration, ResNetModelConfiguration
 
 
 class UNetYamlConfigurationParser(object):
@@ -27,8 +27,21 @@ class UNetYamlConfigurationParser(object):
     def parse(training_config_file_path: str):
         with open(training_config_file_path, 'r') as config_file:
             try:
-                config = yaml.load(config_file)
+                config = yaml.load(config_file, Loader=yaml.FullLoader)
                 return UNetModelConfiguration(config['model'])
+            except yaml.YAMLError as e:
+                logging.warning(
+                    "Unable to read the training config file: {} with error {}".format(training_config_file_path, e))
+
+
+class ResNetYamlConfigurationParser(object):
+
+    @staticmethod
+    def parse(training_config_file_path: str):
+        with open(training_config_file_path, 'r') as config_file:
+            try:
+                config = yaml.load(config_file, Loader=yaml.FullLoader)
+                return ResNetModelConfiguration(config['model'])
             except yaml.YAMLError as e:
                 logging.warning(
                     "Unable to read the training config file: {} with error {}".format(training_config_file_path, e))

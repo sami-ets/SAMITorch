@@ -124,3 +124,96 @@ class UNetModelConfiguration(ModelConfiguration):
         tuple: The scale factor (or stride in the transposed convolution) in the decoding path.
         """
         return self._scale_factor
+
+
+class ResNetModelConfiguration(ModelConfiguration):
+    def __init__(self, config: dict):
+        super(ResNetModelConfiguration, self).__init__(config)
+
+        self._in_channels = config["in_channels"]
+        self._out_channels = config["out_channels"]
+        self._num_groups = config["num_groups"]
+        self._conv_groups = config["conv_groups"]
+        self._width_per_group = config["width_per_group"]
+        self._padding = config["padding"]
+        self._activation = config["activation"]
+        self._zero_init_residual = config["zero_init_residual"]
+        self._replace_stride_with_dilation = config["replace_stride_with_dilation"]
+
+    @property
+    def in_channels(self):
+        """
+        int: Number of input channels (modality).
+        """
+        return self._in_channels
+
+    @property
+    def out_channels(self):
+        """
+        int: Number of output channels.
+        """
+        return self._out_channels
+
+    @property
+    def num_groups(self):
+        """
+        int: The number of groups in group normalization.
+        """
+        return self._num_groups
+
+    @property
+    def conv_groups(self):
+        """
+        int: The number of groups that control the connections between inputs and outputs.
+        """
+        return self._conv_groups
+
+    @property
+    def width_per_group(self):
+        """
+        int: The number of groups that control the connections between inputs and outputs.
+        """
+        return self._width_per_group
+
+    @property
+    def padding(self):
+        """
+        tuple: The padding size of each dimensions.
+        """
+        return self._padding
+
+    @property
+    def activation(self):
+        """
+        str: The activation function as a string.
+        """
+        return self._activation
+
+    @property
+    def block_type(self):
+        """
+        :obj:`torch.nn.Module`: The ResNet block type.
+        """
+        return self._block_type
+
+    @property
+    def n_blocks_per_layer(self):
+        """
+        list: List containing the number of blocks per ResNet layer.
+        """
+        return self._n_blocks_per_layer
+
+    @property
+    def zero_init_residual(self):
+        """
+        bool:  Zero-initialize the last batch normalization layer in each residual branch.
+        """
+        return self._zero_init_residual
+
+    @property
+    def replace_stride_with_dilation(self):
+        """
+        tuple: A tuple of boolean where each element in the tuple indicates if we should replace
+            the 2x2 stride with a dilated convolution instead
+        """
+        return self._replace_stride_with_dilation

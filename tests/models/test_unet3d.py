@@ -20,6 +20,7 @@ import numpy as np
 
 from samitorch.utils.parsers import UNetYamlConfigurationParser
 from samitorch.models.unet3d import UNet3D, SingleConv, DoubleConv, Encoder, Decoder
+from tests.models.model_helper_test import TestModelHelper
 
 
 def load_test_config():
@@ -31,20 +32,24 @@ class Unet3DTest(unittest.TestCase):
     def setUp(self):
         self.config = load_test_config()
         self.input = torch.rand((2, 1, 32, 32, 32))
+        self.y = torch.randint(low=0, high=2, size=(2, 1, 32, 32, 32)).float()
 
     def test_model_should_be_created_with_config(self):
         model = UNet3D(self.config)
         assert isinstance(model, UNet3D)
 
-    def test_model_should_complete_one_forward_pass(self):
+    def test_model_should_update_vars(self):
         model = UNet3D(self.config)
-        output = model(self.input)
+        helper = TestModelHelper(model, torch.nn.BCEWithLogitsLoss(),
+                                 torch.optim.SGD(model.parameters(), lr=0.01))
+        helper.assert_vars_change((self.input, self.y))
+        output = model.forward(self.input)
         assert isinstance(output, torch.Tensor)
 
     def test_model_output_should_have_same_dimensions_than_input(self):
         input_dim = np.array(list(self.input.size()))
         model = UNet3D(self.config)
-        output = model(self.input)
+        output = model.forward(self.input)
         output_dim = np.array(list(output.size()))
         np.testing.assert_array_equal(input_dim, output_dim)
 
