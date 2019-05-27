@@ -17,7 +17,8 @@
 import abc
 
 from samitorch.models.resnet3d import resnet18, resnet34, resnet50, resnet101, resnet152
-from samitorch.configs.model import ModelConfiguration
+from samitorch.models.unet3d import UNet3D
+from samitorch.configs.model_configurations import ModelConfiguration
 
 
 class AbstractModelFactory(metaclass=abc.ABCMeta):
@@ -27,19 +28,33 @@ class AbstractModelFactory(metaclass=abc.ABCMeta):
         pass
 
 
-class ResNetModelFactory(AbstractModelFactory):
-
+class ModelFactory(AbstractModelFactory):
+    """
+    Object to instantiate a model.
+    """
     def __init__(self):
-        self._resnet_models = {
+        self._models = {
             'resnet18': resnet18,
             'resnet34': resnet34,
             'resnet50': resnet50,
             'resnet101': resnet101,
             'resnet152': resnet152,
+            'unet3d': UNet3D
         }
 
     def get_model(self, name: str, config: ModelConfiguration):
-        model = self._resnet_models.get(name)
+        """
+        Instantiate a new support model.
+
+        Args:
+            name (str): The model's name (e.g. 'unet3d').
+            config (:obj:`samitorch.configs.model_configuration.ModelConfiguration): An object containing model's
+                parameters.
+
+        Returns:
+            :obj:`torch.nn.Module`: A PyTorch model.
+        """
+        model = self._models.get(name)
         if not model:
             raise ValueError(name)
         return model(config)

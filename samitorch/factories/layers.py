@@ -30,6 +30,9 @@ class AbstractLayerFactory(metaclass=abc.ABCMeta):
 
 
 class ActivationFunctionsFactory(AbstractLayerFactory):
+    """
+    Object to instantiate an activation layer.
+    """
 
     def __init__(self):
         self._activation_functions = {
@@ -39,16 +42,36 @@ class ActivationFunctionsFactory(AbstractLayerFactory):
         }
 
     def get_layer(self, function: str, *kwargs):
+        """
+        Instantiate an activation layer based on its name.
+
+        Args:
+            function (str): The activation layer's name.
+            *kwargs: Optional keywords arguments for the respective activation function.
+
+        Returns:
+            :obj:`torch.nn.Module`: The activation layer.
+        """
         activation_function = self._activation_functions.get(function)
         if not activation_function:
             raise ValueError(function)
         return activation_function(*kwargs)
 
     def register(self, function: str, creator: torch.nn.Module):
+        """
+        Add a new activation layer.
+
+        Args:
+            function (str): Activation layer name.
+            creator (:obj:`torch.nn.Module`): A torch module object wrapping the new custom activation function.
+        """
         self._activation_functions[function] = creator
 
 
 class PaddingFactory(AbstractLayerFactory):
+    """
+    Object to instantiate a padding layer.
+    """
 
     def __init__(self):
         self._padding_strategies = {
@@ -56,16 +79,36 @@ class PaddingFactory(AbstractLayerFactory):
         }
 
     def get_layer(self, strategy: str, dims: tuple):
+        """
+        Instantiate a new padding layer.
+
+        Args:
+            strategy (str): The padding strategy name.
+            dims (tuple): The number of  where to apply padding.
+
+        Returns:
+            :obj:`torch.nn.Module`: The padding layer.
+        """
         padding = self._padding_strategies.get(strategy)
         if not padding:
             raise ValueError(strategy)
         return padding(dims)
 
     def register(self, strategy: str, creator: torch.nn.Module):
+        """
+        Add a new padding strategy.
+
+        Args:
+            strategy (str): The padding strategy name.
+            creator (:obj:`torch.nn.Module`): A torch module object wrapping the new custom padding layer.
+        """
         self._padding_strategies[strategy] = creator
 
 
 class PoolingFactory(AbstractLayerFactory):
+    """
+    An object to instantiate pooling layers.
+    """
 
     def __init__(self):
         self._pooling_strategies = {
@@ -75,6 +118,18 @@ class PoolingFactory(AbstractLayerFactory):
         }
 
     def get_layer(self, strategy: str, kernel_size: int, stride: int = None, *kwargs):
+        """
+        Instantiate a new pooling layer with mandatory parameters.
+
+        Args:
+            strategy (str): The pooling strategy name.
+            kernel_size (int): Pooling kernel's size.
+            stride (int): The size of the stride of the window.
+            *kwargs: Optional keywords.
+
+        Returns:
+            :obj:`torch.nn.Module`: The pooling layer.
+        """
         pooling = self._pooling_strategies.get(strategy)
         if not pooling:
             raise ValueError(strategy)
@@ -86,10 +141,20 @@ class PoolingFactory(AbstractLayerFactory):
             return pooling(*kwargs, kernel_size, stride)
 
     def register(self, strategy: str, creator: torch.nn.Module):
+        """
+        Add a new pooling layer.
+
+        Args:
+            strategy (str): The pooling strategy name.
+            creator (obj:`torch.nn.Module`): A torch module object wrapping the new custom pooling layer.
+        """
         self._pooling_strategies[strategy] = creator
 
 
 class NormalizationLayerFactory(AbstractLayerFactory):
+    """
+    An object to instantiate normalization layers.
+    """
 
     def __init__(self):
         self._normalization_strategies = {
@@ -98,10 +163,27 @@ class NormalizationLayerFactory(AbstractLayerFactory):
         }
 
     def get_layer(self, strategy: str, *kwargs):
+        """
+        Instantiate a new normalization layer.
+
+        Args:
+            strategy (str): The normalization strategy layer.
+            *kwargs: Optional keywords arguments.
+
+        Returns:
+
+        """
         norm = self._normalization_strategies.get(strategy)
         if not norm:
             raise ValueError(strategy)
         return norm(*kwargs)
 
     def register(self, strategy: str, creator: torch.nn.Module):
+        """
+        Add a new normalization layer.
+
+        Args:
+            strategy (str): The normalization strategy name.
+            creator (:obj:`torch.nn.Module`): A torch module object wrapping the new custom normalization layer.
+        """
         self._normalization_strategies[strategy] = creator

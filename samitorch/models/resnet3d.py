@@ -1,7 +1,7 @@
 import torch
 
-from samitorch.factories.layer_factories import ActivationFunctionsFactory, NormalizationLayerFactory
-from samitorch.configs.model import ModelConfiguration
+from samitorch.factories.layers import ActivationFunctionsFactory, NormalizationLayerFactory
+from samitorch.configs.model_configurations import ModelConfiguration
 
 
 def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1):

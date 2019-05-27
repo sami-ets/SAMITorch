@@ -18,19 +18,20 @@ import torch
 import unittest
 import numpy as np
 
-from samitorch.utils.parsers import UNetYamlConfigurationParser
+from samitorch.factories.parsers import ConfigurationParserFactory
 from samitorch.models.unet3d import UNet3D, SingleConv, DoubleConv, Encoder, Decoder
 from tests.models.model_helper_test import TestModelHelper
 
-
-def load_test_config():
-    return UNetYamlConfigurationParser.parse("samitorch/configs/unet3d.yaml")
+from samitorch.factories.models import ModelFactory
 
 
 class Unet3DTest(unittest.TestCase):
+    CONFIGURATION_PATH = "samitorch/configs/unet3d.yaml"
 
     def setUp(self):
-        self.config = load_test_config()
+        self.configurationParserFactory = ConfigurationParserFactory()
+        self.config = self.configurationParserFactory.parse(self.CONFIGURATION_PATH)
+        self.factory = ModelFactory()
         self.input = torch.rand((2, 1, 32, 32, 32))
         self.y = torch.randint(low=0, high=2, size=(2, 1, 32, 32, 32)).float()
 
@@ -39,7 +40,7 @@ class Unet3DTest(unittest.TestCase):
         assert isinstance(model, UNet3D)
 
     def test_model_should_update_vars(self):
-        model = UNet3D(self.config)
+        model = self.factory.get_model("unet3d", self.config)
         helper = TestModelHelper(model, torch.nn.BCEWithLogitsLoss(),
                                  torch.optim.SGD(model.parameters(), lr=0.01))
         helper.assert_vars_change((self.input, self.y))
@@ -48,16 +49,19 @@ class Unet3DTest(unittest.TestCase):
 
     def test_model_output_should_have_same_dimensions_than_input(self):
         input_dim = np.array(list(self.input.size()))
-        model = UNet3D(self.config)
+        model = self.factory.get_model("unet3d", self.config)
         output = model.forward(self.input)
         output_dim = np.array(list(output.size()))
         np.testing.assert_array_equal(input_dim, output_dim)
 
 
 class UNet3DModulesTest(unittest.TestCase):
+    CONFIGURATION_PATH = "samitorch/configs/unet3d.yaml"
+    MODEL_TYPE = "unet3d"
 
     def setUp(self):
-        self.config = load_test_config()
+        self.configurationParserFactory = ConfigurationParserFactory()
+        self.config = self.configurationParserFactory.parse(self.CONFIGURATION_PATH)
         self.input = torch.rand((2, 1, 32, 32, 32))
         self.input_high_channels = torch.rand(2, 128, 16, 16, 16)
         self.in_channels = 1

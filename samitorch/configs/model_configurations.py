@@ -19,13 +19,23 @@ import abc
 
 class ModelConfiguration(metaclass=abc.ABCMeta):
 
-    def __init__(self, config):
+    @abc.abstractmethod
+    def __init__(self, config: dict):
         pass
 
 
 class UNetModelConfiguration(ModelConfiguration):
+    """
+    Configuration properties for a UNet model.
+    """
 
     def __init__(self, config: dict):
+        """
+        Instantiate a UnetModelConfiguration object regrouping every UNet3D model's hyper-parameters.
+
+        Args:
+            config (dict): A dictionary containing model's hyper-parameters.
+        """
         super(UNetModelConfiguration, self).__init__(config)
 
         self._feature_maps = config["feature_maps"]
@@ -127,7 +137,17 @@ class UNetModelConfiguration(ModelConfiguration):
 
 
 class ResNetModelConfiguration(ModelConfiguration):
+    """
+    Configuration properties for a ResNet model.
+    """
+
     def __init__(self, config: dict):
+        """
+        Instantiate a ResNetModelConfiguration object regrouping every ResNet3D model's hyper-parameters.
+
+        Args:
+            config (dict): A dictionary containing model's hyper-parameters.
+        """
         super(ResNetModelConfiguration, self).__init__(config)
 
         self._in_channels = config["in_channels"]
@@ -188,20 +208,6 @@ class ResNetModelConfiguration(ModelConfiguration):
         str: The activation function as a string.
         """
         return self._activation
-
-    @property
-    def block_type(self):
-        """
-        :obj:`torch.nn.Module`: The ResNet block type.
-        """
-        return self._block_type
-
-    @property
-    def n_blocks_per_layer(self):
-        """
-        list: List containing the number of blocks per ResNet layer.
-        """
-        return self._n_blocks_per_layer
 
     @property
     def zero_init_residual(self):

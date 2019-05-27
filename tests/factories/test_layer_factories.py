@@ -19,7 +19,7 @@ import torch
 
 from hamcrest import *
 
-from samitorch.factories.layer_factories import PaddingFactory, ActivationFunctionsFactory, PoolingFactory, \
+from samitorch.factories.layers import PaddingFactory, ActivationFunctionsFactory, PoolingFactory, \
     NormalizationLayerFactory
 
 

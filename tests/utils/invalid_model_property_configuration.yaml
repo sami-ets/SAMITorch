@@ -2,7 +2,7 @@ model:
   name: "unet3d"
   type: "unet3d"
   feature_maps: 64
-  in_channels: 1
+  in_channel: 1 # BAD PARAMETER. SHOULD BE 'in_channels'
   out_channels: 1
   num_levels: 4
   conv_kernel_size: 3
