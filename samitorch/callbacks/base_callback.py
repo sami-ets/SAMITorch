@@ -20,8 +20,6 @@ Declare methods a Callback must have.
 """
 import abc
 
-from samitorch.training.base_trainer import Trainer
-
 
 class Callback(object):
     """Implements abstract callback interface.
@@ -41,11 +39,10 @@ class Callback(object):
         pass
 
     @abc.abstractmethod
-    def at_epoch_begin(self, trainer: Trainer, **kwargs):
+    def at_epoch_begin(self, **kwargs):
         """Function which will be executed at begin of each epoch
 
         Args:
-            trainer (:obj:`Trainer`): A trainer.
             **kwargs: additional keyword arguments
 
         Returns:
@@ -54,11 +51,10 @@ class Callback(object):
         return {}
 
     @abc.abstractmethod
-    def at_epoch_end(self, trainer: Trainer, **kwargs):
+    def at_epoch_end(self, **kwargs):
         """Function which will be executed at end of each epoch
 
         Args:
-            trainer (:obj:`Trainer`): A trainer.
             **kwargs: additional keyword arguments
 
         Returns:
