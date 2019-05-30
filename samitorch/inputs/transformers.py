@@ -14,12 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 
-
 import numpy as np
 import nibabel as nib
 import nrrd
 import math
 import torch
+import os
 
 from nilearn.image.resampling import resample_to_img
 
@@ -70,12 +70,16 @@ class ToNumpyArray(object):
     """
 
     def __call__(self, image_path: str):
+        if not os.path.exists(image_path):
+            raise FileNotFoundError("Provided image path is not valid.")
+
         if Image.is_nifti(image_path):
             nd_array = nib.load(image_path).get_fdata().__array__()
         elif Image.is_nrrd(image_path):
             nd_array, header = nrrd.read(image_path)
         else:
-            raise NotImplementedError("Only {} files are supported but got {} !".format(ImageType.ALL, image_path))
+            raise NotImplementedError(
+                "Only {} files are supported but got {}".format(ImageType.ALL, os.path.splitext(image_path)[1]))
 
         if nd_array.ndim == 3:
             nd_array = np.expand_dims(nd_array, 3).transpose((3, 2, 1, 0))
@@ -96,6 +100,9 @@ class ToNrrdFile(object):
     """
 
     def __init__(self, file_path: str):
+        if not os.path.exists(file_path):
+            raise FileNotFoundError("Provided NRRD file path is not valid.")
+
         self._file_path = file_path
 
     def __call__(self, nd_array: np.ndarray):
@@ -132,12 +139,15 @@ class ToNrrdFile(object):
         }
 
 
-class ToNiftiImage(object):
+class LoadNifti(object):
     """
-    Creates a Nibabel Nifti Image from a given Nifti file path.
+    Load a Nibabel Nifti Image from a given Nifti file path.
     """
 
     def __call__(self, image_path: str):
+        if not os.path.exists(image_path):
+            raise FileNotFoundError("Provided image path is not valid.")
+
         if Image.is_nifti(image_path):
             return nib.load(image_path)
         else:
@@ -154,11 +164,11 @@ class NiftiImageToNumpy(object):
     The Numpy array is transposed to respect the standard dimensions (DxHxW) for 3D or (CxDxHxW) for 4D arrays.
     """
 
-    def __call__(self, image: nib.Nifti1Image):
-        if isinstance(image, nib.Nifti1Image) or isinstance(image, nib.Nifti2Image):
-            nd_array = image.get_fdata().__array__()
+    def __call__(self, nifti_image):
+        if isinstance(nifti_image, nib.Nifti1Image) or isinstance(nifti_image, nib.Nifti2Image):
+            nd_array = nifti_image.get_fdata().__array__()
         else:
-            raise TypeError("Image type must be Nifti1Image or Nifti2Image, but got {}".format(type(image)))
+            raise TypeError("Image type must be Nifti1Image or Nifti2Image, but got {}".format(type(nifti_image)))
 
         if nd_array.ndim == 3:
             nd_array = np.expand_dims(nd_array, 3).transpose((3, 2, 1, 0))
@@ -176,36 +186,47 @@ class ResampleNiftiImgToTemplate(object):
     Resamples a Nifti Image to a template file using Nilearn.image.resampling module.
     """
 
-    def __init__(self, clip: bool, reference_nii_file: nib.nifti1, interpolation: str):
-        self._clip = clip
-        self._reference_nii_file = reference_nii_file
+    def __init__(self, template: str, interpolation: str, clip: bool):
+        self._template = template
         self._interpolation = interpolation
+        self._clip = clip
 
     def __call__(self, nifti_image: nib.Nifti1Image):
-        return resample_to_img(nifti_image, nib.load(self._reference_nii_file), clip=self._clip,
-                               interpolation=self._interpolation)
+        return resample_to_img(nifti_image, nib.load(self._template), interpolation=self._interpolation,
+                               clip=self._clip)
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
 
 
-class ApplyMaskToNiftiImg(object):
+class ApplyMaskToNiftiImage(object):
     """
-    Multiply a Numpy ndarray by a given mask/label/ROI image file.
+    Apply a mask by a given mask/label/ROI image file.
     """
 
     def __init__(self, mask_path: str):
-        if Image.is_nifti(mask_path):
-            nd_array = nib.load(mask_path).get_fdata().__array__()
-            nd_array[nd_array >= 1] = 1
-            self._mask = nd_array
-        else:
-            raise NotImplementedError("Only {} files are supported but got {}".format(ImageType.ALL, mask_path))
+        if not os.path.exists(mask_path):
+            raise FileNotFoundError("Provided image path is not valid.")
 
-    def __call__(self, image: nib.Nifti1Image):
-        header = image.header
-        brain = np.multiply(image.get_fdata(), self._mask)
-        return nib.Nifti1Image(brain, None, header)
+        if Image.is_nifti(mask_path):
+            mask = nib.load(mask_path).get_fdata().__array__()
+        elif Image.is_nrrd(mask_path):
+            mask, header = nrrd.read(mask_path)
+        else:
+            raise NotImplementedError(
+                "Only {} files are supported but got {}".format(ImageType.ALL, os.path.splitext(mask_path)[1]))
+
+        mask[mask >= 1] = 1
+        self._mask = mask
+
+    def __call__(self, nifti_image):
+        if isinstance(nifti_image, nib.Nifti1Image) or isinstance(nifti_image, nib.Nifti2Image):
+            nd_array = nifti_image.get_fdata().__array__()
+            header = nifti_image.header
+        else:
+            raise TypeError("Image type must be Nifti1Image or Nifti2Image, but got {}".format(type(nifti_image)))
+
+        return nib.Nifti1Image(np.multiply(nd_array, self._mask), None, header)
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
@@ -218,12 +239,23 @@ class ApplyMaskToTensor(object):
     The mask is transposed to respect the standard dimensions (DxHxW) for 3D or (CxDxHxW) for 4D arrays.
     """
 
-    def __init__(self, mask: str):
-        nd_array = nib.load(mask).get_fdata().__array__()
+    def __init__(self, mask_path: str):
+        if not os.path.exists(mask_path):
+            raise FileNotFoundError("Provided image path is not valid.")
+
+        if Image.is_nifti(mask_path):
+            nd_array = nib.load(mask_path).get_fdata().__array__()
+        elif Image.is_nrrd(mask_path):
+            nd_array, header = nrrd.read(mask_path)
+        else:
+            raise NotImplementedError(
+                "Only {} files are supported but got {}".format(ImageType.ALL, os.path.splitext(mask_path)[1]))
+
         if nd_array.ndim == 3:
             nd_array = np.expand_dims(nd_array, 3).transpose((3, 2, 1, 0))
         elif nd_array.ndim == 4:
             nd_array = nd_array.transpose((3, 2, 1, 0))
+
         nd_array[nd_array >= 1] = 1
         self._mask = nd_array
 
@@ -244,14 +276,23 @@ class RemapClassIDs(object):
             raise TypeError(
                 "Initial and final IDs must be a list of integers, but got {} and {}".format(type(initial_ids),
                                                                                              type(final_ids)))
+
+        if not all(isinstance(class_id, int) for class_id in initial_ids) or not all(
+                isinstance(class_id, int) for class_id in final_ids):
+            raise ValueError("Lists of IDs must contain only Integers.")
+
         self._initial_ids = initial_ids
-        self._final_ids = final_ids
+        self._new_ids = final_ids
 
     def __call__(self, nd_array: np.ndarray):
-        for i, id in enumerate(self._initial_ids):
-            nd_array[nd_array == id] = self._final_ids[i]
+        new_nd_array = nd_array.copy()
 
-        return nd_array
+        indexes = [np.where(nd_array == class_id) for class_id in self._initial_ids]
+
+        for indexes, new_id in zip(indexes, self._new_ids):
+            new_nd_array[indexes] = new_id
+
+        return new_nd_array
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
@@ -265,8 +306,8 @@ class NiftiToDisk(object):
     def __init__(self, file_path: str):
         self._file_path = file_path
 
-    def __call__(self, image: nib.Nifti1Image):
-        if isinstance(image, nib.Nifti1Image) or isinstance(nib.Nifti2Image):
+    def __call__(self, image):
+        if isinstance(image, nib.Nifti1Image) or isinstance(image, nib.Nifti2Image):
             nib.save(image, self._file_path)
         else:
             raise TypeError("Image type must be Nifti1Image or Nifti2Image, but got {}".format(type(image)))
@@ -275,7 +316,7 @@ class NiftiToDisk(object):
         return self.__class__.__name__ + '()'
 
 
-class ToNiftiFile(object):
+class ToNifti1Image(object):
     """
     Creates a Nifti1Image from a given Numpy ndarray.
 
@@ -290,8 +331,7 @@ class ToNiftiFile(object):
         if not isinstance(nd_array, np.ndarray) or (nd_array.ndim not in [3, 4]):
             raise TypeError("Only 3D (DxHxW) or 4D (CxDxHxW) ndarrays are supported")
 
-        nifti1_file = nib.Nifti1Image(nd_array.transpose((3, 2, 1, 0)), None, self._header)
-        nib.save(nifti1_file, self._file_path)
+        return nib.Nifti1Image(nd_array.transpose((3, 2, 1, 0)), None, self._header)
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
