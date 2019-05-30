@@ -17,7 +17,7 @@
 import abc
 import datetime
 
-from samitorch.training.base_trainer import Trainer
+from samitorch.training.trainer import Trainer
 from samitorch.utils.model_io import save
 
 
