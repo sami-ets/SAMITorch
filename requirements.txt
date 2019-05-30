@@ -7,3 +7,4 @@ nilearn>=0.5.0
 pyhamcrest>=1.9.0
 scikit-learn>=0.20.3
 pytorch-ignite>=0.2.0
+pynrrd>=0.4.0
