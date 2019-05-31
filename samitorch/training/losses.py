@@ -35,17 +35,18 @@ class DiceLoss(torch.nn.Module):
     def forward(self, inputs: torch.Tensor, targets: torch.Tensor, ignore_index: int = None):
         """
         Computes the Sørensen–Dice loss.
+
         Note that PyTorch optimizers minimize a loss. In this case, we would like to maximize the dice loss so we
         return the negated dice loss.
 
         Args:
-           inputs (:obj:`torch.Tensor`): A tensor of shape (B, C, ..). The model's prediction on which the loss has to
-                be computed.
-           targets (:obj:`torch.Tensor`): A tensor of shape (B, C, ..). The ground truth.
-           ignore_index (int): An index to ignore for computation.
-       Returns:
-           float: the Sørensen–Dice loss.
-        """
+            inputs (:obj:`torch.Tensor`) : A tensor of shape (B, C, ..). The model prediction on which the loss has to be computed.
+            targets (:obj:`torch.Tensor`) : A tensor of shape (B, C, ..). The ground truth.
+            ignore_index (int): An index to ignore for computation.
+
+        Returns:
+            float: The Sørensen–Dice loss.
+         """
 
         cm = ConfusionMatrix(num_classes=inputs.shape[1])
 
@@ -71,10 +72,10 @@ class GeneralizedDiceLoss(torch.nn.Module):
         return the negated dice loss.
 
         Args:
-           inputs (:obj:`torch.Tensor`): A tensor of shape (B, C, ..). The model's prediction on which the loss has to
-                be computed.
+           inputs (:obj:`torch.Tensor`): A tensor of shape (B, C, ..). The model's prediction on which the loss has to be computed.
            targets (:obj:`torch.Tensor`): A tensor of shape (B, C, ..). The ground truth.
            ignore_index (int): An index to ignore for computation.
+
        Returns:
            float: the Generalized Dice Loss.
         """
@@ -105,6 +106,7 @@ class WeightedCrossEntropyLoss(torch.nn.Module):
     def _validate_ignore_index(self, ignore_index: int, input_shape: int):
         """
         Validate the `ignore_index` variable.
+
         Args:
             ignore_index (int): An index of a class to ignore for computation.
             input_shape (int): Input tensor.
@@ -116,11 +118,12 @@ class WeightedCrossEntropyLoss(torch.nn.Module):
     def forward(self, inputs: torch.Tensor, targets: torch.Tensor, ignore_index: int = None):
         """
         Computes the Weighted Cross Entropy Loss (WCE) as described in https://arxiv.org/pdf/1707.03237.pdf
+
         Args:
-            inputs (:obj:`torch.Tensor`): A tensor of shape (B, C, ..). The model's prediction on which the loss has to
-                be computed.
+            nputs (:obj:`torch.Tensor`): A tensor of shape (B, C, ..). The model's prediction on which the loss has to be computed.
            targets (:obj:`torch.Tensor`): A tensor of shape (B, C, ..). The ground truth.
            ignore_index (int): An index to ignore for computation.
+
        Returns:
            float: the weighted Cross-Entropy loss value.
 
@@ -139,11 +142,12 @@ class WeightedCrossEntropyLoss(torch.nn.Module):
     def _compute_class_weights(inputs: torch.Tensor):
         """
         Compute weights for each class as described in https://arxiv.org/pdf/1707.03237.pdf
+
         Args:
-            (:obj:`torch.Tensor`): A tensor of shape (B, C, ..). The model's prediction on which the loss has to
-                be computed.
+            inputs: (:obj:`torch.Tensor`): A tensor of shape (B, C, ..). The model's prediction on which the loss has to be computed.
+
         Returns:
-            :obj:`torch.Variable`): A variable containing class weights.
+            :obj:`torch.Variable`: A variable containing class weights.
         """
         flattened_inputs = flatten(inputs)
         class_weights = Variable((flattened_inputs.shape[1] - flattened_inputs.sum(-1)) / flattened_inputs.sum(-1),
