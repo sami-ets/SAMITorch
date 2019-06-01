@@ -137,9 +137,26 @@ class RemapClassIDsTest(unittest.TestCase):
 
 class RandomCropTest(unittest.TestCase):
     TEST_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data")
-    OUTPUT_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data/generated/randomcrop")
+    OUTPUT_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data/generated/RandomCrop")
     VALID_3D_NIFTI_FILE = os.path.join(TEST_DATA_FOLDER_PATH, "T1.nii")
     VALID_MASK_FILE = os.path.join(TEST_DATA_FOLDER_PATH, "Mask.nii")
+    CROPPED_NIFTI_IMAGE = os.path.join(OUTPUT_DATA_FOLDER_PATH, "cropped_nd_array.nii")
+    CROPPED_NIFTI_LABELS = os.path.join(OUTPUT_DATA_FOLDER_PATH, "cropped_labels.nii")
+    CROPPED_PNG_IMAGE = os.path.join(OUTPUT_DATA_FOLDER_PATH, "cropped_nd_array.png")
+    CROPPED_PNG_LABELS = os.path.join(OUTPUT_DATA_FOLDER_PATH, "cropped_labels.png")
+
+    ALL = [CROPPED_NIFTI_IMAGE, CROPPED_NIFTI_LABELS, CROPPED_PNG_IMAGE, CROPPED_PNG_LABELS]
+
+    def setUpModule(self):
+        for element in self.ALL:
+            if os.path.exists(element):
+                os.remove(element)
+            else:
+                print('File does not exists')
+
+        assert_that(len(os.listdir(self.OUTPUT_DATA_FOLDER_PATH)), is_(0))
+
+        print("Files deleted.")
 
     def setUp(self):
         pass
@@ -159,11 +176,11 @@ class RandomCropTest(unittest.TestCase):
         assert_that(cropped_nd_array.shape[0], equal_to(1))
         assert_that(cropped_label.shape[0], equal_to(1))
 
-    def test_transformer_should_save_files_as_nifti(self):
+    def test_transformer_should_save_files_as_nifti_for_inspection(self):
         nd_array = ToNumpyArray().__call__(self.VALID_3D_NIFTI_FILE)
         labels = ToNumpyArray().__call__(self.VALID_MASK_FILE)
 
-        file_names = ["cropped_nd_array.nii", "labels_cropped.nii"]
+        file_names = [self.CROPPED_NIFTI_IMAGE, self.CROPPED_NIFTI_LABELS]
 
         transform_ = transforms.Compose([RandomCrop(output_size=32),
                                          To2DNifti1Image(),
@@ -175,11 +192,11 @@ class RandomCropTest(unittest.TestCase):
         for file_name in file_names:
             assert_that(os.path.exists(os.path.join(self.OUTPUT_DATA_FOLDER_PATH, file_name)))
 
-    def test_transformer_should_save_files_as_png(self):
+    def test_transformer_should_save_files_as_png_for_inspection(self):
         nd_array = ToNumpyArray().__call__(self.VALID_3D_NIFTI_FILE)
         labels = ToNumpyArray().__call__(self.VALID_MASK_FILE)
 
-        file_names = ["cropped_nd_array.png", "labels_cropped.png"]
+        file_names = [self.CROPPED_PNG_IMAGE, self.CROPPED_PNG_LABELS]
 
         transform_ = transforms.Compose([RandomCrop(output_size=32),
 
@@ -190,18 +207,6 @@ class RandomCropTest(unittest.TestCase):
 
         for file_name in file_names:
             assert_that(os.path.exists(os.path.join(self.OUTPUT_DATA_FOLDER_PATH, file_name)))
-
-    def test_transformer_should_save_with_2D_ndarray(self):
-        nd_array = ToNumpyArray().__call__(self.VALID_3D_NIFTI_FILE)
-        labels = ToNumpyArray().__call__(self.VALID_MASK_FILE)
-
-        file_names = ["cropped_nd_array.png", "labels_cropped.png"]
-
-        transform_ = transforms.Compose([RandomCrop(output_size=32)])
-
-        cropped_nd_array, cropped_label = transform_((nd_array, labels))
-
-        ToPNGFile(file_names[0]).__call__(cropped_nd_array[0, ...])
 
 
 class ToPNGFileTest(unittest.TestCase):
@@ -225,7 +230,7 @@ class ToPNGFileTest(unittest.TestCase):
             else:
                 yield el
 
-    def setUp(self):
+    def setUpModule(self):
         all_files = self._flatten(self.ALL)
         for element in all_files:
             if os.path.exists(element):
@@ -236,6 +241,9 @@ class ToPNGFileTest(unittest.TestCase):
         assert_that(len(os.listdir(self.OUTPUT_DATA_FOLDER_PATH)), is_(0))
 
         print("Files deleted.")
+
+    def setUp(self):
+        pass
 
     def test_should_raise_exception_when_passing_4D_ndarray(self):
         nd_array = np.random.randint(0, 1000, size=(1, 32, 32, 32))
