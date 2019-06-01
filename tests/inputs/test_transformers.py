@@ -18,13 +18,14 @@ import unittest
 import os
 import nibabel as nib
 import numpy as np
+import collections
+
 from torchvision.transforms import transforms
 
 from hamcrest import *
 
 from samitorch.inputs.transformers import LoadNifti, ToNifti1Image, RemapClassIDs, ApplyMaskToNiftiImage, \
-    ApplyMaskToTensor, \
-    ToNumpyArray
+    ApplyMaskToTensor, ToNumpyArray, RandomCrop, NiftiToDisk, To2DNifti1Image, ToPNGFile
 
 
 class ToNiftiImageTest(unittest.TestCase):
@@ -132,3 +133,152 @@ class RemapClassIDsTest(unittest.TestCase):
 
     def test_should_fail_with_non_integer_class_ids(self):
         assert_that(calling(RemapClassIDs).with_args([1, 2, 3], [1.5, 4, 8]), raises(ValueError))
+
+
+class RandomCropTest(unittest.TestCase):
+    TEST_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data")
+    OUTPUT_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data/generated/randomcrop")
+    VALID_3D_NIFTI_FILE = os.path.join(TEST_DATA_FOLDER_PATH, "T1.nii")
+    VALID_MASK_FILE = os.path.join(TEST_DATA_FOLDER_PATH, "Mask.nii")
+
+    def setUp(self):
+        pass
+
+    def test_transformer_should_return_ndarray(self):
+        nd_array = ToNumpyArray().__call__(self.VALID_3D_NIFTI_FILE)
+        labels = ToNumpyArray().__call__(self.VALID_MASK_FILE)
+
+        transform_ = transforms.Compose([RandomCrop(output_size=32)])
+
+        cropped_nd_array, cropped_label = transform_((nd_array, labels))
+
+        assert_that(cropped_nd_array, instance_of(np.ndarray))
+        assert_that(cropped_label, instance_of(np.ndarray))
+        assert_that(cropped_nd_array.ndim, equal_to(3))
+        assert_that(cropped_label.ndim, equal_to(3))
+        assert_that(cropped_nd_array.shape[0], equal_to(1))
+        assert_that(cropped_label.shape[0], equal_to(1))
+
+    def test_transformer_should_save_files_as_nifti(self):
+        nd_array = ToNumpyArray().__call__(self.VALID_3D_NIFTI_FILE)
+        labels = ToNumpyArray().__call__(self.VALID_MASK_FILE)
+
+        file_names = ["cropped_nd_array.nii", "labels_cropped.nii"]
+
+        transform_ = transforms.Compose([RandomCrop(output_size=32),
+                                         To2DNifti1Image(),
+                                         NiftiToDisk(
+                                             [os.path.join(self.OUTPUT_DATA_FOLDER_PATH, file_path) for file_path in
+                                              file_names])])
+        transform_((nd_array, labels))
+
+        for file_name in file_names:
+            assert_that(os.path.exists(os.path.join(self.OUTPUT_DATA_FOLDER_PATH, file_name)))
+
+    def test_transformer_should_save_files_as_png(self):
+        nd_array = ToNumpyArray().__call__(self.VALID_3D_NIFTI_FILE)
+        labels = ToNumpyArray().__call__(self.VALID_MASK_FILE)
+
+        file_names = ["cropped_nd_array.png", "labels_cropped.png"]
+
+        transform_ = transforms.Compose([RandomCrop(output_size=32),
+
+                                         ToPNGFile(
+                                             [os.path.join(self.OUTPUT_DATA_FOLDER_PATH, file_path) for file_path in
+                                              file_names])])
+        transform_((nd_array.astype(np.float32), 75 * labels.astype(np.uint8)))
+
+        for file_name in file_names:
+            assert_that(os.path.exists(os.path.join(self.OUTPUT_DATA_FOLDER_PATH, file_name)))
+
+    def test_transformer_should_save_with_2D_ndarray(self):
+        nd_array = ToNumpyArray().__call__(self.VALID_3D_NIFTI_FILE)
+        labels = ToNumpyArray().__call__(self.VALID_MASK_FILE)
+
+        file_names = ["cropped_nd_array.png", "labels_cropped.png"]
+
+        transform_ = transforms.Compose([RandomCrop(output_size=32)])
+
+        cropped_nd_array, cropped_label = transform_((nd_array, labels))
+
+        ToPNGFile(file_names[0]).__call__(cropped_nd_array[0, ...])
+
+
+class ToPNGFileTest(unittest.TestCase):
+    TEST_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data")
+    OUTPUT_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data/generated/ToPNGFile")
+    PNG_FILE_2D = os.path.join(OUTPUT_DATA_FOLDER_PATH, "ToPNGFile2D.png")
+    PNG_FILE_3D = os.path.join(OUTPUT_DATA_FOLDER_PATH, "ToPNGFile3D.png")
+    PNG_FILE_4D = os.path.join(OUTPUT_DATA_FOLDER_PATH, "ToPNGFile4D.png")
+    PNG_TUPLE_2D = [os.path.join(OUTPUT_DATA_FOLDER_PATH, "ToPNGFileTupleHxW_1.png"),
+                    os.path.join(OUTPUT_DATA_FOLDER_PATH, "ToPNGFileTupleHxW_2.png")]
+    PNG_TUPLE_3D = [os.path.join(OUTPUT_DATA_FOLDER_PATH, "ToPNGFileTupleCxHxW_1.png"),
+                    os.path.join(OUTPUT_DATA_FOLDER_PATH, "ToPNGFileTupleCxHxW_2.png")]
+    PNG_TUPLE_4D = [os.path.join(OUTPUT_DATA_FOLDER_PATH, "ToPNGFileTupleCxDxHxW_1.png"),
+                    os.path.join(OUTPUT_DATA_FOLDER_PATH, "ToPNGFileTupleCxDxHxW_2.png")]
+    ALL = [PNG_FILE_2D, PNG_FILE_3D, PNG_FILE_4D, PNG_TUPLE_2D, PNG_TUPLE_3D, PNG_TUPLE_4D]
+
+    def _flatten(self, l):
+        for el in l:
+            if isinstance(el, collections.Iterable) and not isinstance(el, (str, bytes)):
+                yield from self._flatten(el)
+            else:
+                yield el
+
+    def setUp(self):
+        all_files = self._flatten(self.ALL)
+        for element in all_files:
+            if os.path.exists(element):
+                os.remove(element)
+            else:
+                print('File does not exists')
+
+        assert_that(len(os.listdir(self.OUTPUT_DATA_FOLDER_PATH)), is_(0))
+
+        print("Files deleted.")
+
+    def test_should_raise_exception_when_passing_4D_ndarray(self):
+        nd_array = np.random.randint(0, 1000, size=(1, 32, 32, 32))
+
+        transform_ = ToPNGFile(self.PNG_FILE_4D)
+
+        assert_that(calling(transform_.__call__).with_args(nd_array), raises(TypeError))
+
+    def test_should_raise_exception_when_passing_tuple_of_4D_ndarray(self):
+        nd_array = np.random.randint(0, 1000, size=(1, 32, 32, 32))
+
+        transform_ = ToPNGFile(self.PNG_TUPLE_4D)
+
+        assert_that(calling(transform_.__call__).with_args((nd_array, nd_array)), raises(TypeError))
+
+    def test_should_pass_when_passing_3D_ndarray(self):
+        nd_array = np.random.randint(0, 1000, size=(1, 32, 32))
+
+        ToPNGFile(self.PNG_FILE_3D).__call__(nd_array)
+
+        assert_that(os.path.exists(os.path.join(self.OUTPUT_DATA_FOLDER_PATH, self.PNG_FILE_3D)))
+
+    def test_should_pass_when_passing_2D_ndarray(self):
+        nd_array = np.random.randint(0, 1000, size=(32, 32))
+
+        ToPNGFile(self.PNG_FILE_2D).__call__(nd_array)
+
+        assert_that(os.path.exists(os.path.join(self.OUTPUT_DATA_FOLDER_PATH, self.PNG_FILE_2D)))
+
+    def test_should_pass_when_passing_tuple_2D_nd_array(self):
+
+        nd_array = np.random.randint(0, 1000, size=(32, 32))
+
+        ToPNGFile(self.PNG_TUPLE_2D).__call__((nd_array, nd_array))
+
+        for file_name in self.PNG_TUPLE_2D:
+            assert_that(os.path.exists(os.path.join(self.OUTPUT_DATA_FOLDER_PATH, file_name)))
+
+    def test_should_pass_when_passing_tuple_3D_nd_array(self):
+
+        nd_array = np.random.randint(0, 1000, size=(1, 32, 32))
+
+        ToPNGFile(self.PNG_TUPLE_3D).__call__((nd_array, nd_array))
+
+        for file_name in self.PNG_TUPLE_3D:
+            assert_that(os.path.exists(os.path.join(self.OUTPUT_DATA_FOLDER_PATH, file_name)))
