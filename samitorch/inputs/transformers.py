@@ -40,7 +40,7 @@ class ToNDTensor(object):
     """
 
     # noinspection PyArgumentList
-    def __call__(self, nd_array: np.ndarray):
+    def __call__(self, nd_array: np.ndarray) -> torch.Tensor:
         """
         Args:
             nd_array (:obj:`Numpy.ndarray`):  A 3D or 4D numpy array to convert to torch.Tensor
@@ -72,7 +72,7 @@ class ToNumpyArray(object):
     The Numpy array is transposed to respect the standard dimensions (DxHxW) for 3D or (CxDxHxW) for 4D arrays.
     """
 
-    def __call__(self, image_path: str):
+    def __call__(self, image_path: str) -> np.ndarray:
         if not os.path.exists(image_path):
             raise FileNotFoundError("Provided image path is not valid.")
 
@@ -102,13 +102,13 @@ class ToNrrdFile(object):
     The numpy arrays are transposed to respect the standard NRRD dimensions (WxHxDxC)
     """
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str) -> None:
         if not os.path.exists(file_path):
             raise FileNotFoundError("Provided NRRD file path is not valid.")
 
         self._file_path = file_path
 
-    def __call__(self, nd_array: np.ndarray):
+    def __call__(self, nd_array: np.ndarray) -> None:
         if not isinstance(nd_array, np.ndarray) or (nd_array.ndim not in [3, 4]):
             raise TypeError("Only 3D (DxHxW) or 4D (CxDxHxW) {} are supported".format(np.ndarray))
 
@@ -119,7 +119,7 @@ class ToNrrdFile(object):
         return self.__class__.__name__ + '()'
 
     @staticmethod
-    def _create_header_from(nd_array: np.ndarray):
+    def _create_header_from(nd_array: np.ndarray) -> dict:
         """
 
         Args:
@@ -147,7 +147,7 @@ class LoadNifti(object):
     Load a Nibabel Nifti Image from a given Nifti file path.
     """
 
-    def __call__(self, image_path: str):
+    def __call__(self, image_path: str) -> None:
         if not os.path.exists(image_path):
             raise FileNotFoundError("Provided image path is not valid.")
 
@@ -167,7 +167,7 @@ class NiftiImageToNumpy(object):
     The Numpy array is transposed to respect the standard dimensions (DxHxW) for 3D or (CxDxHxW) for 4D arrays.
     """
 
-    def __call__(self, nifti_image):
+    def __call__(self, nifti_image) -> np.ndarray:
         if isinstance(nifti_image, nib.Nifti1Image) or isinstance(nifti_image, nib.Nifti2Image):
             nd_array = nifti_image.get_fdata().__array__()
         else:
@@ -189,12 +189,12 @@ class ResampleNiftiImgToTemplate(object):
     Resamples a Nifti Image to a template file using Nilearn.image.resampling module.
     """
 
-    def __init__(self, template: str, interpolation: str, clip: bool):
+    def __init__(self, template: str, interpolation: str, clip: bool) -> None:
         self._template = template
         self._interpolation = interpolation
         self._clip = clip
 
-    def __call__(self, nifti_image: nib.Nifti1Image):
+    def __call__(self, nifti_image: nib.Nifti1Image) -> nib.Nifti1Image:
         return resample_to_img(nifti_image, nib.load(self._template), interpolation=self._interpolation,
                                clip=self._clip)
 
@@ -207,7 +207,7 @@ class ApplyMaskToNiftiImage(object):
     Apply a mask by a given mask/label/ROI image file.
     """
 
-    def __init__(self, mask_path: str):
+    def __init__(self, mask_path: str) -> None:
         if not os.path.exists(mask_path):
             raise FileNotFoundError("Provided image path is not valid.")
 
@@ -222,7 +222,7 @@ class ApplyMaskToNiftiImage(object):
         mask[mask >= 1] = 1
         self._mask = mask
 
-    def __call__(self, nifti_image):
+    def __call__(self, nifti_image) -> nib.Nifti1Image:
         if isinstance(nifti_image, nib.Nifti1Image) or isinstance(nifti_image, nib.Nifti2Image):
             nd_array = nifti_image.get_fdata().__array__()
             header = nifti_image.header
@@ -242,7 +242,7 @@ class ApplyMaskToTensor(object):
     The mask is transposed to respect the standard dimensions (DxHxW) for 3D or (CxDxHxW) for 4D arrays.
     """
 
-    def __init__(self, mask_path: str):
+    def __init__(self, mask_path: str) -> None:
         if not os.path.exists(mask_path):
             raise FileNotFoundError("Provided image path is not valid.")
 
@@ -262,7 +262,7 @@ class ApplyMaskToTensor(object):
         nd_array[nd_array >= 1] = 1
         self._mask = nd_array
 
-    def __call__(self, nd_array: np.ndarray):
+    def __call__(self, nd_array: np.ndarray) -> np.ndarray:
         return np.multiply(nd_array, self._mask)
 
     def __repr__(self):
@@ -294,7 +294,7 @@ class RemapClassIDs(object):
         self._initial_ids = initial_ids
         self._new_ids = final_ids
 
-    def __call__(self, nd_array: np.ndarray):
+    def __call__(self, nd_array: np.ndarray) -> np.ndarray:
         new_nd_array = nd_array.copy()
 
         indexes = [np.where(nd_array == class_id) for class_id in self._initial_ids]
