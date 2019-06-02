@@ -435,16 +435,27 @@ class ToNifti1Image(object):
             self._header = header
 
     def __call__(self, nd_array: Union[np.ndarray, tuple]) -> Union[nib.Nifti1Image, tuple]:
+        if isinstance(nd_array, tuple):
+            for array in nd_array:
+                if not isinstance(array, np.ndarray) or (array.ndim not in [3, 4]):
+                    raise TypeError("Only 3D (DxHxW) or 4D (CxDxHxW) ndarrays are supported")
 
-        if isinstance(nd_array, tuple) and isinstance(self._header, list):
-            return (nib.Nifti1Image(nd_array[0].transpose((3, 2, 1, 0)), None, self._header[0]),
-                    nib.Nifti1Image(nd_array[1].transpose((3, 2, 1, 0)), None, self._header[1]))
+            if self._header is not None and isinstance(self._header, list):
+                return (nib.Nifti1Image(nd_array[0].transpose((3, 2, 1, 0)), None, self._header[0]),
+                        nib.Nifti1Image(nd_array[1].transpose((3, 2, 1, 0)), None, self._header[1]))
+            else:
+                return (nib.Nifti1Image(nd_array[0].transpose((3, 2, 1, 0)), None),
+                        nib.Nifti1Image(nd_array[1].transpose((3, 2, 1, 0)), None))
 
-        elif isinstance(nd_array, np.ndarray) and isinstance(self._header, nib.Nifti1Header):
+        elif isinstance(nd_array, np.ndarray):
             if not isinstance(nd_array, np.ndarray) or (nd_array.ndim not in [3, 4]):
                 raise TypeError("Only 3D (DxHxW) or 4D (CxDxHxW) ndarrays are supported")
 
-            return nib.Nifti1Image(nd_array.transpose((3, 2, 1, 0)), None, self._header)
+            if isinstance(self._header, nib.Nifti1Header):
+                return nib.Nifti1Image(nd_array.transpose((3, 2, 1, 0)), None, self._header)
+
+            else:
+                return nib.Nifti1Image(nd_array.transpose((3, 2, 1, 0)), None)
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
