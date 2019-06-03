@@ -22,11 +22,12 @@ import torch
 import os
 import cv2
 
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple, Union, List
 
 from nilearn.image.resampling import resample_to_img
 
 from samitorch.inputs.images import ImageType, Image
+from samitorch.inputs.sample import Sample
 
 
 class ToNDTensor(object):
@@ -40,26 +41,39 @@ class ToNDTensor(object):
     """
 
     # noinspection PyArgumentList
-    def __call__(self, nd_array: np.ndarray) -> torch.Tensor:
+    def __call__(self, sample: Sample) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Args:
-            nd_array (:obj:`Numpy.ndarray`):  A 3D or 4D numpy array to convert to torch.Tensor
+           sample (:obj:`samitorch.inputs.sample.Sample`): A Sample object containing Numpy ndarray as `x`.
 
         Returns:
-            :obj:`torch.Tensor`: A torch.Tensor of size (DxHxW) or (CxDxHxW)
+            Tuple[:obj:`torch.Tensor`]: A Tuple containing two torch.Tensor of size (DxHxW) or (CxDxHxW)
         """
+        transformed_sample = Sample.from_sample(sample)
 
-        if not isinstance(nd_array, np.ndarray):
-            raise TypeError("Only {} are supporter".format(np.ndarray))
+        if not isinstance(sample.x, np.ndarray):
+            raise TypeError("Only {} are supported.".format(np.ndarray))
 
-        if nd_array.ndim == 3:
-            nd_tensor = torch.Tensor(nd_array.reshape(nd_array.shape + (1,)).transpose((3, 2, 1, 0)))
-        elif nd_array.ndim == 4:
-            nd_tensor = torch.Tensor(nd_array.transpose((3, 2, 1, 0)))
+        if sample.x.ndim == 3:
+            transformed_sample.x = torch.Tensor(sample.x.reshape(sample.x.shape + (1,)).transpose((3, 2, 1, 0)))
+        elif sample.x.ndim == 4:
+            transformed_sample.x = torch.Tensor(sample.x.transpose((3, 2, 1, 0)))
         else:
             raise NotImplementedError("Only 3D or 4D arrays are supported.")
 
-        return nd_tensor
+        if sample.is_labeled:
+            if not isinstance(sample.y, np.ndarray):
+                raise TypeError("Only {} are supported.".format(np.ndarray))
+            if sample.y.ndim == 1:
+                transformed_sample.y = torch.Tensor(sample.y)
+            elif sample.y.ndim == 3:
+                transformed_sample.y = torch.Tensor(sample.y.reshape(sample.x.shape + (1,)).transpose((3, 2, 1, 0)))
+            elif sample.y.ndim == 4:
+                transformed_sample.y = torch.Tensor(sample.y.transpose((3, 2, 1, 0)))
+            else:
+                raise NotImplementedError("Only 3D or 4D arrays are supported.")
+
+        return sample.update(transformed_sample).unpack()
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
@@ -67,29 +81,52 @@ class ToNDTensor(object):
 
 class ToNumpyArray(object):
     """
-    Creates a Numpy ndarray from a given Nifti or NRRD image file path.
+    Creates a Numpy ndarray from a given a Sample containing at least one file path as X property.
 
     The Numpy array is transposed to respect the standard dimensions (DxHxW) for 3D or (CxDxHxW) for 4D arrays.
     """
 
-    def __call__(self, image_path: str) -> np.ndarray:
-        if not os.path.exists(image_path):
+    def __call__(self, sample: Sample) -> Sample:
+        """
+        Returns a new Sample with updated `x` property and `y` property if labeled.
+
+        Args:
+            sample (:obj:`samitorch.inputs.sample.Sample`): A Sample object.
+
+        Returns:
+            :obj:`samitorch.inputs.sample.Sample`): An updated Sample object.
+        """
+        transformed_sample = Sample.from_sample(sample)
+
+        if not os.path.exists(sample.x) and not os.path.exists(sample.y):
             raise FileNotFoundError("Provided image path is not valid.")
 
-        if Image.is_nifti(image_path):
-            nd_array = nib.load(image_path).get_fdata().__array__()
-        elif Image.is_nrrd(image_path):
-            nd_array, header = nrrd.read(image_path)
+        if Image.is_nifti(sample.x):
+            x = nib.load(sample.y).get_fdata().__array__()
+        elif Image.is_nrrd(sample.x):
+            x, header = nrrd.read(sample.x)
         else:
             raise NotImplementedError(
-                "Only {} files are supported but got {}".format(ImageType.ALL, os.path.splitext(image_path)[1]))
+                "Only {} files are supported but got {}".format(ImageType.ALL, os.path.splitext(sample.x)[1]))
 
-        if nd_array.ndim == 3:
-            nd_array = np.expand_dims(nd_array, 3).transpose((3, 2, 1, 0))
-        elif nd_array.ndim == 4:
-            nd_array = nd_array.transpose((3, 2, 1, 0))
+        if x.ndim == 3:
+            x = np.expand_dims(x, 3).transpose((3, 2, 1, 0))
+        elif x.ndim == 4:
+            x = x.transpose((3, 2, 1, 0))
 
-        return nd_array
+        transformed_sample.x = x
+
+        if sample.is_labeled:
+            if Image.is_nifti(sample.y):
+                y = nib.load(sample.y).get_fdata().__array__()
+            elif Image.is_nrrd(sample.y):
+                y, header = nrrd.read(sample.y)
+            else:
+                raise NotImplementedError(
+                    "Only Nifti, NRRD or integer types are supported but got {}".format(type(sample.y)))
+            transformed_sample.y = y
+
+        return sample.update(transformed_sample)
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
@@ -102,18 +139,19 @@ class ToNrrdFile(object):
     The numpy arrays are transposed to respect the standard NRRD dimensions (WxHxDxC)
     """
 
-    def __init__(self, file_path: str) -> None:
-        if not os.path.exists(file_path):
-            raise FileNotFoundError("Provided NRRD file path is not valid.")
-
+    def __init__(self, file_path: list) -> None:
         self._file_path = file_path
 
-    def __call__(self, nd_array: np.ndarray) -> None:
-        if not isinstance(nd_array, np.ndarray) or (nd_array.ndim not in [3, 4]):
-            raise TypeError("Only 3D (DxHxW) or 4D (CxDxHxW) {} are supported".format(np.ndarray))
+    def __call__(self, sample: Sample) -> None:
+        if not isinstance(sample.x, np.ndarray) or (sample.x.ndim not in [3, 4]):
+            raise TypeError("Only 3D (DxHxW) or 4D (CxDxHxW) {} are supported.".format(np.ndarray))
 
-        header = self._create_header_from(nd_array)
-        nrrd.write(self._file_path, nd_array.transpose((3, 2, 1, 0)), header=header)
+        header = self._create_header_from(sample.x)
+        nrrd.write(self._file_path[0], sample.x.transpose((3, 2, 1, 0)), header=header)
+
+        if sample.is_labeled:
+            header = self._create_header_from(sample.y)
+            nrrd.write(self._file_path[1], sample.y.transpose((3, 2, 1, 0)), header=header)
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
