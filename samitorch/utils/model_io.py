@@ -23,12 +23,12 @@ from collections import OrderedDict
 logger = logging.getLogger(__name__)
 
 
-def save(file_name: str, model=None, epoch_num=None, optimizers={}, **kwargs):
+def save(file_name: str, model: torch.nn.Module = None, epoch_num: int = None, optimizers: dict = {}, **kwargs):
     """Save a checkpoint.
 
     Args:
-        file_name (str): the file name to save a PyTorch model checkpoint.
-        model (:class: `torch.nn.Module`): A PyTorch model.
+        file_name (str): The file name to save a PyTorch model checkpoint.
+        model (:obj:`torch.nn.Module`): A PyTorch model.
         epoch_num (int): Current epoch number.
         optimizers (dict): dictionary containing all optimizers
     """
