@@ -21,6 +21,7 @@ import numpy as np
 from samitorch.factories.parsers import ConfigurationParserFactory
 from samitorch.models.unet3d import UNet3D, SingleConv, DoubleConv, Encoder, Decoder
 from tests.models.model_helper_test import TestModelHelper
+from samitorch.models.enums import UNetModels, ActivationLayers
 
 from samitorch.factories.models import ModelFactory
 
@@ -40,7 +41,7 @@ class Unet3DTest(unittest.TestCase):
         assert isinstance(model, UNet3D)
 
     def test_model_should_update_vars(self):
-        model = self.factory.get_model("unet3d", self.config)
+        model = self.factory.create_model(UNetModels.UNet3D, self.config)
         helper = TestModelHelper(model, torch.nn.BCEWithLogitsLoss(),
                                  torch.optim.SGD(model.parameters(), lr=0.01))
         helper.assert_vars_change((self.input, self.y))
@@ -49,7 +50,7 @@ class Unet3DTest(unittest.TestCase):
 
     def test_model_output_should_have_same_dimensions_than_input(self):
         input_dim = np.array(list(self.input.size()))
-        model = self.factory.get_model("unet3d", self.config)
+        model = self.factory.create_model(UNetModels.UNet3D, self.config)
         output = model.forward(self.input)
         output_dim = np.array(list(output.size()))
         np.testing.assert_array_equal(input_dim, output_dim)
@@ -69,8 +70,8 @@ class UNet3DModulesTest(unittest.TestCase):
         self.kernel_size = 3
         self.num_groups = 8
         self.padding = (1, 1, 1, 1, 1, 1)
-        self.relu_activation = "ReLU"
-        self.leaky_relu_activation = "LeakyReLU"
+        self.relu_activation = ActivationLayers.ReLU
+        self.leaky_relu_activation = ActivationLayers.LeakyReLU
 
     def test_single_conv_with_padding_should_give_correct_dimensions(self):
         block = SingleConv(self.in_channels, self.out_channels, self.kernel_size, self.num_groups, self.padding,
@@ -113,7 +114,7 @@ class UNet3DModulesTest(unittest.TestCase):
 
     def test_encoder_should_give_correct_pooling(self):
         encoder = Encoder(self.in_channels, self.out_channels, DoubleConv, self.config)
-        assert hasattr(encoder, "pooling")
+        assert hasattr(encoder, "_pooling")
         assert isinstance(encoder._pooling, torch.nn.MaxPool3d)
 
     def test_encoder_should_give_correct_dimension(self):
@@ -123,5 +124,5 @@ class UNet3DModulesTest(unittest.TestCase):
 
     def test_decoder_should_use_upsampling(self):
         decoder = Decoder(self.out_channels, self.in_channels, DoubleConv, self.config)
-        assert hasattr(decoder, "upsample")
+        assert hasattr(decoder, "_upsample")
         assert decoder._upsample is None

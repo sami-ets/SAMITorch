@@ -23,7 +23,7 @@ from hamcrest import *
 
 from samitorch.factories.layers import PaddingLayerFactory, ActivationLayerFactory, PoolingLayerFactory, \
     NormalizationLayerFactory
-from samitorch.models.types import ActivationLayers, PoolingLayers, PaddingLayers, NormalizationLayers
+from samitorch.models.enums import ActivationLayers, PoolingLayers, PaddingLayers, NormalizationLayers
 
 
 class IncorrectLayers(Enum):
@@ -45,10 +45,10 @@ class PaddingFactoryTest(unittest.TestCase):
         padding_layer = self.factory.create_layer(self.CORRECT_PADDING_STRATEGY, dims=(1, 1, 1, 1, 1, 1))
         assert_that(padding_layer, instance_of(torch.nn.ReplicationPad3d))
 
-    def test_should_raise_value_error_exception_with_unknown_padding_strategy(self):
+    def test_should_raise_key_error_exception_with_unknown_padding_strategy(self):
         assert_that(
             calling(self.factory.create_layer).with_args(self.INCORRECT_PADDING_STRATEGY, dims=(1, 1, 1, 1, 1, 1)),
-            raises(ValueError))
+            raises(KeyError))
 
     def test_registering_new_padding_strategy_should_append_to_supported_strategies(self):
         new_padding_strategy = "ReplicationPad1d"
@@ -71,10 +71,10 @@ class ActivationFunctionFactory(unittest.TestCase):
         activation_function = self.factory.create_layer(self.CORRECT_ACTIVATION_FUNCTION, inplace=True)
         assert_that(activation_function, instance_of(torch.nn.ReLU))
 
-    def test_should_raise_value_error_exception_with_unknown_activation_function(self):
+    def test_should_raise_key_error_exception_with_unknown_activation_function(self):
         assert_that(
             calling(self.factory.create_layer).with_args(IncorrectLayers.Incorrect),
-            raises(ValueError))
+            raises(KeyError))
 
     def test_registering_new_activation_function_should_append_to_supported_function(self):
         new_activation_function = "ELU"
@@ -99,10 +99,10 @@ class PoolingFactoryTest(unittest.TestCase):
         pooling_layer = self.factory.create_layer(self.CORRECT_POOLING_STRATEGY, kernel_size=self.KERNEL_SIZE)
         assert_that(pooling_layer, instance_of(torch.nn.MaxPool3d))
 
-    def test_should_raise_value_error_exception_with_unknown_pooling_strategy(self):
+    def test_should_raise_key_error_exception_with_unknown_pooling_strategy(self):
         assert_that(
             calling(self.factory.create_layer).with_args(self.INCORRECT_POOLING_STRATEGY, kernel_size=self.KERNEL_SIZE),
-            raises(ValueError))
+            raises(KeyError))
 
     def test_should_instantiate_Conv3d_pooling_layer(self):
         pooling_layer = self.factory.create_layer(PoolingLayers.Conv3d, 2, 2, 16, 32)
@@ -143,10 +143,10 @@ class NormalizationFactoryTest(unittest.TestCase):
         assert_that(normalization_layer, instance_of(torch.nn.BatchNorm3d))
         assert_that(normalization_layer, has_property("num_features", 256))
 
-    def test_should_raise_value_error_exception_with_unknown_normalization_strategy(self):
+    def test_should_raise_key_error_exception_with_unknown_normalization_strategy(self):
         assert_that(
             calling(self.factory.create_layer).with_args(self.INCORRECT_NORM_LAYER, self.NUM_FEATURES),
-            raises(ValueError))
+            raises(KeyError))
 
     def test_registering_new_padding_strategy_should_append_to_supported_strategies(self):
         new_normalization_layer = "BatchNorm2d"

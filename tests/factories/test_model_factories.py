@@ -16,19 +16,27 @@
 
 import unittest
 
+from enum import Enum
+
 from hamcrest import *
 
 from samitorch.factories.models import ModelFactory
 
 from samitorch.factories.parsers import ConfigurationParserFactory
 
+from samitorch.models.enums import UNetModels, ResNetModels
+
+
+class IncorrectModels(Enum):
+    Incorrect = "Incorrect"
+
 
 class ModelFactoryTest(unittest.TestCase):
-    RESNET_MODEL = "resnet18"
+    RESNET_MODEL = ResNetModels.ResNet18
     RESNET_CONFIGURATION_PATH = "samitorch/configs/resnet3d.yaml"
-    UNET_MODEL = "unet3d"
+    UNET_MODEL = UNetModels.UNet3D
     UNET_CONFIGURATION_PATH = "samitorch/configs/unet3d.yaml"
-    UNKNOWN_MODEL = "unknown"
+    UNKNOWN_MODEL = IncorrectModels.Incorrect
     INVALID_CONFIG_PATH = "samitorch/configs/invalid.yaml"
 
     def setUp(self):
@@ -38,14 +46,14 @@ class ModelFactoryTest(unittest.TestCase):
         self.unet_config = self.configurationParserFactory.parse(self.UNET_CONFIGURATION_PATH)
 
     def test_should_instantiate_restnet_model(self):
-        model = self.model_factory.get_model(self.RESNET_MODEL, self.resnet_config)
+        model = self.model_factory.create_model(self.RESNET_MODEL, self.resnet_config)
         assert_that(model, is_not(None))
 
     def test_should_instantiate_unet_model(self):
-        model = self.model_factory.get_model(self.UNET_MODEL, self.unet_config)
+        model = self.model_factory.create_model(self.UNET_MODEL, self.unet_config)
         assert_that(model, is_not(None))
 
     def test_should_fail_with_unknown_model(self):
         model_factory = ModelFactory()
-        assert_that(calling(model_factory.get_model).with_args(self.UNKNOWN_MODEL, self.resnet_config),
+        assert_that(calling(model_factory.create_model).with_args(self.UNKNOWN_MODEL, self.resnet_config),
                     raises(ValueError))

@@ -20,6 +20,7 @@ import unittest
 from samitorch.factories.parsers import ConfigurationParserFactory
 from samitorch.models.resnet3d import ResNet3D
 from samitorch.factories.models import ModelFactory
+from samitorch.models.enums import ResNetModels
 
 from tests.models.model_helper_test import TestModelHelper
 
@@ -35,11 +36,11 @@ class ResNet3DTest(unittest.TestCase):
         self.y = torch.randint(low=0, high=2, size=(2, 1)).float()
 
     def test_model_should_be_created_with_config(self):
-        model = self.model_factory.get_model("resnet101", self.config)
+        model = self.model_factory.create_model(ResNetModels.ResNet101, self.config)
         assert isinstance(model, ResNet3D)
 
     def test_model_should_update_vars(self):
-        model = self.model_factory.get_model("resnet101", self.config)
+        model = self.model_factory.create_model(ResNetModels.ResNet101, self.config)
         helper = TestModelHelper(model, torch.nn.BCEWithLogitsLoss(),
                                  torch.optim.SGD(model.parameters(), lr=0.01))
         helper.assert_vars_change((self.input, self.y))

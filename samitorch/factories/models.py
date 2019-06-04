@@ -15,16 +15,21 @@
 # ==============================================================================
 
 import abc
+import torch
 
-from samitorch.models.resnet3d import resnet18, resnet34, resnet50, resnet101, resnet152
+from enum import Enum
+
+from samitorch.models.resnet3d import ResNet18, ResNet34, ResNet50, ResNet101, ResNet152
+
 from samitorch.models.unet3d import UNet3D
+
 from samitorch.configs.model_configurations import ModelConfiguration
 
 
 class AbstractModelFactory(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def get_model(self, name: str, config: ModelConfiguration):
+    def create_model(self, name: str, config: ModelConfiguration):
         pass
 
 
@@ -32,29 +37,30 @@ class ModelFactory(AbstractModelFactory):
     """
     Object to instantiate a model.
     """
+
     def __init__(self):
         self._models = {
-            'ResNet18': resnet18,
-            'ResNet34': resnet34,
-            'ResNet50': resnet50,
-            'ResNet101': resnet101,
-            'ResNet152': resnet152,
-            'UNet3d': UNet3D
+            'ResNet18': ResNet18,
+            'ResNet34': ResNet34,
+            'ResNet50': ResNet50,
+            'ResNet101': ResNet101,
+            'ResNet152': ResNet152,
+            'UNet3D': UNet3D
         }
 
-    def get_model(self, name: str, config: ModelConfiguration):
+    def create_model(self, model_name: Enum, config: ModelConfiguration) -> torch.nn.Module:
         """
         Instantiate a new support model.
 
         Args:
-            name (str): The model's name (e.g. 'unet3d').
+            model_name (str): The model's name (e.g. 'UNet3D').
             config (:obj:`samitorch.configs.model_configuration.ModelConfiguration): An object containing model's
                 parameters.
 
         Returns:
             :obj:`torch.nn.Module`: A PyTorch model.
         """
-        model = self._models.get(name)
+        model = self._models.get(model_name.name)
         if not model:
-            raise ValueError(name)
+            raise ValueError("Model {} is not supported.".format(model_name.name))
         return model(config)

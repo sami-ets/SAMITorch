@@ -20,6 +20,8 @@ from samitorch.configs.model_configurations import ModelConfiguration
 from samitorch.factories.layers import ActivationLayerFactory, PaddingLayerFactory, PoolingLayerFactory, \
     NormalizationLayerFactory
 
+from samitorch.models.enums import ActivationLayers, PoolingLayers, PaddingLayers, NormalizationLayers
+
 
 class UNet3D(torch.nn.Module):
     """
@@ -102,14 +104,14 @@ class SingleConv(torch.nn.Module):
     """
 
     def __init__(self, in_channels: int, out_channels: int, kernel_size: int = 3, num_groups: int = None,
-                 padding: tuple = None, activation: str = None):
+                 padding: tuple = None, activation: ActivationLayers = None):
         super(SingleConv, self).__init__()
         self._padding_factory = PaddingLayerFactory()
         self._activation_function_factory = ActivationLayerFactory()
         self._normalization_factory = NormalizationLayerFactory()
 
         if padding is not None:
-            self._padding = self._padding_factory.create_layer("ReplicationPad3d", padding)
+            self._padding = self._padding_factory.create_layer(PaddingLayers.ReplicationPad3d, padding)
             self._conv = torch.nn.Conv3d(in_channels, out_channels, kernel_size)
         else:
             self._padding = None
@@ -117,15 +119,15 @@ class SingleConv(torch.nn.Module):
 
         if num_groups is not None:
             assert isinstance(num_groups, int)
-            self._norm = self._normalization_factory.create_layer("GroupNorm", num_groups, out_channels)
+            self._norm = self._normalization_factory.create_layer(NormalizationLayers.GroupNorm, num_groups, out_channels)
         else:
-            self._norm = self._normalization_factory.create_layer("BatchNorm3d", out_channels)
+            self._norm = self._normalization_factory.create_layer(NormalizationLayers.BatchNorm3d, out_channels)
 
         if activation is not None:
             if activation == "PReLU":
                 self._activation = self._activation_function_factory.create_layer(activation)
             else:
-                self._activation = self._activation_function_factory.create_layer(activation, True)
+                self._activation = self._activation_function_factory.create_layer(activation, inplace=True)
         else:
             self._activation = None
 
@@ -168,7 +170,7 @@ class DoubleConv(torch.nn.Module):
     """
 
     def __init__(self, in_channels: int, out_channels: int, is_in_encoder: bool, kernel_size: int = 3,
-                 num_groups: int = 8, padding: tuple = None, activation: str = None):
+                 num_groups: int = 8, padding: tuple = None, activation: ActivationLayers = None):
         super(DoubleConv, self).__init__()
 
         if is_in_encoder:

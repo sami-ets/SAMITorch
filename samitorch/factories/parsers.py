@@ -25,22 +25,22 @@ class AbstractConfigurationParserFactory(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def parse(self, path: str):
-        pass
+        raise NotImplementedError
 
     @abc.abstractmethod
     def register(self, model_type: str, model_configuration_class: ModelConfiguration):
-        pass
+        raise NotImplementedError
 
 
 class ConfigurationParserFactory(AbstractConfigurationParserFactory):
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._supported_model_configuration = {
-            "unet3d": UNetModelConfiguration,
-            "resnet3d": ResNetModelConfiguration
+            "UNet3D": UNetModelConfiguration,
+            "ResNet3D": ResNetModelConfiguration
         }
 
-    def parse(self, path: str):
+    def parse(self, path: str) -> ModelConfiguration:
         """
         Parse a model configuration file.
 
@@ -55,16 +55,15 @@ class ConfigurationParserFactory(AbstractConfigurationParserFactory):
             try:
                 config = yaml.load(config_file, Loader=yaml.FullLoader)
                 model_type = config["model"]["type"]
-                try:
-                    model_configuration = self._supported_model_configuration.get(model_type)
-                    return model_configuration(config["model"])
-                except ValueError as e:
-                    logging.error("Model type {} not supported.".format(model_type, e))
+                model_configuration = self._supported_model_configuration.get(model_type)
+                return model_configuration(config["model"])
+            except ValueError as e:
+                logging.error("Model type {} not supported.".format(model_type, e))
             except yaml.YAMLError as e:
                 logging.error(
                     "Unable to read the training config file: {} with error {}".format(path, e))
 
-    def register(self, model_type: str, model_configuration_class: ModelConfiguration):
+    def register(self, model_type: str, model_configuration_class: ModelConfiguration) -> None:
         """
         Register a new type of model.
 

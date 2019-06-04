@@ -50,14 +50,14 @@ class Gauge(object):
 class RunningAverageGauge(Gauge):
     """A moving accuracy gauge."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Class constructor."""
         self.count = 0
         self.sum = 0
         self.average = 0
         super(RunningAverageGauge).__init__()
 
-    def update(self, value: float, n_data: int = 1):
+    def update(self, value: float, n_data: int = 1) -> None:
         """Update the moving average.
 
         Args:
@@ -68,7 +68,7 @@ class RunningAverageGauge(Gauge):
         self.sum += value * n_data
         self.average = self.sum / self.count
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset the moving average."""
         self.count = 0
         self.sum = 0

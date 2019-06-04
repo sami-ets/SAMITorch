@@ -16,12 +16,11 @@
 
 import abc
 
+from samitorch.models.enums import ActivationLayers, PoolingLayers
+
 
 class ModelConfiguration(metaclass=abc.ABCMeta):
-
-    @abc.abstractmethod
-    def __init__(self):
-        raise NotImplementedError
+    pass
 
 
 class UNetModelConfiguration(ModelConfiguration):
@@ -29,7 +28,7 @@ class UNetModelConfiguration(ModelConfiguration):
     Configuration properties for a UNet model.
     """
 
-    def __init__(self, config: dict):
+    def __init__(self, config: dict) -> None:
         """
         Instantiate a UnetModelConfiguration object regrouping every UNet3D model's hyper-parameters.
 
@@ -44,92 +43,92 @@ class UNetModelConfiguration(ModelConfiguration):
         self._num_levels = config["num_levels"]
         self._conv_kernel_size = config["conv_kernel_size"]
         self._pool_kernel_size = config["pool_kernel_size"]
-        self._pooling_type = config["pooling_type"]
+        self._pooling_type = PoolingLayers.from_string(config["pooling_type"])
         self._num_groups = config["num_groups"]
         self._padding = config["padding"]
-        self._activation = config["activation"]
+        self._activation = ActivationLayers.from_string(config["activation"])
         self._interpolation = config["interpolation"]
         self._scale_factor = config["scale_factor"]
 
     @property
-    def feature_maps(self):
+    def feature_maps(self) -> int:
         """
         int: Number of feature maps of first UNet level.
         """
         return self._feature_maps
 
     @property
-    def in_channels(self):
+    def in_channels(self) -> int:
         """
         int: Number of input channels (modality).
         """
         return self._in_channels
 
     @property
-    def out_channels(self):
+    def out_channels(self) -> int:
         """
         int: Number of output channels.
         """
         return self._out_channels
 
     @property
-    def num_levels(self):
+    def num_levels(self) -> int:
         """
         int: Number of levels in the UNet architecture.
         """
         return self._num_levels
 
     @property
-    def conv_kernel_size(self):
+    def conv_kernel_size(self) -> int:
         """
         int: The convolution kernel size as integer.
         """
         return self._conv_kernel_size
 
     @property
-    def pool_kernel_size(self):
+    def pool_kernel_size(self) -> int:
         """
         int: The pooling kernel size as integer.
         """
         return self._pool_kernel_size
 
     @property
-    def pooling_type(self):
+    def pooling_type(self) -> str:
         """
         str: The pooling type.
         """
         return self._pooling_type
 
     @property
-    def num_groups(self):
+    def num_groups(self) -> int:
         """
         int: The number of groups in group normalization.
         """
         return self._num_groups
 
     @property
-    def padding(self):
+    def padding(self) -> tuple:
         """
-        tuple: The padding size of each dimensions.
+        tuple: The padding size of each dimension.
         """
         return self._padding
 
     @property
-    def activation(self):
+    def activation(self) -> ActivationLayers:
         """
-        str: The activation function as a string.
+        :obj:`samitorch.models.enums.ActivationLayers`: The activation function as a string.
         """
         return self._activation
 
     @property
-    def interpolation(self):
+    def interpolation(self) -> bool:
         """
         bool: Whether the decoder is doing interpolation (True) or transposed convolution (False).
         """
         return self._interpolation
 
     @property
-    def scale_factor(self):
+    def scale_factor(self) -> tuple:
         """
         tuple: The scale factor (or stride in the transposed convolution) in the decoding path.
         """
@@ -141,14 +140,14 @@ class ResNetModelConfiguration(ModelConfiguration):
     Configuration properties for a ResNet model.
     """
 
-    def __init__(self, config: dict):
+    def __init__(self, config: dict) -> None:
         """
         Instantiate a ResNetModelConfiguration object regrouping every ResNet3D model's hyper-parameters.
 
         Args:
             config (dict): A dictionary containing model's hyper-parameters.
         """
-        super(ResNetModelConfiguration, self).__init__(config)
+        super(ResNetModelConfiguration, self).__init__()
 
         self._in_channels = config["in_channels"]
         self._out_channels = config["out_channels"]
@@ -156,61 +155,66 @@ class ResNetModelConfiguration(ModelConfiguration):
         self._conv_groups = config["conv_groups"]
         self._width_per_group = config["width_per_group"]
         self._padding = config["padding"]
-        self._activation = config["activation"]
+        self._activation = ActivationLayers.from_string(config["activation"])
         self._zero_init_residual = config["zero_init_residual"]
         self._replace_stride_with_dilation = config["replace_stride_with_dilation"]
 
     @property
-    def in_channels(self):
+    def in_channels(self) -> int:
         """
         int: Number of input channels (modality).
         """
         return self._in_channels
 
     @property
-    def out_channels(self):
+    def out_channels(self) -> int:
         """
         int: Number of output channels.
         """
         return self._out_channels
 
     @property
-    def num_groups(self):
+    def num_groups(self) -> int:
         """
         int: The number of groups in group normalization.
         """
         return self._num_groups
 
     @property
-    def conv_groups(self):
+    def conv_groups(self) -> int:
         """
-        int: The number of groups that control the connections between inputs and outputs.
+        int: The number of groups that control the connections between inputs and outputs convolutions.
         """
         return self._conv_groups
 
     @property
-    def width_per_group(self):
+    def width_per_group(self) -> int:
         """
-        int: The number of groups that control the connections between inputs and outputs.
+        int: The width of convolution groups.
+
+        Notes:
+            Variable used in the width calculation formula of ResNet convolutional groups:
+                `width = int(planes * (width_per_group / 64.)) * groups`
+            And then used in torch.nn.conv3d operations as in_channels and out_channels parameters.
         """
         return self._width_per_group
 
     @property
-    def padding(self):
+    def padding(self) -> tuple:
         """
         tuple: The padding size of each dimensions.
         """
         return self._padding
 
     @property
-    def activation(self):
+    def activation(self) -> ActivationLayers:
         """
-        str: The activation function as a string.
+        :obj:`samitorch.models.enums.ActivationLayers`: The activation function as a string.
         """
         return self._activation
 
     @property
-    def zero_init_residual(self):
+    def zero_init_residual(self) -> str:
         """
         bool:  Zero-initialize the last batch normalization layer in each residual branch.
         """

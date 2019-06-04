@@ -16,7 +16,7 @@
 
 import torch
 
-from samitorch.models.types import ActivationLayers, PaddingLayers, PoolingLayers, NormalizationLayers
+from samitorch.models.enums import ActivationLayers, PaddingLayers, PoolingLayers, NormalizationLayers
 from samitorch.factories.layers import ActivationLayerFactory, NormalizationLayerFactory
 from samitorch.configs.model_configurations import ModelConfiguration
 
@@ -339,7 +339,7 @@ class ResNet3D(torch.nn.Module):
         return x
 
 
-def _resnet(block, layers, config):
+def _ResNet(block, layers, config):
     """
     Construct the ResNet 3D network.
 
@@ -356,46 +356,46 @@ def _resnet(block, layers, config):
     return model
 
 
-def resnet18(config):
+def ResNet18(config):
     """Constructs a ResNet-18 model.
 
     Args:
         config (:obj:`samitorch.config.model.ModelConfiguration`): The network configuration.
     """
-    return _resnet(BasicBlock, [2, 2, 2, 2], config)
+    return _ResNet(BasicBlock, [2, 2, 2, 2], config)
 
 
-def resnet34(config):
+def ResNet34(config):
     """Constructs a ResNet-34 model.
 
     Args:
         config (:obj:`samitorch.config.model.ModelConfiguration`): The network configuration.
     """
-    return _resnet(BasicBlock, [3, 4, 6, 3], config)
+    return _ResNet(BasicBlock, [3, 4, 6, 3], config)
 
 
-def resnet50(config):
+def ResNet50(config):
     """Constructs a ResNet-50 model.
 
     Args:
         config (:obj:`samitorch.config.model.ModelConfiguration`): The network configuration.
     """
-    return _resnet(Bottleneck, [3, 4, 6, 3], config)
+    return _ResNet(Bottleneck, [3, 4, 6, 3], config)
 
 
-def resnet101(config):
+def ResNet101(config):
     """Constructs a ResNet-101 model.
 
     Args:
         config (:obj:`samitorch.config.model.ModelConfiguration`): The network configuration.
     """
-    return _resnet(Bottleneck, [3, 4, 23, 3], config)
+    return _ResNet(Bottleneck, [3, 4, 23, 3], config)
 
 
-def resnet152(config):
+def ResNet152(config):
     """Constructs a ResNet-152 model.
 
     Args:
         config (:obj:`samitorch.config.model.ModelConfiguration`): The network configuration.
     """
-    return _resnet(Bottleneck, [3, 8, 36, 3], config)
+    return _ResNet(Bottleneck, [3, 8, 36, 3], config)

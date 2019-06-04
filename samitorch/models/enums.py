@@ -23,9 +23,21 @@ class ActivationLayers(Enum):
     LeakyReLU = "LeakyReLU"
     PReLU = "PReLU"
 
+    @classmethod
+    def from_string(cls, name: str):
+        for member in cls:
+            if member.name == name:
+                return member
+
 
 class PaddingLayers(Enum):
     ReplicationPad3d = "ReplicatonPad3d"
+
+    @classmethod
+    def from_string(cls, name: str):
+        for member in cls:
+            if member.name == name:
+                return member
 
 
 class PoolingLayers(Enum):
@@ -33,14 +45,43 @@ class PoolingLayers(Enum):
     AvgPool3d = "AvgPool3d"
     Conv3d = "Conv3d"
 
+    @classmethod
+    def from_string(cls, name: str):
+        for member in cls:
+            if member.name == name:
+                return member
+
 
 class NormalizationLayers(Enum):
     GroupNorm = "GroupNorm"
     BatchNorm3d = "BatchNorm3d"
 
-class Models(Enum):
+    @classmethod
+    def from_string(cls, name: str):
+        for member in cls:
+            if member.name == name:
+                return member
+
+
+class ResNetModels(Enum):
     ResNet18 = "ResNet18"
     ResNet34 = "ResNet34"
     ResNet50 = "ResNet50"
     ResNet101 = "ResNet101"
     ResNet152 = "ResNet152"
+
+    @classmethod
+    def from_string(cls, name: str):
+        for member in cls:
+            if member.name == name:
+                return member
+
+
+class UNetModels(Enum):
+    UNet3D = "UNet3D"
+
+    @classmethod
+    def from_string(cls, name: str):
+        for member in cls:
+            if member.name == name:
+                return member
