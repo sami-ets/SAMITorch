@@ -16,7 +16,7 @@
 
 import abc
 
-from samitorch.models.enums import ActivationLayers, PoolingLayers
+from factories.enums import ActivationLayers, PoolingLayers
 
 
 class ModelConfiguration(metaclass=abc.ABCMeta):

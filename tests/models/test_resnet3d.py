@@ -20,7 +20,7 @@ import unittest
 from samitorch.factories.parsers import ConfigurationParserFactory
 from samitorch.models.resnet3d import ResNet3D
 from samitorch.factories.models import ModelFactory
-from samitorch.models.enums import ResNetModels
+from factories.enums import ResNetModels
 
 from tests.models.model_helper_test import TestModelHelper
 

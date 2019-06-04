@@ -21,7 +21,7 @@ import numpy as np
 from samitorch.factories.parsers import ConfigurationParserFactory
 from samitorch.models.unet3d import UNet3D, SingleConv, DoubleConv, Encoder, Decoder
 from tests.models.model_helper_test import TestModelHelper
-from samitorch.models.enums import UNetModels, ActivationLayers
+from factories.enums import UNetModels, ActivationLayers
 
 from samitorch.factories.models import ModelFactory
 
