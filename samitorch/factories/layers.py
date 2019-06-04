@@ -17,19 +17,21 @@
 import abc
 import torch
 
+from samitorch.models.types import ActivationLayers, PaddingLayers, PoolingLayers, NormalizationLayers
+
 
 class AbstractLayerFactory(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def get_layer(self, *args):
-        pass
+    def create_layer(self, *args):
+        raise NotImplementedError
 
     @abc.abstractmethod
     def register(self, function: str, creator: torch.nn.Module):
-        pass
+        raise NotImplementedError
 
 
-class ActivationFunctionsFactory(AbstractLayerFactory):
+class ActivationLayerFactory(AbstractLayerFactory):
     """
     Object to instantiate an activation layer.
     """
@@ -41,21 +43,21 @@ class ActivationFunctionsFactory(AbstractLayerFactory):
             'PReLU': torch.nn.PReLU
         }
 
-    def get_layer(self, function: str, *kwargs):
+    def create_layer(self, function: ActivationLayers, **kwargs):
         """
         Instantiate an activation layer based on its name.
 
         Args:
             function (str): The activation layer's name.
-            *kwargs: Optional keywords arguments for the respective activation function.
+            *args: Optional arguments for the respective activation function.
 
         Returns:
             :obj:`torch.nn.Module`: The activation layer.
         """
-        activation_function = self._activation_functions.get(function)
+        activation_function = self._activation_functions.get(function.name)
         if not activation_function:
-            raise ValueError(function)
-        return activation_function(*kwargs)
+            raise ValueError("Activation function {} not supported.".format(function))
+        return activation_function(**kwargs)
 
     def register(self, function: str, creator: torch.nn.Module):
         """
@@ -68,7 +70,7 @@ class ActivationFunctionsFactory(AbstractLayerFactory):
         self._activation_functions[function] = creator
 
 
-class PaddingFactory(AbstractLayerFactory):
+class PaddingLayerFactory(AbstractLayerFactory):
     """
     Object to instantiate a padding layer.
     """
@@ -78,21 +80,22 @@ class PaddingFactory(AbstractLayerFactory):
             "ReplicationPad3d": torch.nn.ReplicationPad3d
         }
 
-    def get_layer(self, strategy: str, dims: tuple):
+    def create_layer(self, strategy: PaddingLayers, dims: tuple, *args):
         """
         Instantiate a new padding layer.
 
         Args:
-            strategy (str): The padding strategy name.
+            strategy (:obj:samitorch.models.layers.PaddingLayers): The padding strategy.
             dims (tuple): The number of  where to apply padding.
+            *args: Optional arguments for the respective activation function.
 
         Returns:
             :obj:`torch.nn.Module`: The padding layer.
         """
-        padding = self._padding_strategies.get(strategy)
+        padding = self._padding_strategies.get(strategy.name)
         if not padding:
             raise ValueError(strategy)
-        return padding(dims)
+        return padding(dims, *args)
 
     def register(self, strategy: str, creator: torch.nn.Module):
         """
@@ -105,7 +108,7 @@ class PaddingFactory(AbstractLayerFactory):
         self._padding_strategies[strategy] = creator
 
 
-class PoolingFactory(AbstractLayerFactory):
+class PoolingLayerFactory(AbstractLayerFactory):
     """
     An object to instantiate pooling layers.
     """
@@ -117,7 +120,7 @@ class PoolingFactory(AbstractLayerFactory):
             "Conv3d": torch.nn.Conv3d
         }
 
-    def get_layer(self, strategy: str, kernel_size: int, stride: int = None, *kwargs):
+    def create_layer(self, strategy: PoolingLayers, kernel_size: int, stride: int = None, *args):
         """
         Instantiate a new pooling layer with mandatory parameters.
 
@@ -130,15 +133,15 @@ class PoolingFactory(AbstractLayerFactory):
         Returns:
             :obj:`torch.nn.Module`: The pooling layer.
         """
-        pooling = self._pooling_strategies.get(strategy)
+        pooling = self._pooling_strategies.get(strategy.name)
         if not pooling:
             raise ValueError(strategy)
 
-        if not "Conv3d" in strategy:
-            return pooling(kernel_size, stride)
+        if not "Conv3d" in strategy.name:
+            return pooling(kernel_size, stride, args)
 
         else:
-            return pooling(*kwargs, kernel_size, stride)
+            return pooling(*args, kernel_size, stride)
 
     def register(self, strategy: str, creator: torch.nn.Module):
         """
@@ -162,7 +165,7 @@ class NormalizationLayerFactory(AbstractLayerFactory):
             "BatchNorm3d": torch.nn.BatchNorm3d
         }
 
-    def get_layer(self, strategy: str, *kwargs):
+    def create_layer(self, strategy: NormalizationLayers, *args):
         """
         Instantiate a new normalization layer.
 
@@ -173,10 +176,10 @@ class NormalizationLayerFactory(AbstractLayerFactory):
         Returns:
 
         """
-        norm = self._normalization_strategies.get(strategy)
+        norm = self._normalization_strategies.get(strategy.name)
         if not norm:
             raise ValueError(strategy)
-        return norm(*kwargs)
+        return norm(*args)
 
     def register(self, strategy: str, creator: torch.nn.Module):
         """

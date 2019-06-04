@@ -34,12 +34,12 @@ class ModelFactory(AbstractModelFactory):
     """
     def __init__(self):
         self._models = {
-            'resnet18': resnet18,
-            'resnet34': resnet34,
-            'resnet50': resnet50,
-            'resnet101': resnet101,
-            'resnet152': resnet152,
-            'unet3d': UNet3D
+            'ResNet18': resnet18,
+            'ResNet34': resnet34,
+            'ResNet50': resnet50,
+            'ResNet101': resnet101,
+            'ResNet152': resnet152,
+            'UNet3d': UNet3D
         }
 
     def get_model(self, name: str, config: ModelConfiguration):

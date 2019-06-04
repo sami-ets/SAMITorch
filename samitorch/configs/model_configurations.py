@@ -20,8 +20,8 @@ import abc
 class ModelConfiguration(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def __init__(self, config: dict):
-        pass
+    def __init__(self):
+        raise NotImplementedError
 
 
 class UNetModelConfiguration(ModelConfiguration):
@@ -36,7 +36,7 @@ class UNetModelConfiguration(ModelConfiguration):
         Args:
             config (dict): A dictionary containing model's hyper-parameters.
         """
-        super(UNetModelConfiguration, self).__init__(config)
+        super(UNetModelConfiguration, self).__init__()
 
         self._feature_maps = config["feature_maps"]
         self._in_channels = config["in_channels"]

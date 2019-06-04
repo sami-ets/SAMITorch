@@ -87,23 +87,23 @@ class UNet3DModulesTest(unittest.TestCase):
     def test_single_conv_with_leaky_relu_should_give_correct_instance(self):
         block = SingleConv(self.in_channels, self.out_channels, self.kernel_size, self.num_groups, None,
                            self.leaky_relu_activation)
-        assert isinstance(block.activation, torch.nn.LeakyReLU)
+        assert isinstance(block._activation, torch.nn.LeakyReLU)
 
     def test_single_conv_with_relu_should_give_correct_instance(self):
         block = SingleConv(self.in_channels, self.out_channels, self.kernel_size, self.num_groups, None,
                            self.relu_activation)
-        assert isinstance(block.activation, torch.nn.ReLU)
+        assert isinstance(block._activation, torch.nn.ReLU)
 
     def test_single_conv_without_activation_should_instantiate_correctly(self):
         block = SingleConv(self.in_channels, self.out_channels, self.kernel_size, self.num_groups, self.padding,
                            None)
         assert block is not None
-        assert block.activation is None
+        assert block._activation is None
 
     def test_single_conv_without_group_norm_should_give_correct_instance(self):
         block = SingleConv(self.in_channels, self.out_channels, self.kernel_size, None, None,
                            self.relu_activation)
-        assert isinstance(block.norm, torch.nn.BatchNorm3d)
+        assert isinstance(block._norm, torch.nn.BatchNorm3d)
 
     def test_double_conv_should_give_correct_dimensions(self):
         block = DoubleConv(self.in_channels, self.out_channels, True, self.kernel_size, self.num_groups, self.padding,
@@ -114,7 +114,7 @@ class UNet3DModulesTest(unittest.TestCase):
     def test_encoder_should_give_correct_pooling(self):
         encoder = Encoder(self.in_channels, self.out_channels, DoubleConv, self.config)
         assert hasattr(encoder, "pooling")
-        assert isinstance(encoder.pooling, torch.nn.MaxPool3d)
+        assert isinstance(encoder._pooling, torch.nn.MaxPool3d)
 
     def test_encoder_should_give_correct_dimension(self):
         encoder = Encoder(self.in_channels, self.out_channels, DoubleConv, self.config)
@@ -124,4 +124,4 @@ class UNet3DModulesTest(unittest.TestCase):
     def test_decoder_should_use_upsampling(self):
         decoder = Decoder(self.out_channels, self.in_channels, DoubleConv, self.config)
         assert hasattr(decoder, "upsample")
-        assert decoder.upsample is None
+        assert decoder._upsample is None

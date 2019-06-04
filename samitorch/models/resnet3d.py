@@ -1,6 +1,23 @@
+# -*- coding: utf-8 -*-
+# Copyright 2019 SAMITorch Authors. All Rights Reserved.
+#
+# Licensed under the MIT License;
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://opensource.org/licenses/MIT
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 import torch
 
-from samitorch.factories.layers import ActivationFunctionsFactory, NormalizationLayerFactory
+from samitorch.models.types import ActivationLayers, PaddingLayers, PoolingLayers, NormalizationLayers
+from samitorch.factories.layers import ActivationLayerFactory, NormalizationLayerFactory
 from samitorch.configs.model_configurations import ModelConfiguration
 
 
@@ -60,48 +77,52 @@ class BasicBlock(torch.nn.Module):
             norm_num_groups (int): The number of groups for group normalization.
         """
         super(BasicBlock, self).__init__()
-        self._activation_layer_factory = ActivationFunctionsFactory()
+        self._activation_layer_factory = ActivationLayerFactory()
         self._normalization_layer_factory = NormalizationLayerFactory()
 
         if norm_num_groups is not None:
-            self.norm1 = self._normalization_layer_factory.get_layer("GroupNorm", norm_num_groups, out_planes)
-            self.norm2 = self._normalization_layer_factory.get_layer("GroupNorm", norm_num_groups, out_planes)
+            self._norm1 = self._normalization_layer_factory.create_layer(NormalizationLayers.GroupNorm,
+                                                                         norm_num_groups, out_planes)
+            self._norm2 = self._normalization_layer_factory.create_layer(NormalizationLayers.GroupNorm,
+                                                                         norm_num_groups, out_planes)
         else:
-            self.norm1 = self._normalization_layer_factory.get_layer("BatchNorm3d", out_planes)
-            self.norm2 = self._normalization_layer_factory.get_layer("BatchNorm3d", out_planes)
+            self._norm1 = self._normalization_layer_factory.create_layer(NormalizationLayers.BatchNormd3d,
+                                                                         out_planes)
+            self._norm2 = self._normalization_layer_factory.create_layer(NormalizationLayers.BatchNormd3d,
+                                                                         out_planes)
 
         if groups != 1 or base_width != 64:
             raise ValueError('BasicBlock only supports groups=1 and base_width=64')
         if dilation > 1:
             raise NotImplementedError("Dilation > 1 not supported in BasicBlock")
         # Both self.conv1 and self.downsample layers downsample the input when stride != 1
-        self.conv1 = conv3x3(in_planes, out_planes, stride)
+        self._conv1 = conv3x3(in_planes, out_planes, stride)
 
-        if activation == "PReLU":
-            self.activation = self._activation_layer_factory.get_layer(activation)
+        if activation == ActivationLayers.PReLU.name:
+            self._activation = self._activation_layer_factory.create_layer(ActivationLayers.PReLU)
         else:
-            self.activation = self._activation_layer_factory.get_layer(activation, True)
+            self._activation = self._activation_layer_factory.create_layer(ActivationLayers.ReLU, inplace=True)
 
-        self.conv2 = conv3x3(out_planes, out_planes)
+        self._conv2 = conv3x3(out_planes, out_planes)
 
-        self.downsample = downsample
-        self.stride = stride
+        self._downsample = downsample
+        self._stride = stride
 
     def forward(self, x):
         identity = x
 
-        out = self.conv1(x)
-        out = self.norm1(out)
-        out = self.activation(out)
+        out = self._conv1(x)
+        out = self._norm1(out)
+        out = self._activation(out)
 
-        out = self.conv2(out)
-        out = self.norm2(out)
+        out = self._conv2(out)
+        out = self._norm2(out)
 
-        if self.downsample is not None:
-            identity = self.downsample(x)
+        if self._downsample is not None:
+            identity = self._downsample(x)
 
         out += identity
-        out = self.activation(out)
+        out = self._activation(out)
 
         return out
 
@@ -130,55 +151,58 @@ class Bottleneck(torch.nn.Module):
         """
         super(Bottleneck, self).__init__()
 
-        self._activation_layer_factory = ActivationFunctionsFactory()
+        self._activation_layer_factory = ActivationLayerFactory()
         self._normalization_layer_factory = NormalizationLayerFactory()
 
         width = int(out_planes * (base_width / 64.)) * groups
         # Both self.conv2 and self.downsample layers downsample the input when stride != 1
 
         if norm_num_groups is not None:
-            self.norm1 = self._normalization_layer_factory.get_layer("GroupNorm", norm_num_groups, width)
-            self.norm2 = self._normalization_layer_factory.get_layer("GroupNorm", norm_num_groups, width)
-            self.norm3 = self._normalization_layer_factory.get_layer("GroupNorm", norm_num_groups,
-                                                                     out_planes * self.expansion)
+            self._norm1 = self._normalization_layer_factory.create_layer(NormalizationLayers.GroupNorm, norm_num_groups,
+                                                                         width)
+            self._norm2 = self._normalization_layer_factory.create_layer(NormalizationLayers.GroupNorm, norm_num_groups,
+                                                                         width)
+            self._norm3 = self._normalization_layer_factory.create_layer(NormalizationLayers.GroupNorm, norm_num_groups,
+                                                                         out_planes * self.expansion)
         else:
-            self.norm1 = self._normalization_layer_factory.get_layer("BatchNorm3d", width)
-            self.norm2 = self._normalization_layer_factory.get_layer("BatchNorm3d", width)
-            self.norm3 = self._normalization_layer_factory.get_layer("BatchNorm3d", out_planes * self.expansion)
+            self._norm1 = self._normalization_layer_factory.create_layer(NormalizationLayers.BatchNormd3d, width)
+            self._norm2 = self._normalization_layer_factory.create_layer(NormalizationLayers.BatchNormd3d, width)
+            self._norm3 = self._normalization_layer_factory.create_layer(NormalizationLayers.BatchNormd3d,
+                                                                         out_planes * self.expansion)
 
-        self.conv1 = conv1x1(in_planes, width)
+        self._conv1 = conv1x1(in_planes, width)
 
-        self.conv2 = conv3x3(width, width, stride, groups, dilation)
+        self._conv2 = conv3x3(width, width, stride, groups, dilation)
 
-        self.conv3 = conv1x1(width, out_planes * self.expansion)
+        self._conv3 = conv1x1(width, out_planes * self.expansion)
 
-        if activation == "PReLU":
-            self.activation = self._activation_layer_factory.get_layer(activation)
+        if activation == ActivationLayers.PReLU.name:
+            self._activation = self._activation_layer_factory.create_layer(ActivationLayers.PReLU)
         else:
-            self.activation = self._activation_layer_factory.get_layer(activation, True)
+            self._activation = self._activation_layer_factory.create_layer(ActivationLayers.ReLU, inplace=True)
 
-        self.downsample = downsample
-        self.stride = stride
+        self._downsample = downsample
+        self._stride = stride
 
     def forward(self, x):
         identity = x
 
-        out = self.conv1(x)
-        out = self.norm1(out)
-        out = self.activation(out)
+        out = self._conv1(x)
+        out = self._norm1(out)
+        out = self._activation(out)
 
-        out = self.conv2(out)
-        out = self.norm2(out)
-        out = self.activation(out)
+        out = self._conv2(out)
+        out = self._norm2(out)
+        out = self._activation(out)
 
-        out = self.conv3(out)
-        out = self.norm3(out)
+        out = self._conv3(out)
+        out = self._norm3(out)
 
-        if self.downsample is not None:
-            identity = self.downsample(x)
+        if self._downsample is not None:
+            identity = self._downsample(x)
 
         out += identity
-        out = self.activation(out)
+        out = self._activation(out)
 
         return out
 
@@ -198,23 +222,23 @@ class ResNet3D(torch.nn.Module):
             config:
         """
         super(ResNet3D, self).__init__()
-        self._activation_layer_factory = ActivationFunctionsFactory()
+        self._activation_layer_factory = ActivationLayerFactory()
 
         if config.num_groups is not None:
             norm_layer = torch.nn.GroupNorm
         else:
             norm_layer = torch.nn.BatchNorm3d
 
-        self.norm_layer = norm_layer
-        self.num_groups = config.num_groups
-        self.activation_fn = config.activation
-        self.groups = config.conv_groups
-        self.base_width = config.width_per_group
-        self.replace_stride_with_dilation = config.replace_stride_with_dilation
-        self.inplanes = 64
-        self.dilation = 1
+        self._norm_layer = norm_layer
+        self._num_groups = config.num_groups
+        self._activation_fn = config.activation
+        self._groups = config.conv_groups
+        self._base_width = config.width_per_group
+        self._replace_stride_with_dilation = config.replace_stride_with_dilation
+        self._inplanes = 64
+        self._dilation = 1
 
-        if self.replace_stride_with_dilation is None:
+        if self._replace_stride_with_dilation is None:
             # each element in the tuple indicates if we should replace
             # the 2x2 stride with a dilated convolution instead
             replace_stride_with_dilation = [False, False, False]
@@ -225,29 +249,29 @@ class ResNet3D(torch.nn.Module):
             raise ValueError("replace_stride_with_dilation should be None "
                              "or a 3-element tuple, got {}".format(config.replace_stride_with_dilation))
 
-        self.conv1 = torch.nn.Conv3d(config.in_channels, self.inplanes, kernel_size=7, stride=2, padding=3,
-                                     bias=False)
+        self._conv1 = torch.nn.Conv3d(config.in_channels, self._inplanes, kernel_size=7, stride=2, padding=3,
+                                      bias=False)
 
         if config.num_groups is not None:
-            self.norm1 = norm_layer(self.num_groups, self.inplanes)
+            self._norm1 = norm_layer(self._num_groups, self._inplanes)
         else:
-            self.norm1 = norm_layer(self.inplanes)
+            self._norm1 = norm_layer(self._inplanes)
 
-        if self.activation_fn == "PReLU":
-            self.activation = self._activation_layer_factory.get_layer(self.activation_fn)
+        if self._activation_fn == ActivationLayers.PReLU.name:
+            self._activation = self._activation_layer_factory.create_layer(self._activation_fn)
         else:
-            self.activation = self._activation_layer_factory.get_layer(self.activation_fn, True)
+            self._activation = self._activation_layer_factory.create_layer(self._activation_fn, inplace=True)
 
-        self.maxpool = torch.nn.MaxPool3d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(block, 64, n_blocks_per_layer[0])
-        self.layer2 = self._make_layer(block, 128, n_blocks_per_layer[1], stride=2,
-                                       dilate=replace_stride_with_dilation[0])
-        self.layer3 = self._make_layer(block, 256, n_blocks_per_layer[2], stride=2,
-                                       dilate=replace_stride_with_dilation[1])
-        self.layer4 = self._make_layer(block, 512, n_blocks_per_layer[3], stride=2,
-                                       dilate=replace_stride_with_dilation[2])
-        self.avgpool = torch.nn.AdaptiveAvgPool3d((1, 1, 1))
-        self.fc = torch.nn.Linear(512 * block.expansion, config.out_channels)
+        self._maxpool = torch.nn.MaxPool3d(kernel_size=3, stride=2, padding=1)
+        self._layer1 = self._make_layer(block, 64, n_blocks_per_layer[0])
+        self._layer2 = self._make_layer(block, 128, n_blocks_per_layer[1], stride=2,
+                                        dilate=replace_stride_with_dilation[0])
+        self._layer3 = self._make_layer(block, 256, n_blocks_per_layer[2], stride=2,
+                                        dilate=replace_stride_with_dilation[1])
+        self._layer4 = self._make_layer(block, 512, n_blocks_per_layer[3], stride=2,
+                                        dilate=replace_stride_with_dilation[2])
+        self._avgpool = torch.nn.AdaptiveAvgPool3d((1, 1, 1))
+        self._fc = torch.nn.Linear(512 * block.expansion, config.out_channels)
 
         for m in self.modules():
             if isinstance(m, torch.nn.Conv3d):
@@ -262,55 +286,55 @@ class ResNet3D(torch.nn.Module):
         if config.zero_init_residual:
             for m in self.modules():
                 if isinstance(m, Bottleneck):
-                    torch.nn.init.constant_(m.norm3.weight, 0)
+                    torch.nn.init.constant_(m._norm3.weight, 0)
                 elif isinstance(m, BasicBlock):
                     torch.nn.init.constant_(m.norm.weight, 0)
 
     def _make_layer(self, block, planes, blocks, stride=1, dilate=False):
-        norm_layer = self.norm_layer
-        num_groups = self.num_groups
+        norm_layer = self._norm_layer
+        num_groups = self._num_groups
         downsample = None
-        previous_dilation = self.dilation
+        previous_dilation = self._dilation
         if dilate:
-            self.dilation *= stride
+            self._dilation *= stride
             stride = 1
 
         if num_groups is not None:
-            if stride != 1 or self.inplanes != planes * block.expansion:
+            if stride != 1 or self._inplanes != planes * block.expansion:
                 downsample = torch.nn.Sequential(
-                    conv1x1(self.inplanes, planes * block.expansion, stride),
+                    conv1x1(self._inplanes, planes * block.expansion, stride),
                     norm_layer(num_groups, planes * block.expansion),
                 )
         else:
-            if stride != 1 or self.inplanes != planes * block.expansion:
+            if stride != 1 or self._inplanes != planes * block.expansion:
                 downsample = torch.nn.Sequential(
-                    conv1x1(self.inplanes, planes * block.expansion, stride),
+                    conv1x1(self._inplanes, planes * block.expansion, stride),
                     norm_layer(planes * block.expansion),
                 )
         layers = []
-        layers.append(block(self.inplanes, planes, stride, downsample, self.groups,
-                            self.base_width, previous_dilation, self.activation_fn, num_groups))
-        self.inplanes = planes * block.expansion
+        layers.append(block(self._inplanes, planes, stride, downsample, self._groups,
+                            self._base_width, previous_dilation, self._activation_fn, num_groups))
+        self._inplanes = planes * block.expansion
         for _ in range(1, blocks):
-            layers.append(block(self.inplanes, planes, groups=self.groups,
-                                base_width=self.base_width, dilation=self.dilation, activation=self.activation_fn))
+            layers.append(block(self._inplanes, planes, groups=self._groups,
+                                base_width=self._base_width, dilation=self._dilation, activation=self._activation_fn))
 
         return torch.nn.Sequential(*layers)
 
     def forward(self, x):
-        x = self.conv1(x)
-        x = self.norm1(x)
-        x = self.activation(x)
-        x = self.maxpool(x)
+        x = self._conv1(x)
+        x = self._norm1(x)
+        x = self._activation(x)
+        x = self._maxpool(x)
 
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-        x = self.layer4(x)
+        x = self._layer1(x)
+        x = self._layer2(x)
+        x = self._layer3(x)
+        x = self._layer4(x)
 
-        x = self.avgpool(x)
+        x = self._avgpool(x)
         x = x.reshape(x.size(0), -1)
-        x = self.fc(x)
+        x = self._fc(x)
 
         return x
 

@@ -17,7 +17,7 @@
 import torch
 
 from samitorch.configs.model_configurations import ModelConfiguration
-from samitorch.factories.layers import ActivationFunctionsFactory, PaddingFactory, PoolingFactory, \
+from samitorch.factories.layers import ActivationLayerFactory, PaddingLayerFactory, PoolingLayerFactory, \
     NormalizationLayerFactory
 
 
@@ -35,11 +35,11 @@ class UNet3D(torch.nn.Module):
 
         feature_maps = self._get_feature_maps(config.feature_maps, config.num_levels)
 
-        self.encoders = torch.nn.ModuleList(self._build_encoder(feature_maps, config))
+        self._encoders = torch.nn.ModuleList(self._build_encoder(feature_maps, config))
 
-        self.decoders = torch.nn.ModuleList(self._build_decoder(feature_maps, config))
+        self._decoders = torch.nn.ModuleList(self._build_decoder(feature_maps, config))
 
-        self.final_conv = torch.nn.Conv3d(feature_maps[0], config.out_channels, 1)
+        self._final_conv = torch.nn.Conv3d(feature_maps[0], config.out_channels, 1)
 
     @staticmethod
     def _get_feature_maps(starting_feature_maps, num_levels):
@@ -71,7 +71,7 @@ class UNet3D(torch.nn.Module):
 
     def forward(self, x):
         encoders_features = []
-        for encoder in self.encoders:
+        for encoder in self._encoders:
             x = encoder.forward(x)
             # reverse the encoder outputs to be aligned with the decoder
             encoders_features.insert(0, x)
@@ -79,10 +79,10 @@ class UNet3D(torch.nn.Module):
         # remove the last encoder's output from the list
         encoders_features = encoders_features[1:]
 
-        for decoder, encoder_features in zip(self.decoders, encoders_features):
+        for decoder, encoder_features in zip(self._decoders, encoders_features):
             x = decoder.forward(encoder_features, x)
 
-        x = self.final_conv(x)
+        x = self._final_conv(x)
 
         return x
 
@@ -104,30 +104,30 @@ class SingleConv(torch.nn.Module):
     def __init__(self, in_channels: int, out_channels: int, kernel_size: int = 3, num_groups: int = None,
                  padding: tuple = None, activation: str = None):
         super(SingleConv, self).__init__()
-        self._padding_factory = PaddingFactory()
-        self._activation_function_factory = ActivationFunctionsFactory()
+        self._padding_factory = PaddingLayerFactory()
+        self._activation_function_factory = ActivationLayerFactory()
         self._normalization_factory = NormalizationLayerFactory()
 
         if padding is not None:
-            self.padding = self._padding_factory.get_layer("ReplicationPad3d", padding)
-            self.conv = torch.nn.Conv3d(in_channels, out_channels, kernel_size)
+            self._padding = self._padding_factory.create_layer("ReplicationPad3d", padding)
+            self._conv = torch.nn.Conv3d(in_channels, out_channels, kernel_size)
         else:
-            self.padding = None
-            self.conv = torch.nn.Conv3d(in_channels, out_channels, kernel_size, padding=1)
+            self._padding = None
+            self._conv = torch.nn.Conv3d(in_channels, out_channels, kernel_size, padding=1)
 
         if num_groups is not None:
             assert isinstance(num_groups, int)
-            self.norm = self._normalization_factory.get_layer("GroupNorm", num_groups, out_channels)
+            self._norm = self._normalization_factory.create_layer("GroupNorm", num_groups, out_channels)
         else:
-            self.norm = self._normalization_factory.get_layer("BatchNorm3d", out_channels)
+            self._norm = self._normalization_factory.create_layer("BatchNorm3d", out_channels)
 
         if activation is not None:
             if activation == "PReLU":
-                self.activation = self._activation_function_factory.get_layer(activation)
+                self._activation = self._activation_function_factory.create_layer(activation)
             else:
-                self.activation = self._activation_function_factory.get_layer(activation, True)
+                self._activation = self._activation_function_factory.create_layer(activation, True)
         else:
-            self.activation = None
+            self._activation = None
 
     def forward(self, x):
         """
@@ -138,15 +138,15 @@ class SingleConv(torch.nn.Module):
          Returns:
              :obj:`torch.Tensor`: The transformed tensor.
          """
-        if self.padding is not None:
-            x = self.padding(x)
+        if self._padding is not None:
+            x = self._padding(x)
 
-        x = self.conv(x)
+        x = self._conv(x)
 
-        x = self.norm(x)
+        x = self._norm(x)
 
-        if self.activation is not None:
-            x = self.activation(x)
+        if self._activation is not None:
+            x = self._activation(x)
         return x
 
 
@@ -184,8 +184,8 @@ class DoubleConv(torch.nn.Module):
             conv1_in_channels, conv1_out_channels = in_channels, out_channels
             conv2_in_channels, conv2_out_channels = out_channels, out_channels
 
-        self.conv1 = SingleConv(conv1_in_channels, conv1_out_channels, kernel_size, num_groups, padding, activation)
-        self.conv2 = SingleConv(conv2_in_channels, conv2_out_channels, kernel_size, num_groups, padding, activation)
+        self._conv1 = SingleConv(conv1_in_channels, conv1_out_channels, kernel_size, num_groups, padding, activation)
+        self._conv2 = SingleConv(conv2_in_channels, conv2_out_channels, kernel_size, num_groups, padding, activation)
 
     def forward(self, x):
         """
@@ -196,8 +196,8 @@ class DoubleConv(torch.nn.Module):
         Returns:
             :obj:`torch.Tensor`: The transformed tensor.
         """
-        x = self.conv1.forward(x)
-        x = self.conv2.forward(x)
+        x = self._conv1.forward(x)
+        x = self._conv2.forward(x)
         return x
 
 
@@ -216,19 +216,19 @@ class Encoder(torch.nn.Module):
     def __init__(self, in_channels: int, out_channels: int, basic_module: torch.nn.Module,
                  config: ModelConfiguration, apply_pooling: bool = True):
         super(Encoder, self).__init__()
-        self._pooling_factory = PoolingFactory()
+        self._pooling_factory = PoolingLayerFactory()
 
         if apply_pooling:
-            self.pooling = self._pooling_factory.get_layer(config.pooling_type, config.pool_kernel_size)
+            self._pooling = self._pooling_factory.create_layer(config.pooling_type, config.pool_kernel_size)
         else:
-            self.pooling = None
+            self._pooling = None
 
-        self.basic_module = basic_module(in_channels, out_channels,
-                                         is_in_encoder=True,
-                                         kernel_size=config.conv_kernel_size,
-                                         num_groups=config.num_groups,
-                                         padding=config.padding,
-                                         activation=config.activation)
+        self._basic_module = basic_module(in_channels, out_channels,
+                                          is_in_encoder=True,
+                                          kernel_size=config.conv_kernel_size,
+                                          num_groups=config.num_groups,
+                                          padding=config.padding,
+                                          activation=config.activation)
 
     def forward(self, x):
         """
@@ -239,9 +239,9 @@ class Encoder(torch.nn.Module):
          Returns:
              :obj:`torch.Tensor`: The transformed tensor.
          """
-        if self.pooling is not None:
-            x = self.pooling.forward(x)
-        x = self.basic_module.forward(x)
+        if self._pooling is not None:
+            x = self._pooling.forward(x)
+        x = self._basic_module.forward(x)
         return x
 
 
@@ -262,27 +262,27 @@ class Decoder(torch.nn.Module):
         super(Decoder, self).__init__()
 
         if config.interpolation:
-            self.upsample = None
+            self._upsample = None
         else:
             # Otherwise use ConvTranspose3d (bear in mind your GPU memory)
             # make sure that the output size reverses the MaxPool3d from the corresponding encoder
             # (D_out = (D_in − 1) ×  stride[0] − 2 ×  padding[0] +  kernel_size[0] +  output_padding[0])
             # also scale the number of channels from in_channels to out_channels so that summation joining
             # works correctly
-            self.upsample = torch.nn.ConvTranspose3d(in_channels,
-                                                     out_channels,
-                                                     kernel_size=config.conv_kernel_size,
-                                                     stride=config.scale_factor,
-                                                     padding=torch.nn.ReplicationPad3d(config.padding),
-                                                     output_padding=1)
+            self._upsample = torch.nn.ConvTranspose3d(in_channels,
+                                                      out_channels,
+                                                      kernel_size=config.conv_kernel_size,
+                                                      stride=config.scale_factor,
+                                                      padding=torch.nn.ReplicationPad3d(config.padding),
+                                                      output_padding=1)
             # adapt the number of in_channels for the ExtResNetBlock
             in_channels = out_channels
-        self.basic_module = basic_module(in_channels, out_channels,
-                                         is_in_encoder=False,
-                                         kernel_size=config.conv_kernel_size,
-                                         num_groups=config.num_groups,
-                                         padding=config.padding,
-                                         activation=config.activation)
+        self._basic_module = basic_module(in_channels, out_channels,
+                                          is_in_encoder=False,
+                                          kernel_size=config.conv_kernel_size,
+                                          num_groups=config.num_groups,
+                                          padding=config.padding,
+                                          activation=config.activation)
 
     def forward(self, encoder_features, x):
         """
@@ -294,7 +294,7 @@ class Decoder(torch.nn.Module):
          Returns:
              :obj:`torch.Tensor`: The transformed tensor.
          """
-        if self.upsample is None:
+        if self._upsample is None:
             # use nearest neighbor interpolation and concatenation joining
             output_size = encoder_features.size()[2:]
             x = torch.nn.functional.interpolate(x, size=output_size, mode='nearest')
@@ -302,8 +302,8 @@ class Decoder(torch.nn.Module):
             x = torch.cat((encoder_features, x), dim=1)
         else:
             # use ConvTranspose3d and summation joining
-            x = self.upsample(x)
+            x = self._upsample(x)
             x += encoder_features
 
-        x = self.basic_module.forward(x)
+        x = self._basic_module.forward(x)
         return x
