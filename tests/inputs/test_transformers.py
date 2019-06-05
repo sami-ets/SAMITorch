@@ -674,7 +674,7 @@ class To2DNifti1ImageTest(unittest.TestCase):
     OUTPUT_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data/generated/To2DNifti1Image")
     NIFTI_2D_IMAGE_FROM_NDARRAY = os.path.join(OUTPUT_DATA_FOLDER_PATH, "2d_nifti_image_from_nd_array.nii")
     NIFTI_2D_IMAGE_FROM_SAMPLE = os.path.join(OUTPUT_DATA_FOLDER_PATH, "2d_nifti_image_from_sample.nii")
-    NIFTI_2D_LABEL_FROM_SAMPLE = os.path.join(OUTPUT_DATA_FOLDER_PATH, "2d_nifti_label_from_ndarray.nii")
+    NIFTI_2D_LABEL_FROM_SAMPLE = os.path.join(OUTPUT_DATA_FOLDER_PATH, "2d_nifti_label_from_sample.nii")
     ALL = [NIFTI_2D_IMAGE_FROM_NDARRAY, NIFTI_2D_IMAGE_FROM_SAMPLE, NIFTI_2D_LABEL_FROM_SAMPLE]
 
     @classmethod
@@ -732,9 +732,10 @@ class To2DNifti1ImageTest(unittest.TestCase):
         y = nib.load(self.VALID_MASK_FILE).get_fdata().__array__()
 
         sample = Sample(x=x, y=y, is_labeled=True)
-
-        transform_ = To2DNifti1Image([header_x, header_y])
+        transform_ = RandomCrop(64)
         transformed_sample = transform_(sample)
+        transform_ = To2DNifti1Image([header_x, header_y])
+        transformed_sample = transform_(transformed_sample)
 
         assert_that(transformed_sample.x, instance_of(nib.Nifti1Image))
         assert_that(transformed_sample.y, instance_of(nib.Nifti1Image))
