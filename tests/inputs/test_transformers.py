@@ -26,8 +26,8 @@ from hamcrest import *
 
 from samitorch.inputs.sample import Sample
 
-from samitorch.inputs.transformers import LoadNifti, ToNifti1Image, RemapClassIDs, ApplyMaskToNiftiImage, \
-    ApplyMaskToTensor, ToNumpyArray, RandomCrop, NiftiToDisk, To2DNifti1Image, ToPNGFile, RandomCrop3D, \
+from samitorch.inputs.transformers import LoadNifti, ToNifti1Image, RemapClassIDs, ApplyMask, \
+    ToNumpyArray, RandomCrop, NiftiToDisk, To2DNifti1Image, ToPNGFile, RandomCrop3D, \
     NiftiImageToNumpy, ResampleNiftiImageToTemplate
 
 
@@ -219,16 +219,12 @@ class ResampleNiftiImageToTemplateTest(unittest.TestCase):
         for element in all_files:
             if os.path.exists(element):
                 os.remove(element)
-            else:
-                print('File does not exists')
 
         if not os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH):
             os.makedirs(cls.OUTPUT_DATA_FOLDER_PATH)
 
         assert_that(len(os.listdir(cls.OUTPUT_DATA_FOLDER_PATH)), is_(0))
         assert_that(os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH), is_(True))
-
-        print("Files deleted.")
 
     def test_should_return_resampled_Nifti1Image_from_Nifti1Image(self):
         transform_ = ResampleNiftiImageToTemplate(interpolation="continuous",
@@ -404,16 +400,12 @@ class NiftiToDiskTest(unittest.TestCase):
         for element in all_files:
             if os.path.exists(element):
                 os.remove(element)
-            else:
-                print('File does not exists')
 
         if not os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH):
             os.makedirs(cls.OUTPUT_DATA_FOLDER_PATH)
 
         assert_that(len(os.listdir(cls.OUTPUT_DATA_FOLDER_PATH)), is_(0))
         assert_that(os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH), is_(True))
-
-        print("Files deleted.")
 
     def test_should_save_nifti_file_from_Nifti1Image(self):
         nifti_image = nib.load(self.VALID_3D_NIFTI_FILE)
@@ -447,15 +439,16 @@ class NiftiToDiskTest(unittest.TestCase):
         assert_that(calling(transform_).with_args(transformed_sample), raises(TypeError))
 
 
-class ApplyMaskToNiftiImageTest(unittest.TestCase):
+class ApplyMaskTest(unittest.TestCase):
     TEST_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data")
     OUTPUT_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data/generated/ApplyMaskToNiftiImage")
     VALID_MASK_FILE = os.path.join(TEST_DATA_FOLDER_PATH, "Mask.nii")
     INVALID_MASK_FILE = os.path.join(TEST_DATA_FOLDER_PATH, "invalid_mask.nii")
     VALID_3D_NIFTI_FILE = os.path.join(TEST_DATA_FOLDER_PATH, "T1.nii")
-    MASKED_FILE_FROM_SAMPLE = os.path.join(OUTPUT_DATA_FOLDER_PATH, "masked_file_from_sample.nii")
+    MASKED_T1_FILE_FROM_SAMPLE = os.path.join(OUTPUT_DATA_FOLDER_PATH, "masked_t1_file_from_sample.nii")
+    MASK_FILE_FROM_SAMPLE = os.path.join(OUTPUT_DATA_FOLDER_PATH, "mask.nii")
 
-    ALL = [MASKED_FILE_FROM_SAMPLE]
+    ALL = [MASKED_T1_FILE_FROM_SAMPLE, MASK_FILE_FROM_SAMPLE]
 
     @classmethod
     def _flatten(cls, l):
@@ -474,8 +467,6 @@ class ApplyMaskToNiftiImageTest(unittest.TestCase):
         for element in all_files:
             if os.path.exists(element):
                 os.remove(element)
-            else:
-                print('File does not exists')
 
         if not os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH):
             os.makedirs(cls.OUTPUT_DATA_FOLDER_PATH)
@@ -483,21 +474,34 @@ class ApplyMaskToNiftiImageTest(unittest.TestCase):
         assert_that(len(os.listdir(cls.OUTPUT_DATA_FOLDER_PATH)), is_(0))
         assert_that(os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH), is_(True))
 
-        print("Files deleted.")
+    def test_transformer_should_initialize_with_str(self):
+        transform_ = ApplyMask(self.VALID_MASK_FILE)
+        assert_that(transform_, is_not(None))
+        assert_that(transform_._mask, instance_of(np.ndarray))
+
+    def test_transformer_should_initialize_with_Nifti1Image(self):
+        transform_ = ApplyMask(nib.load(self.VALID_MASK_FILE))
+        assert_that(transform_, is_not(None))
+        assert_that(transform_._mask, instance_of(np.ndarray))
+
+    def test_transformer_should_initialize_with_Numpy_ndarray(self):
+        transform_ = ApplyMask(nib.load(self.VALID_MASK_FILE).get_fdata().__array__())
+        assert_that(transform_, is_not(None))
+        assert_that(transform_._mask, instance_of(np.ndarray))
 
     def test_should_initialize_mask_correctly(self):
-        transformer = ApplyMaskToNiftiImage(self.VALID_MASK_FILE)
+        transformer = ApplyMask(self.VALID_MASK_FILE)
         np.testing.assert_array_less(transformer._mask, 1.0 + 1e-10)
         assert_that(len(transformer._mask.shape), is_(3))
 
     def test_returned_image_should_be_Nifti1Image_type(self):
-        transformer = ApplyMaskToNiftiImage(self.VALID_MASK_FILE)
+        transformer = ApplyMask(self.VALID_MASK_FILE)
         nifti = nib.load(self.VALID_3D_NIFTI_FILE)
         transformed_nifti = transformer.__call__(nifti)
         assert_that(transformed_nifti, instance_of(nib.Nifti1Image))
 
     def test_should_return_image_with_same_shape_as_original(self):
-        transformer = ApplyMaskToNiftiImage(self.VALID_MASK_FILE)
+        transformer = ApplyMask(self.VALID_MASK_FILE)
         nifti = nib.load(self.VALID_3D_NIFTI_FILE)
         transformed_nifti = transformer.__call__(nifti)
         np.testing.assert_array_equal(transformed_nifti.shape, nifti.shape)
@@ -505,7 +509,7 @@ class ApplyMaskToNiftiImageTest(unittest.TestCase):
     def test_should_return_sample_with_masked_image(self):
         sample = Sample(x=self.VALID_3D_NIFTI_FILE, y=self.VALID_MASK_FILE, is_labeled=True)
         transformed_sample = LoadNifti().__call__(sample)
-        transformed_sample = ApplyMaskToNiftiImage().__call__(transformed_sample)
+        transformed_sample = ApplyMask().__call__(transformed_sample)
 
         assert_that(transformed_sample.x, instance_of(nib.Nifti1Image))
 
@@ -513,61 +517,81 @@ class ApplyMaskToNiftiImageTest(unittest.TestCase):
         sample = Sample(x=self.VALID_3D_NIFTI_FILE, y=self.VALID_MASK_FILE, is_labeled=True)
         transformed_sample = LoadNifti().__call__(sample)
         transformed_sample.y = "incorrect_input"
-        transform_ = ApplyMaskToNiftiImage()
+        transform_ = ApplyMask()
 
         assert_that(calling(transform_).with_args(transformed_sample), raises(TypeError))
 
     def test_should_raise_TypeError_exception_with_invalid_argument(self):
-        transform_ = ApplyMaskToNiftiImage()
+        transform_ = ApplyMask()
 
         assert_that(calling(transform_).with_args("invalid_argument"), raises(TypeError))
 
+    def test_should_return_sample_with_masked_image_for_inspection(self):
+        sample = Sample(x=self.VALID_3D_NIFTI_FILE, y=self.VALID_MASK_FILE, is_labeled=True)
+        transformed_sample = LoadNifti().__call__(sample)
+        transformed_sample = ApplyMask().__call__(transformed_sample)
 
-class ApplyMaskToNiftiTensor(unittest.TestCase):
-    TEST_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data")
-    VALID_MASK_FILE = os.path.join(TEST_DATA_FOLDER_PATH, "Mask.nii")
-    INVALID_MASK_FILE = os.path.join(TEST_DATA_FOLDER_PATH, "invalid_mask.nii")
-    VALID_3D_NIFTI_FILE = os.path.join(TEST_DATA_FOLDER_PATH, "T1.nii")
+        transform_ = NiftiToDisk([self.MASKED_T1_FILE_FROM_SAMPLE, self.MASK_FILE_FROM_SAMPLE])
+        transform_(transformed_sample)
 
-    def setUp(self):
-        pass
-
-    def test_should_initialize_mask_correctly(self):
-        transformer = ApplyMaskToTensor(self.VALID_MASK_FILE)
-        np.testing.assert_array_less(transformer._mask, 1.0 + 1e-10)
-        assert_that(len(transformer._mask.shape), is_(4))
-
-    def test_returned_image_should_be_ndarray_type(self):
-        transforms_ = transforms.Compose([ToNumpyArray(),
-                                          ApplyMaskToTensor(self.VALID_MASK_FILE)])
-        masked_nd_array = transforms_(self.VALID_3D_NIFTI_FILE)
-        assert_that(masked_nd_array, instance_of(np.ndarray))
-
-    def test_should_return_image_with_same_shape_as_original(self):
-        nd_array = ToNumpyArray().__call__(self.VALID_3D_NIFTI_FILE)
-        transforms_ = transforms.Compose([ToNumpyArray(),
-                                          ApplyMaskToTensor(self.VALID_MASK_FILE)])
-        masked_nd_array = transforms_(self.VALID_3D_NIFTI_FILE)
-        np.testing.assert_array_equal(masked_nd_array.shape, nd_array.shape)
+        assert_that(os.path.exists(self.MASKED_T1_FILE_FROM_SAMPLE))
+        assert_that(os.path.exists(self.MASK_FILE_FROM_SAMPLE))
 
     def test_should_raise_FileNotFoundError_exception_with_invalid_file(self):
-        assert_that(calling(ApplyMaskToTensor).with_args(self.INVALID_MASK_FILE), raises(FileNotFoundError))
+        assert_that(calling(ApplyMask).with_args(self.INVALID_MASK_FILE), raises(FileNotFoundError))
+
+    def test_should_raise_TypeError_exception_when_passing_invalid_x_sample(self):
+        sample = Sample(x="invalid", y=np.random.randint(0, 255, (32, 32)), is_labeled=True)
+        transform_ = ApplyMask()
+
+        assert_that(calling(transform_).with_args(sample), raises(TypeError))
+
+    def test_shoud_raise_TypeError_exception_with_invalid_argument(self):
+        transform_ = ApplyMask()
+
+        assert_that(calling(transform_).with_args("invalid"), raises(TypeError))
 
 
 class RemapClassIDsTest(unittest.TestCase):
     TEST_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data")
+    OUTPUT_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data/generated/RemapClassIDs")
     VALID_MASK_FILE = os.path.join(TEST_DATA_FOLDER_PATH, "Mask.nii")
+    VALID_3D_NIFTI_FILE = os.path.join(TEST_DATA_FOLDER_PATH, "T1.nii")
+    REMAPPED_LABELS_FROM_SAMPLE = os.path.join(OUTPUT_DATA_FOLDER_PATH, "remapped_labels_from_sample.nii")
+    UNTOUCHED_IMAGE_FROM_SAMPLE = os.path.join(OUTPUT_DATA_FOLDER_PATH, "original_image_from_sample.nii")
+    REMAPPED_LABELS_FROM_NDARRAY = os.path.join(OUTPUT_DATA_FOLDER_PATH, "remapped_labels_from_ndarray.nii")
+    ALL = [UNTOUCHED_IMAGE_FROM_SAMPLE, REMAPPED_LABELS_FROM_SAMPLE, REMAPPED_LABELS_FROM_NDARRAY]
+
+    @classmethod
+    def _flatten(cls, l):
+        for el in l:
+            if isinstance(el, collections.Iterable) and not isinstance(el, (str, bytes)):
+                yield from cls._flatten(el)
+            else:
+                yield el
 
     def setUp(self):
         pass
 
-    def test_should_remap_labels_correctly(self):
+    @classmethod
+    def setUpClass(cls):
+        all_files = cls._flatten(cls.ALL)
+        for element in all_files:
+            if os.path.exists(element):
+                os.remove(element)
+
+        if not os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH):
+            os.makedirs(cls.OUTPUT_DATA_FOLDER_PATH)
+
+        assert_that(len(os.listdir(cls.OUTPUT_DATA_FOLDER_PATH)), is_(0))
+        assert_that(os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH), is_(True))
+
+    def test_should_remap_labels_correctly_from_Numpy_ndarray(self):
         nd_array = ToNumpyArray().__call__(self.VALID_MASK_FILE)
 
-        transforms_ = transforms.Compose([ToNumpyArray(),
-                                          RemapClassIDs([1, 2, 3], [4, 8, 12])])
+        transform_ = RemapClassIDs([1, 2, 3], [4, 8, 12])
 
-        remapped_nd_array = transforms_(self.VALID_MASK_FILE)
+        remapped_nd_array = transform_(nd_array)
 
         expected_nd_array = nd_array * 4
         assert_that(np.isnan(np.all(remapped_nd_array)), is_(False))
@@ -578,6 +602,144 @@ class RemapClassIDsTest(unittest.TestCase):
 
     def test_should_fail_with_non_integer_class_ids(self):
         assert_that(calling(RemapClassIDs).with_args([1, 2, 3], [1.5, 4, 8]), raises(ValueError))
+
+    def test_should_return_remapped_sample_from_Nifti1Image_sample(self):
+        x_nifti = nib.load(self.VALID_3D_NIFTI_FILE)
+        y_nifti = nib.load(self.VALID_MASK_FILE)
+        sample = Sample(x=x_nifti, y=y_nifti, is_labeled=True)
+        transform_ = RemapClassIDs([1, 2, 3], [4, 8, 12])
+
+        remapped_sample = transform_(sample)
+
+        expected_x = x_nifti
+        expected_y = nib.Nifti1Image(y_nifti.get_fdata().__array__() * 4, affine=y_nifti.affine, header=y_nifti.header)
+
+        np.testing.assert_array_equal(remapped_sample.y.get_fdata(), expected_y.get_fdata())
+        np.testing.assert_array_equal(remapped_sample.x.get_fdata(), expected_x.get_fdata())
+
+    def test_should_return_remapped_sample_from_Nifti1Image_for_inspection(self):
+        x_nifti = nib.load(self.VALID_3D_NIFTI_FILE)
+        y_nifti = nib.load(self.VALID_MASK_FILE)
+        sample = Sample(x=x_nifti, y=y_nifti, is_labeled=True)
+        transform_ = RemapClassIDs([1, 2, 3], [4, 8, 12])
+
+        remapped_sample = transform_(sample)
+
+        NiftiToDisk([self.UNTOUCHED_IMAGE_FROM_SAMPLE, self.REMAPPED_LABELS_FROM_SAMPLE]).__call__(remapped_sample)
+
+    def test_should_return_remapped_sample_from_Numpy_ndarray_sample_for_inspection(self):
+        x = ToNumpyArray().__call__(self.VALID_3D_NIFTI_FILE)
+        y = ToNumpyArray().__call__(self.VALID_MASK_FILE)
+
+        header_image = nib.load(self.VALID_3D_NIFTI_FILE).header
+        header_label = nib.load(self.VALID_MASK_FILE).header
+        sample = Sample(x=x, y=y, is_labeled=True)
+
+        transform_ = RemapClassIDs([1, 2, 3], [4, 8, 12])
+
+        remapped_sample = transform_(sample)
+
+        nifti_sample = ToNifti1Image([header_image, header_label]).__call__(remapped_sample)
+
+        NiftiToDisk([self.UNTOUCHED_IMAGE_FROM_SAMPLE, self.REMAPPED_LABELS_FROM_SAMPLE]).__call__(nifti_sample)
+
+    def test_should_remap_labels_correctly_from_Numpy_ndarray_for_inspection(self):
+        nd_array = ToNumpyArray().__call__(self.VALID_MASK_FILE)
+        nifti_image = nib.load(self.VALID_MASK_FILE)
+        transform_ = RemapClassIDs([1, 2, 3], [4, 8, 12])
+        remapped_nd_array = transform_(nd_array)
+        expected_nd_array = nd_array * 4
+
+        assert_that(np.isnan(np.all(remapped_nd_array)), is_(False))
+        assert_that(np.isnan(np.all(remapped_nd_array)), is_(False))
+        assert_that(np.isnan(np.all(expected_nd_array)), is_(False))
+        assert_that(np.isnan(np.all(expected_nd_array)), is_(False))
+        np.testing.assert_array_equal(remapped_nd_array, expected_nd_array)
+
+        new_nifti_image = nib.Nifti1Image(remapped_nd_array.transpose((3, 2, 1, 0)), nifti_image.affine,
+                                          nifti_image.header)
+        nib.save(new_nifti_image, self.REMAPPED_LABELS_FROM_NDARRAY)
+
+    def test_should_raise_TypeError_exception_with_2D_Numpy_ndarray(self):
+        nd_array = np.random.randint(0, 3, (32, 32))
+        transform_ = RemapClassIDs([1, 2, 3], [4, 8, 12])
+
+        assert_that(calling(transform_).with_args(nd_array), raises(TypeError))
+
+
+class To2DNifti1ImageTest(unittest.TestCase):
+    TEST_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data")
+    VALID_3D_NIFTI_FILE = os.path.join(TEST_DATA_FOLDER_PATH, "T1.nii")
+    VALID_MASK_FILE = os.path.join(TEST_DATA_FOLDER_PATH, "Mask.nii")
+    OUTPUT_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data/generated/To2DNifti1Image")
+    NIFTI_2D_IMAGE_FROM_NDARRAY = os.path.join(OUTPUT_DATA_FOLDER_PATH, "2d_nifti_image_from_nd_array.nii")
+    NIFTI_2D_IMAGE_FROM_SAMPLE = os.path.join(OUTPUT_DATA_FOLDER_PATH, "2d_nifti_image_from_sample.nii")
+    NIFTI_2D_LABEL_FROM_SAMPLE = os.path.join(OUTPUT_DATA_FOLDER_PATH, "2d_nifti_label_from_ndarray.nii")
+    ALL = [NIFTI_2D_IMAGE_FROM_NDARRAY, NIFTI_2D_IMAGE_FROM_SAMPLE, NIFTI_2D_LABEL_FROM_SAMPLE]
+
+    @classmethod
+    def _flatten(cls, l):
+        for el in l:
+            if isinstance(el, collections.Iterable) and not isinstance(el, (str, bytes)):
+                yield from cls._flatten(el)
+            else:
+                yield el
+
+    def setUp(self):
+        pass
+
+    @classmethod
+    def setUpClass(cls):
+        all_files = cls._flatten(cls.ALL)
+        for element in all_files:
+            if os.path.exists(element):
+                os.remove(element)
+
+        if not os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH):
+            os.makedirs(cls.OUTPUT_DATA_FOLDER_PATH)
+
+        assert_that(len(os.listdir(cls.OUTPUT_DATA_FOLDER_PATH)), is_(0))
+        assert_that(os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH), is_(True))
+
+    def test_should_return_Nifti1Image_from_Numpy_array(self):
+        nifti_image = nib.load(self.VALID_3D_NIFTI_FILE)
+        nd_array = nib.load(self.VALID_3D_NIFTI_FILE).get_fdata().__array__()
+        transform_ = To2DNifti1Image(nifti_image.header)
+        nd_array_2d = transform_(nd_array)
+
+        assert_that(nd_array_2d, instance_of(nib.Nifti1Image))
+
+    def test_should_return_Sample_from_Sample_of_Numpy_array(self):
+        header_x = nib.load(self.VALID_3D_NIFTI_FILE).header
+        header_y = nib.load(self.VALID_MASK_FILE).header
+
+        x = nib.load(self.VALID_3D_NIFTI_FILE).get_fdata().__array__()
+        y = nib.load(self.VALID_MASK_FILE).get_fdata().__array__()
+
+        sample = Sample(x=x, y=y, is_labeled=True)
+
+        transform_ = To2DNifti1Image([header_x, header_y])
+        transformed_sample = transform_(sample)
+
+        assert_that(transformed_sample.x, instance_of(nib.Nifti1Image))
+        assert_that(transformed_sample.y, instance_of(nib.Nifti1Image))
+
+    def test_should_return_Sample_from_Sample_of_Numpy_array_for_inspection(self):
+        header_x = nib.load(self.VALID_3D_NIFTI_FILE).header
+        header_y = nib.load(self.VALID_MASK_FILE).header
+
+        x = nib.load(self.VALID_3D_NIFTI_FILE).get_fdata().__array__()
+        y = nib.load(self.VALID_MASK_FILE).get_fdata().__array__()
+
+        sample = Sample(x=x, y=y, is_labeled=True)
+
+        transform_ = To2DNifti1Image([header_x, header_y])
+        transformed_sample = transform_(sample)
+
+        assert_that(transformed_sample.x, instance_of(nib.Nifti1Image))
+        assert_that(transformed_sample.y, instance_of(nib.Nifti1Image))
+
+        NiftiToDisk([self.NIFTI_2D_IMAGE_FROM_SAMPLE, self.NIFTI_2D_LABEL_FROM_SAMPLE]).__call__(transformed_sample)
 
 
 class RandomCropTest(unittest.TestCase):
@@ -609,8 +771,6 @@ class RandomCropTest(unittest.TestCase):
         for element in all_files:
             if os.path.exists(element):
                 os.remove(element)
-            else:
-                print('File does not exists')
 
         if not os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH):
             os.makedirs(cls.OUTPUT_DATA_FOLDER_PATH)
@@ -618,35 +778,34 @@ class RandomCropTest(unittest.TestCase):
         assert_that(len(os.listdir(cls.OUTPUT_DATA_FOLDER_PATH)), is_(0))
         assert_that(os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH), is_(True))
 
-        print("Files deleted.")
-
     def test_transformer_should_return_ndarray(self):
         nd_array = ToNumpyArray().__call__(self.VALID_3D_NIFTI_FILE)
         labels = ToNumpyArray().__call__(self.VALID_MASK_FILE)
 
+        sample = Sample(x=nd_array, y=labels, is_labeled=True)
+
         transform_ = transforms.Compose([RandomCrop(output_size=32)])
 
-        cropped_nd_array, cropped_label = transform_((nd_array, labels))
+        transformed_sample = transform_(sample)
 
-        assert_that(cropped_nd_array, instance_of(np.ndarray))
-        assert_that(cropped_label, instance_of(np.ndarray))
-        assert_that(cropped_nd_array.ndim, equal_to(3))
-        assert_that(cropped_label.ndim, equal_to(3))
-        assert_that(cropped_nd_array.shape[0], equal_to(1))
-        assert_that(cropped_label.shape[0], equal_to(1))
+        assert_that(transformed_sample.x, instance_of(np.ndarray))
+        assert_that(transformed_sample.y, instance_of(np.ndarray))
+        assert_that(transformed_sample.x.ndim, equal_to(3))
+        assert_that(transformed_sample.y.ndim, equal_to(3))
+        assert_that(transformed_sample.x.shape[0], equal_to(1))
+        assert_that(transformed_sample.y.shape[0], equal_to(1))
 
     def test_transformer_should_save_files_as_nifti_for_inspection(self):
         nd_array = ToNumpyArray().__call__(self.VALID_3D_NIFTI_FILE)
         labels = ToNumpyArray().__call__(self.VALID_MASK_FILE)
-
+        sample = Sample(x=nd_array, y=labels, is_labeled=True)
         file_names = [self.CROPPED_NIFTI_IMAGE, self.CROPPED_NIFTI_LABELS]
-
         transform_ = transforms.Compose([RandomCrop(output_size=32),
                                          To2DNifti1Image(),
                                          NiftiToDisk(
                                              [os.path.join(self.OUTPUT_DATA_FOLDER_PATH, file_path) for file_path in
                                               file_names])])
-        transform_((nd_array, labels))
+        transform_(sample)
 
         for file_name in file_names:
             assert_that(os.path.exists(os.path.join(self.OUTPUT_DATA_FOLDER_PATH, file_name)))
@@ -654,15 +813,14 @@ class RandomCropTest(unittest.TestCase):
     def test_transformer_should_save_files_as_png_for_inspection(self):
         nd_array = ToNumpyArray().__call__(self.VALID_3D_NIFTI_FILE)
         labels = ToNumpyArray().__call__(self.VALID_MASK_FILE)
-
+        sample = Sample(x=nd_array, y=labels, is_labeled=True)
         file_names = [self.CROPPED_PNG_IMAGE, self.CROPPED_PNG_LABELS]
 
         transform_ = transforms.Compose([RandomCrop(output_size=32),
-
                                          ToPNGFile(
                                              [os.path.join(self.OUTPUT_DATA_FOLDER_PATH, file_path) for file_path in
                                               file_names])])
-        transform_((nd_array.astype(np.float32), 75 * labels.astype(np.uint8)))
+        transform_(sample)
 
         for file_name in file_names:
             assert_that(os.path.exists(os.path.join(self.OUTPUT_DATA_FOLDER_PATH, file_name)))
@@ -697,8 +855,6 @@ class RandomCrop3DTest(unittest.TestCase):
         for element in all_files:
             if os.path.exists(element):
                 os.remove(element)
-            else:
-                print('File does not exists')
 
         if not os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH):
             os.makedirs(cls.OUTPUT_DATA_FOLDER_PATH)
@@ -706,27 +862,25 @@ class RandomCrop3DTest(unittest.TestCase):
         assert_that(len(os.listdir(cls.OUTPUT_DATA_FOLDER_PATH)), is_(0))
         assert_that(os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH), is_(True))
 
-        print("Files deleted.")
-
     def test_transformer_should_return_ndarray(self):
         nd_array = ToNumpyArray().__call__(self.VALID_3D_NIFTI_FILE)
         labels = ToNumpyArray().__call__(self.VALID_MASK_FILE)
-
+        sample = Sample(x=nd_array, y=labels, is_labeled=True)
         transform_ = transforms.Compose([RandomCrop3D(output_size=32)])
 
-        cropped_nd_array, cropped_label = transform_((nd_array, labels))
+        transformed_sample = transform_(sample)
 
-        assert_that(cropped_nd_array, instance_of(np.ndarray))
-        assert_that(cropped_label, instance_of(np.ndarray))
-        assert_that(cropped_nd_array.ndim, equal_to(4))
-        assert_that(cropped_label.ndim, equal_to(4))
-        assert_that(cropped_nd_array.shape[0], equal_to(1))
-        assert_that(cropped_label.shape[0], equal_to(1))
+        assert_that(transformed_sample.x, instance_of(np.ndarray))
+        assert_that(transformed_sample.y, instance_of(np.ndarray))
+        assert_that(transformed_sample.x.ndim, equal_to(4))
+        assert_that(transformed_sample.y.ndim, equal_to(4))
+        assert_that(transformed_sample.x.shape[0], equal_to(1))
+        assert_that(transformed_sample.y.shape[0], equal_to(1))
 
     def test_transformer_should_save_files_as_nifti_for_inspection(self):
         nd_array = ToNumpyArray().__call__(self.VALID_3D_NIFTI_FILE)
         labels = ToNumpyArray().__call__(self.VALID_MASK_FILE)
-
+        sample = Sample(x=nd_array, y=labels, is_labeled=True)
         file_names = [self.CROPPED_NIFTI_IMAGE, self.CROPPED_NIFTI_LABELS]
 
         transform_ = transforms.Compose([RandomCrop3D(output_size=32),
@@ -734,7 +888,7 @@ class RandomCrop3DTest(unittest.TestCase):
                                          NiftiToDisk(
                                              [os.path.join(self.OUTPUT_DATA_FOLDER_PATH, file_path) for file_path in
                                               file_names])])
-        transform_((nd_array, labels))
+        transform_(sample)
 
         for file_name in file_names:
             assert_that(os.path.exists(os.path.join(self.OUTPUT_DATA_FOLDER_PATH, file_name)))
@@ -746,13 +900,13 @@ class ToPNGFileTest(unittest.TestCase):
     PNG_FILE_2D = os.path.join(OUTPUT_DATA_FOLDER_PATH, "ToPNGFile2D.png")
     PNG_FILE_3D = os.path.join(OUTPUT_DATA_FOLDER_PATH, "ToPNGFile3D.png")
     PNG_FILE_4D = os.path.join(OUTPUT_DATA_FOLDER_PATH, "ToPNGFile4D.png")
-    PNG_TUPLE_2D = [os.path.join(OUTPUT_DATA_FOLDER_PATH, "ToPNGFileTupleHxW_1.png"),
-                    os.path.join(OUTPUT_DATA_FOLDER_PATH, "ToPNGFileTupleHxW_2.png")]
-    PNG_TUPLE_3D = [os.path.join(OUTPUT_DATA_FOLDER_PATH, "ToPNGFileTupleCxHxW_1.png"),
-                    os.path.join(OUTPUT_DATA_FOLDER_PATH, "ToPNGFileTupleCxHxW_2.png")]
-    PNG_TUPLE_4D = [os.path.join(OUTPUT_DATA_FOLDER_PATH, "ToPNGFileTupleCxDxHxW_1.png"),
-                    os.path.join(OUTPUT_DATA_FOLDER_PATH, "ToPNGFileTupleCxDxHxW_2.png")]
-    ALL = [PNG_FILE_2D, PNG_FILE_3D, PNG_FILE_4D, PNG_TUPLE_2D, PNG_TUPLE_3D, PNG_TUPLE_4D]
+    PNG_SAMPLE_2D = [os.path.join(OUTPUT_DATA_FOLDER_PATH, "ToPNGFileTupleHxW_1.png"),
+                     os.path.join(OUTPUT_DATA_FOLDER_PATH, "ToPNGFileTupleHxW_2.png")]
+    PNG_SAMPLE_3D = [os.path.join(OUTPUT_DATA_FOLDER_PATH, "ToPNGFileTupleCxHxW_1.png"),
+                     os.path.join(OUTPUT_DATA_FOLDER_PATH, "ToPNGFileTupleCxHxW_2.png")]
+    PNG_SAMPLE_4D = [os.path.join(OUTPUT_DATA_FOLDER_PATH, "ToPNGFileTupleCxDxHxW_1.png"),
+                     os.path.join(OUTPUT_DATA_FOLDER_PATH, "ToPNGFileTupleCxDxHxW_2.png")]
+    ALL = [PNG_FILE_2D, PNG_FILE_3D, PNG_FILE_4D, PNG_SAMPLE_2D, PNG_SAMPLE_3D, PNG_SAMPLE_4D]
 
     @classmethod
     def _flatten(cls, l):
@@ -771,16 +925,11 @@ class ToPNGFileTest(unittest.TestCase):
         for element in all_files:
             if os.path.exists(element):
                 os.remove(element)
-            else:
-                print('File does not exists')
-
         if not os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH):
             os.makedirs(cls.OUTPUT_DATA_FOLDER_PATH)
 
         assert_that(len(os.listdir(cls.OUTPUT_DATA_FOLDER_PATH)), is_(0))
         assert_that(os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH), is_(True))
-
-        print("Files deleted.")
 
     def test_should_raise_exception_when_passing_4D_ndarray(self):
         nd_array = np.random.randint(0, 1000, size=(1, 32, 32, 32))
@@ -789,12 +938,15 @@ class ToPNGFileTest(unittest.TestCase):
 
         assert_that(calling(transform_.__call__).with_args(nd_array), raises(TypeError))
 
-    def test_should_raise_exception_when_passing_tuple_of_4D_ndarray(self):
-        nd_array = np.random.randint(0, 1000, size=(1, 32, 32, 32))
+    def test_should_raise_exception_when_passing_Sample_of_4D_ndarray(self):
+        x = np.random.randint(0, 1000, size=(1, 32, 32, 32))
+        y = np.random.randint(0, 1000, size=(1, 32, 32, 32))
 
-        transform_ = ToPNGFile(self.PNG_TUPLE_4D)
+        sample = Sample(x=x, y=y, is_labeled=True)
 
-        assert_that(calling(transform_.__call__).with_args((nd_array, nd_array)), raises(TypeError))
+        transform_ = ToPNGFile(self.PNG_SAMPLE_4D)
+
+        assert_that(calling(transform_.__call__).with_args(sample), raises(TypeError))
 
     def test_should_pass_when_passing_2D_ndarray(self):
         nd_array = np.random.randint(0, 1000, size=(32, 32))
@@ -810,20 +962,26 @@ class ToPNGFileTest(unittest.TestCase):
 
         assert_that(os.path.exists(os.path.join(self.OUTPUT_DATA_FOLDER_PATH, self.PNG_FILE_3D)))
 
-    def test_should_pass_when_passing_tuple_2D_nd_array(self):
+    def test_should_pass_when_passing_sample_2D_nd_array(self):
 
-        nd_array = np.random.randint(0, 1000, size=(32, 32))
+        x = np.random.randint(0, 1000, size=(32, 32))
+        y = np.random.randint(0, 1000, size=(32, 32))
 
-        ToPNGFile(self.PNG_TUPLE_2D).__call__((nd_array, nd_array))
+        sample = Sample(x=x, y=y, is_labeled=True)
 
-        for file_name in self.PNG_TUPLE_2D:
+        ToPNGFile(self.PNG_SAMPLE_2D).__call__(sample)
+
+        for file_name in self.PNG_SAMPLE_2D:
             assert_that(os.path.exists(os.path.join(self.OUTPUT_DATA_FOLDER_PATH, file_name)))
 
     def test_should_pass_when_passing_tuple_3D_nd_array(self):
 
-        nd_array = np.random.randint(0, 1000, size=(1, 32, 32))
+        x = np.random.randint(0, 1000, size=(1, 32, 32))
+        y = np.random.randint(0, 1000, size=(1, 32, 32))
 
-        ToPNGFile(self.PNG_TUPLE_3D).__call__((nd_array, nd_array))
+        sample = Sample(x=x, y=y, is_labeled=True)
 
-        for file_name in self.PNG_TUPLE_3D:
+        ToPNGFile(self.PNG_SAMPLE_3D).__call__(sample)
+
+        for file_name in self.PNG_SAMPLE_3D:
             assert_that(os.path.exists(os.path.join(self.OUTPUT_DATA_FOLDER_PATH, file_name)))
