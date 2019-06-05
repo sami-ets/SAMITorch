@@ -22,7 +22,7 @@ Class to describe a Sample object, which contains a source element associated to
 
 class Sample(object):
 
-    def __init__(self, x=None, y=None, is_labeled=False):
+    def __init__(self, x=None, y=None, template=None, is_labeled=False):
         """
         Sample initializer.
 
@@ -32,6 +32,7 @@ class Sample(object):
         """
         self._x = x
         self._y = y
+        self._template = template
         self._is_labeled = is_labeled
 
     @property
@@ -46,6 +47,10 @@ class Sample(object):
     def y(self):
         return self._y
 
+    @property
+    def template(self):
+        return self._template
+
     @x.setter
     def x(self, x):
         self._x = x
@@ -53,6 +58,10 @@ class Sample(object):
     @y.setter
     def y(self, y):
         self._y = y
+
+    @template.setter
+    def template(self, template):
+        self._template = template
 
     @is_labeled.setter
     def is_labeled(self, is_labeled):
@@ -69,4 +78,4 @@ class Sample(object):
 
     @classmethod
     def from_sample(cls, sample):
-        return cls(sample.x, sample.y, sample.is_labeled)
+        return cls(sample.x, sample.y, sample.template, sample.is_labeled)

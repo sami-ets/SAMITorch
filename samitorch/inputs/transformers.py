@@ -26,7 +26,7 @@ from typing import Optional, Tuple, Union, List
 
 from nilearn.image.resampling import resample_to_img
 
-from samitorch.inputs.images import ImageType, Image
+from samitorch.inputs.images import ImageTypes, Image
 from samitorch.inputs.sample import Sample
 
 
@@ -86,7 +86,7 @@ class ToNumpyArray(object):
     The Numpy array is transposed to respect the standard dimensions (DxHxW) for 3D or (CxDxHxW) for 4D arrays.
     """
 
-    def __call__(self, sample: Sample) -> Sample:
+    def __call__(self, input: Union[str, nib.Nifti1Image, nib.Nifti2Image, Sample]) -> Union[np.ndarray, Sample]:
         """
         Returns a new Sample with updated `x` property and `y` property if labeled.
 
@@ -96,37 +96,65 @@ class ToNumpyArray(object):
         Returns:
             :obj:`samitorch.inputs.sample.Sample`): An updated Sample object.
         """
-        transformed_sample = Sample.from_sample(sample)
 
-        if not os.path.exists(sample.x) and not os.path.exists(sample.y):
-            raise FileNotFoundError("Provided image path is not valid.")
+        if isinstance(input, nib.Nifti1Image) or isinstance(input, nib.Nifti2Image):
+            nd_array = input.get_fdata().__array__()
+            nd_array = self._expand_dims_and_transpose(nd_array)
+            return nd_array
 
-        if Image.is_nifti(sample.x):
-            x = nib.load(sample.y).get_fdata().__array__()
-        elif Image.is_nrrd(sample.x):
-            x, header = nrrd.read(sample.x)
-        else:
-            raise NotImplementedError(
-                "Only {} files are supported but got {}".format(ImageType.ALL, os.path.splitext(sample.x)[1]))
+        elif isinstance(input, str):
+            nd_array = nib.load(input).get_fdata().__array__()
+            nd_array = self._expand_dims_and_transpose(nd_array)
+            return nd_array
 
-        if x.ndim == 3:
-            x = np.expand_dims(x, 3).transpose((3, 2, 1, 0))
-        elif x.ndim == 4:
-            x = x.transpose((3, 2, 1, 0))
+        elif isinstance(input, Sample):
+            sample = input
+            transformed_sample = Sample.from_sample(sample)
 
-        transformed_sample.x = x
+            if not os.path.exists(sample.x):
+                raise FileNotFoundError("Provided image path is not valid.")
 
-        if sample.is_labeled:
-            if Image.is_nifti(sample.y):
-                y = nib.load(sample.y).get_fdata().__array__()
-            elif Image.is_nrrd(sample.y):
-                y, header = nrrd.read(sample.y)
+            if Image.is_nifti(sample.x):
+                x = nib.load(sample.x).get_fdata().__array__()
+            elif Image.is_nrrd(sample.x):
+                x, header = nrrd.read(sample.x)
             else:
                 raise NotImplementedError(
-                    "Only Nifti, NRRD or integer types are supported but got {}".format(type(sample.y)))
-            transformed_sample.y = y
+                    "Only {} files are supported but got {}".format(ImageTypes.ALL, os.path.splitext(sample.x)[1]))
 
-        return sample.update(transformed_sample)
+            x = self._expand_dims_and_transpose(x)
+            transformed_sample.x = x
+
+            if sample.is_labeled:
+                if not os.path.exists(sample.x):
+                    raise FileNotFoundError("Provided image path is not valid.")
+                if Image.is_nifti(sample.y):
+                    y = nib.load(sample.y).get_fdata().__array__()
+                elif Image.is_nrrd(sample.y):
+                    y, header = nrrd.read(sample.y)
+                else:
+                    raise NotImplementedError(
+                        "Only Nifti, NRRD or integer types are supported but got {}".format(type(sample.y)))
+                y = self._expand_dims_and_transpose(y)
+                transformed_sample.y = y
+
+            return sample.update(transformed_sample)
+
+    @staticmethod
+    def _expand_dims_and_transpose(nd_darray: np.ndarray) -> np.ndarray:
+        """
+        Expands an Numpy ndarray and transpose its axes to respect the standard dimensions (DxHxW) for 3D or (CxDxHxW) for 4D arrays.
+        Args:
+            nd_darray:
+
+        Returns:
+
+        """
+        if nd_darray.ndim == 3:
+            nd_darray = np.expand_dims(nd_darray, 3).transpose((3, 2, 1, 0))
+        elif nd_darray.ndim == 4:
+            nd_darray = nd_darray.transpose((3, 2, 1, 0))
+        return nd_darray
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
@@ -140,9 +168,18 @@ class ToNrrdFile(object):
     """
 
     def __init__(self, file_path: list) -> None:
+        """
+        Transformer initializer.
+
+        Args:
+            file_path (list): A list of file paths where to save a Sample.
+        """
         self._file_path = file_path
 
     def __call__(self, sample: Sample) -> None:
+        assert len(
+            self._file_path) <= 2, "Provided file path list cannot be superior to 2 entries, one for X path, one for Y path."
+
         if not isinstance(sample.x, np.ndarray) or (sample.x.ndim not in [3, 4]):
             raise TypeError("Only 3D (DxHxW) or 4D (CxDxHxW) {} are supported.".format(np.ndarray))
 
@@ -185,14 +222,56 @@ class LoadNifti(object):
     Load a Nibabel Nifti Image from a given Nifti file path.
     """
 
-    def __call__(self, image_path: str) -> None:
-        if not os.path.exists(image_path):
-            raise FileNotFoundError("Provided image path is not valid.")
+    def __call__(self, input: Union[str, Sample]) -> None:
+        """
+        Load a Nifti Image.
 
-        if Image.is_nifti(image_path):
-            return nib.load(image_path)
-        else:
-            raise NotImplementedError("Only {} files are supported !".format(ImageType.NIFTI))
+        Args:
+             input (str_or_:obj:`samitorch.inputs.sample.Sample`): An input, either a string or a Sample.
+
+        Returns:
+            :obj:`nibabel.Nifti1Image_or_:obj:`samitorch.inputs.sample.Sample`: A Nifti1Image or a transformed Sample.
+
+        Raises:
+            FileNotFoundError: If provided file path isn't found.
+            NoteImplementedError: If file extension isn't in supported extensions.
+                See :obj:`samitorch.inputs.images.Extensions`.
+        """
+        if isinstance(input, str):
+            if not os.path.exists(input):
+                raise FileNotFoundError("Provided image path is not valid.")
+            if Image.is_nifti(input):
+                return nib.load(input)
+            else:
+                raise NotImplementedError("Only {} files are supported !".format(ImageTypes.NIFTI.name))
+        elif isinstance(input, Sample):
+            sample = input
+            transformed_sample = Sample.from_sample(sample)
+            if not os.path.exists(sample.x):
+                raise FileNotFoundError("Provided image path is not valid.")
+
+            if Image.is_nifti(sample.x):
+                x = nib.load(sample.x)
+
+            else:
+                raise NotImplementedError(
+                    "Only {} files are supported but got {}".format(ImageTypes.NIFTI.name,
+                                                                    os.path.splitext(sample.x)[1]))
+            transformed_sample.x = x
+
+            if sample.is_labeled:
+                if not os.path.exists(sample.x):
+                    raise FileNotFoundError("Provided image path is not valid.")
+                if Image.is_nifti(sample.y):
+                    y = nib.load(sample.y)
+                elif Image.is_nrrd(sample.y):
+                    y, header = nrrd.read(sample.y)
+                else:
+                    raise NotImplementedError(
+                        "Only Nifti, NRRD or integer types are supported but got {}".format(type(sample.y)))
+                transformed_sample.y = y
+
+            return sample.update(transformed_sample)
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
@@ -200,41 +279,172 @@ class LoadNifti(object):
 
 class NiftiImageToNumpy(object):
     """
-    Create a Numpy ndarray from Nifti image.
+    Create a NiftiImage to Numpy NDArray.
 
     The Numpy array is transposed to respect the standard dimensions (DxHxW) for 3D or (CxDxHxW) for 4D arrays.
     """
 
-    def __call__(self, nifti_image) -> np.ndarray:
-        if isinstance(nifti_image, nib.Nifti1Image) or isinstance(nifti_image, nib.Nifti2Image):
-            nd_array = nifti_image.get_fdata().__array__()
+    def __call__(self, input: Union[nib.Nifti1Image, nib.Nifti2Image, Sample]) -> Union[np.ndarray, Sample]:
+        """
+        Transforms a NiftiImage to Numpy NDArray.
+
+        Args:
+            input (:obj:`nibabel.Nifti1Image`_or_:obj:`nibabel.Nifti2Image`_or_:obj:`samitorch.inputs.sample.Sample`):
+                An input, either a Nibabel Nifti image or a Sample.
+
+        Returns:
+            :obj:`Numpy.ndarray`_or_:obj:`samitorch.inputs.sample.Sample`: A Numpy NDArray or transformed Sample.
+
+        Raises:
+            TypeError: If the type isn't supported.
+        """
+        if isinstance(input, nib.Nifti1Image) or isinstance(input, nib.Nifti2Image):
+            nd_array = input.get_fdata().__array__()
+            nd_array = self._expand_dims_and_transpose(nd_array)
+            return nd_array
+
+        elif isinstance(input, Sample):
+            sample = input
+            transformed_sample = Sample.from_sample(sample)
+            if isinstance(sample.x, nib.Nifti1Image) or isinstance(sample.x, nib.Nifti2Image):
+                x = sample.x.get_fdata().__array__()
+                x = self._expand_dims_and_transpose(x)
+                transformed_sample.x = x
+            else:
+                raise TypeError(
+                    "Only Nifti1Images and Nifti2Images types are supported, but got {}".format(type(sample.x)))
+
+            if sample.is_labeled:
+                if isinstance(sample.y, nib.Nifti1Image) or isinstance(sample.y, nib.Nifti2Image):
+                    y = sample.y.get_fdata().__array__()
+                    y = self._expand_dims_and_transpose(y)
+                    transformed_sample.y = y
+                else:
+                    raise TypeError(
+                        "Only Nifti1Images and Nifti2Images typles are supported, but got {}".format(type(sample.y)))
+            return sample.update(transformed_sample)
+
         else:
-            raise TypeError("Image type must be Nifti1Image or Nifti2Image, but got {}".format(type(nifti_image)))
+            raise TypeError(
+                "Only Nifti1Images, Nifti2Images or Sample types are supported, but got {}".format(type(input)))
 
-        if nd_array.ndim == 3:
-            nd_array = np.expand_dims(nd_array, 3).transpose((3, 2, 1, 0))
-        elif nd_array.ndim == 4:
-            nd_array = nd_array.transpose((3, 2, 1, 0))
+    @staticmethod
+    def _expand_dims_and_transpose(nd_darray: np.ndarray) -> np.ndarray:
+        """
+        Expands an Numpy ndarray and transpose its axes to respect the standard dimensions (DxHxW) for 3D or (CxDxHxW) for 4D arrays.
+        Args:
+            nd_darray:
 
-        return nd_array
+        Returns:
+
+        """
+        if nd_darray.ndim == 3:
+            nd_darray = np.expand_dims(nd_darray, 3).transpose((3, 2, 1, 0))
+        elif nd_darray.ndim == 4:
+            nd_darray = nd_darray.transpose((3, 2, 1, 0))
+        return nd_darray
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
 
 
-class ResampleNiftiImgToTemplate(object):
+class ResampleNiftiImageToTemplate(object):
     """
     Resamples a Nifti Image to a template file using Nilearn.image.resampling module.
     """
 
-    def __init__(self, template: str, interpolation: str, clip: bool) -> None:
-        self._template = template
+    def __init__(self, interpolation: str, clip: bool,
+                 template: Optional[Union[str, nib.Nifti1Image, nib.Nifti2Image]] = None) -> None:
+        """
+        Resampler initializer.
+
+        Args:
+            interpolation (str): Either `continuous`, `linear`, or `nearest`. See `nilearn.image.resample_to_img`.
+            clip (bool): If False (default) no clip is preformed. If True all resampled image values above max(img) and under min(img) are clipped to min(img) and max(img).
+            template (optional, str_or_nibabel.Nifti1Image): The target reference image.
+        """
         self._interpolation = interpolation
         self._clip = clip
+        self._template = template
 
-    def __call__(self, nifti_image: nib.Nifti1Image) -> nib.Nifti1Image:
-        return resample_to_img(nifti_image, nib.load(self._template), interpolation=self._interpolation,
-                               clip=self._clip)
+    def __call__(self, input: Union[str, nib.Nifti1Image, nib.Nifti2Image, Sample]) -> Union[nib.Nifti1Image, Sample]:
+        """
+        Resample an image.
+
+        Args:
+            input (str_or_nib.Nifti1Image_or_:obj:`samitorch.inputs.sample.Sample`): An input to be transformed.
+
+        Returns:
+            nib.Nifti1Image_or_:obj:`samitorch.inputs.sample.Sample`): A transformed Nibabel Nifti1Image or transformed Sample.
+        """
+        if isinstance(input, str):
+            input = nib.load(input)
+        if isinstance(input, nib.Nifti1Image):
+            if isinstance(self._template, str):
+                return resample_to_img(input, nib.load(self._template), interpolation=self._interpolation,
+                                       clip=self._clip)
+            elif isinstance(self._template, nib.Nifti1Image):
+                return resample_to_img(input, self._template, interpolation=self._interpolation,
+                                       clip=self._clip)
+            else:
+                raise TypeError(
+                    "Template must be either in a Sample object or of type nibabel.Nifti1Image or String, but got {}".format(
+                        type(self._template)))
+
+        elif isinstance(input, Sample):
+            sample = input
+            transformed_sample = Sample.from_sample(sample)
+
+            if not isinstance(sample.x, nib.nifti1.Nifti1Image) or isinstance(sample.x, nib.nifti2.Nifti2Image):
+                raise TypeError(
+                    "Only Nifti1Images and Nifti2Images typles are supported, but got {}".format(type(sample.x)))
+
+            if isinstance(sample.template, str):
+                if not os.path.exists(sample.template):
+                    raise FileNotFoundError("Provided image path is not valid.")
+                sample.template = nib.load(sample.template)
+
+            transformed_sample.x = resample_to_img(sample.x, sample.template, interpolation=self._interpolation,
+                                                   clip=self._clip)
+
+            return sample.update(transformed_sample)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '()'
+
+
+class NiftiToDisk(object):
+    """
+    Write to disk a Nifti image.
+    """
+
+    def __init__(self, file_path: Union[str, list]) -> None:
+        """
+        Transformer initializer.
+
+        Args:
+            file_path (str_or_list): The file path to save the Nifti file.
+        """
+        self._file_path = file_path
+
+    def __call__(self, input: Union[nib.Nifti1Image, nib.Nifti2Image, Sample]) -> None:
+        if isinstance(input, nib.Nifti1Image) or isinstance(input, nib.Nifti2Image):
+            if not isinstance(self._file_path, str):
+                raise TypeError(
+                    "You passed an instance of a single Nibabel Nifti1Image or Nifti2Image, but file_path isn't of type String.")
+            nib.save(input, self._file_path)
+        elif isinstance(input, Sample):
+            sample = input
+            if not isinstance(self._file_path, list) and sample.is_labeled:
+                raise TypeError(
+                    "You passed an instance of a Sample containing an X and Y, but file_path isn't of type List.")
+            if isinstance(self._file_path, str) and not sample.is_labeled:
+                nib.save(sample.x, self._file_path[0])
+            elif isinstance(self._file_path, list) and sample.is_labeled:
+                nib.save(sample.x, self._file_path[0])
+                nib.save(sample.y, self._file_path[1])
+        else:
+            raise TypeError("Image type must be Nifti1Image, Nifti2Image or a Sample, but got {}".format(type(input)))
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
@@ -255,19 +465,29 @@ class ApplyMaskToNiftiImage(object):
             mask, header = nrrd.read(mask_path)
         else:
             raise NotImplementedError(
-                "Only {} files are supported but got {}".format(ImageType.ALL, os.path.splitext(mask_path)[1]))
+                "Only {} files are supported but got {}".format(ImageTypes.ALL, os.path.splitext(mask_path)[1]))
 
         mask[mask >= 1] = 1
         self._mask = mask
 
-    def __call__(self, nifti_image) -> nib.Nifti1Image:
-        if isinstance(nifti_image, nib.Nifti1Image) or isinstance(nifti_image, nib.Nifti2Image):
-            nd_array = nifti_image.get_fdata().__array__()
-            header = nifti_image.header
-        else:
-            raise TypeError("Image type must be Nifti1Image or Nifti2Image, but got {}".format(type(nifti_image)))
+    def __call__(self, input: Union[nib.Nifti1Image, Sample]) -> Union[nib.Nifti1Image, Sample]:
+        if isinstance(input, nib.Nifti1Image) or isinstance(input, nib.Nifti2Image):
+            nd_array = input.get_fdata().__array__()
+            header = input.header
+            return nib.Nifti1Image(np.multiply(nd_array, self._mask), None, header)
 
-        return nib.Nifti1Image(np.multiply(nd_array, self._mask), None, header)
+        elif isinstance(input, Sample):
+            sample = input
+            if not (isinstance(sample.x, nib.Nifti1Image) and isinstance(sample.y,
+                                                                         nib.Nifti1Header)) or (
+                    isinstance(sample.x, nib.Nifti2Image) and isinstance(sample.y,
+                                                                         nib.Nifti2Image)):
+                raise TypeError("Only Nifti1Image and Nifti2Images are supported.")
+
+            return nib.Nifti1Image(np.multiply(sample.x.get_fdata.__array__(), self._mask), None, sample.x.header)
+
+        else:
+            raise TypeError("Image type must be Nifti1Image, Nifti2Image or a Sample, but got {}".format(type(input)))
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
@@ -290,7 +510,7 @@ class ApplyMaskToTensor(object):
             nd_array, header = nrrd.read(mask_path)
         else:
             raise NotImplementedError(
-                "Only {} files are supported but got {}".format(ImageType.ALL, os.path.splitext(mask_path)[1]))
+                "Only {} files are supported but got {}".format(ImageTypes.ALL, os.path.splitext(mask_path)[1]))
 
         if nd_array.ndim == 3:
             nd_array = np.expand_dims(nd_array, 3).transpose((3, 2, 1, 0))
@@ -341,33 +561,6 @@ class RemapClassIDs(object):
             new_nd_array[indexes] = new_id
 
         return new_nd_array
-
-    def __repr__(self):
-        return self.__class__.__name__ + '()'
-
-
-class NiftiToDisk(object):
-    """
-    Write to disk a Nifti image.
-    """
-
-    def __init__(self, file_path: Union[str, list]) -> None:
-        """
-        Transformer initializer.
-
-        Args:
-            file_path (str): The file path to save the Nifti file.
-        """
-        self._file_path = file_path
-
-    def __call__(self, nifti_image: Union[nib.Nifti1Image, nib.Nifti2Image, tuple]) -> None:
-        if isinstance(nifti_image, tuple) and isinstance(self._file_path, list):
-            for element, file_name in zip(nifti_image, self._file_path):
-                nib.save(element, file_name)
-        elif isinstance(nifti_image, nib.Nifti1Image) or isinstance(nifti_image, nib.Nifti2Image):
-            nib.save(nifti_image, self._file_path)
-        else:
-            raise TypeError("Image type must be Nifti1Image or Nifti2Image, but got {}".format(type(nifti_image)))
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
@@ -457,7 +650,7 @@ class ToNifti1Image(object):
     The Numpy arrays are transposed to respect the standard Nifti dimensions (WxHxDxC)
     """
 
-    def __init__(self, header: Union[nib.Nifti1Header, list, None]) -> None:
+    def __init__(self, header: Union[nib.Nifti1Header, List[Union[nib.Nifti1Header, nib.Nifti2Header]], None]) -> None:
         """
         Transformer initializer.
 
@@ -465,35 +658,64 @@ class ToNifti1Image(object):
             header (:obj:`nibabel.Nifti1Header): The Nifti image header.
         """
         if isinstance(header, list):
-            if not len(header) <= 2:
-                raise ValueError("List of headers must contain at most 2 elements.")
+            if not len(header) == 2:
+                raise ValueError("List of headers must contain 2 elements.")
 
             self._header = header
         else:
             self._header = header
 
-    def __call__(self, nd_array: Union[np.ndarray, tuple]) -> Union[nib.Nifti1Image, tuple]:
-        if isinstance(nd_array, tuple):
-            for array in nd_array:
-                if not isinstance(array, np.ndarray) or (array.ndim not in [3, 4]):
-                    raise TypeError("Only 3D (DxHxW) or 4D (CxDxHxW) ndarrays are supported")
-
-            if self._header is not None and isinstance(self._header, list):
-                return (nib.Nifti1Image(nd_array[0].transpose((3, 2, 1, 0)), None, self._header[0]),
-                        nib.Nifti1Image(nd_array[1].transpose((3, 2, 1, 0)), None, self._header[1]))
-            else:
-                return (nib.Nifti1Image(nd_array[0].transpose((3, 2, 1, 0)), None),
-                        nib.Nifti1Image(nd_array[1].transpose((3, 2, 1, 0)), None))
-
-        elif isinstance(nd_array, np.ndarray):
-            if not isinstance(nd_array, np.ndarray) or (nd_array.ndim not in [3, 4]):
+    def __call__(self, input: Union[np.ndarray, Sample]) -> Union[nib.Nifti1Image, Sample]:
+        if isinstance(input, np.ndarray):
+            if not isinstance(input, np.ndarray) or (input.ndim not in [3, 4]):
                 raise TypeError("Only 3D (DxHxW) or 4D (CxDxHxW) ndarrays are supported")
 
             if isinstance(self._header, nib.Nifti1Header):
-                return nib.Nifti1Image(nd_array.transpose((3, 2, 1, 0)), None, self._header)
+                return nib.Nifti1Image(input.transpose((3, 2, 1, 0)), None, self._header)
 
             else:
-                return nib.Nifti1Image(nd_array.transpose((3, 2, 1, 0)), None)
+                return nib.Nifti1Image(input.transpose((3, 2, 1, 0)), None)
+
+        elif isinstance(input, Sample):
+            sample = input
+            transformed_sample = Sample.from_sample(sample)
+
+            if not (isinstance(sample.x, np.ndarray) and (sample.x.ndim in [3, 4])):
+                raise TypeError("Only 3D (DxHxW) or 4D (CxDxHxW) ndarrays are supported")
+            if sample.is_labeled:
+                if not (isinstance(sample.y, np.ndarray) and (sample.y.ndim in [3, 4])):
+                    raise TypeError("Only 3D (DxHxW) or 4D (CxDxHxW) ndarrays are supported")
+
+            if isinstance(self._header, list):
+                assert sample.is_labeled, "You provided a list of headers, but sample is not labeled."
+
+                if len(self._header) == 2 and sample.is_labeled:
+                    if not (isinstance(self._header[0], nib.Nifti1Header) and isinstance(self._header[1],
+                                                                                         nib.Nifti1Header)) or (
+                            isinstance(self._header[0], nib.Nifti2Header) and isinstance(self._header[1],
+                                                                                         nib.Nifti2Header)):
+                        raise TypeError("Transformer needs headers of type Nifti1Header or Nifti2Header.")
+
+                    transformed_sample.x = nib.Nifti1Image(sample.x.transpose((3, 2, 1, 0)), None, self._header[0])
+                    transformed_sample.y = nib.Nifti1Image(sample.y.transpose((3, 2, 1, 0)), None, self._header[1])
+                    return sample.update(transformed_sample)
+                else:
+                    raise ValueError("Transformer must have a list of two headers when transforming a Sample object.")
+
+            elif (isinstance(self._header, nib.Nifti1Header) or isinstance(self._header,
+                                                                           nib.Nifti2Header)) and not sample.is_labeled:
+                transformed_sample.x = nib.Nifti1Image(sample.x.transpose((3, 2, 1, 0)), None)
+                return sample.update(transformed_sample)
+
+            elif self._header is None:
+                transformed_sample.x = nib.Nifti1Image(sample.x.transpose((3, 2, 1, 0)), None)
+                if sample.is_labeled:
+                    transformed_sample.y = nib.Nifti1Image(sample.y.transpose((3, 2, 1, 0)), None)
+                return sample.update(transformed_sample)
+            else:
+                raise ValueError(
+                    "Transformer must either doesn't have a header or have a list of Nifti1Header or Nifti2Header, but got {} ".format(
+                        type(self._header)))
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
