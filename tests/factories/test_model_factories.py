@@ -24,7 +24,7 @@ from samitorch.factories.models import ModelFactory
 
 from samitorch.factories.parsers import ConfigurationParserFactory
 
-from factories.enums import UNetModels, ResNetModels
+from samitorch.factories.enums import UNetModels, ResNetModels
 
 
 class IncorrectModels(Enum):

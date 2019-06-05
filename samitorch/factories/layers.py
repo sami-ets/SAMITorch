@@ -17,7 +17,7 @@
 import abc
 import torch
 
-from factories.enums import ActivationLayers, PaddingLayers, PoolingLayers, NormalizationLayers
+from samitorch.factories.enums import ActivationLayers, PaddingLayers, PoolingLayers, NormalizationLayers
 
 
 class AbstractLayerFactory(metaclass=abc.ABCMeta):

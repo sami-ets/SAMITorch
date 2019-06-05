@@ -23,7 +23,7 @@ from hamcrest import *
 
 from samitorch.factories.layers import PaddingLayerFactory, ActivationLayerFactory, PoolingLayerFactory, \
     NormalizationLayerFactory
-from factories.enums import ActivationLayers, PoolingLayers, PaddingLayers, NormalizationLayers
+from samitorch.factories.enums import ActivationLayers, PoolingLayers, PaddingLayers, NormalizationLayers
 
 
 class IncorrectLayers(Enum):
