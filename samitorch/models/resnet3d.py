@@ -16,7 +16,7 @@
 
 import torch
 
-from factories.enums import ActivationLayers, NormalizationLayers
+from samitorch.factories.enums import ActivationLayers, NormalizationLayers
 from samitorch.factories.layers import ActivationLayerFactory, NormalizationLayerFactory
 from samitorch.configs.model_configurations import ModelConfiguration
 
