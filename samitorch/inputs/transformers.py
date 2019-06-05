@@ -222,7 +222,7 @@ class LoadNifti(object):
     Load a Nibabel Nifti Image from a given Nifti file path.
     """
 
-    def __call__(self, input: Union[str, Sample]) -> None:
+    def __call__(self, input: Union[str, Sample]) -> Union[nib.Nifti1Image, Sample]:
         """
         Load a Nifti Image.
 
@@ -455,37 +455,44 @@ class ApplyMaskToNiftiImage(object):
     Apply a mask by a given mask/label/ROI image file.
     """
 
-    def __init__(self, mask_path: str) -> None:
-        if not os.path.exists(mask_path):
-            raise FileNotFoundError("Provided image path is not valid.")
+    def __init__(self, mask_path: Optional[str] = None) -> None:
 
-        if Image.is_nifti(mask_path):
-            mask = nib.load(mask_path).get_fdata().__array__()
-        elif Image.is_nrrd(mask_path):
-            mask, header = nrrd.read(mask_path)
-        else:
-            raise NotImplementedError(
-                "Only {} files are supported but got {}".format(ImageTypes.ALL, os.path.splitext(mask_path)[1]))
+        if mask_path is not None:
+            if not os.path.exists(mask_path):
+                raise FileNotFoundError("Provided image path is not valid.")
 
-        mask[mask >= 1] = 1
-        self._mask = mask
+            if Image.is_nifti(mask_path):
+                mask = nib.load(mask_path).get_fdata().__array__()
+            elif Image.is_nrrd(mask_path):
+                mask, header = nrrd.read(mask_path)
+            else:
+                raise NotImplementedError(
+                    "Only {} files are supported but got {}".format(ImageTypes.ALL, os.path.splitext(mask_path)[1]))
+
+            mask[mask >= 1] = 1
+            self._mask = mask
 
     def __call__(self, input: Union[nib.Nifti1Image, Sample]) -> Union[nib.Nifti1Image, Sample]:
         if isinstance(input, nib.Nifti1Image) or isinstance(input, nib.Nifti2Image):
+            assert self._mask is not None
             nd_array = input.get_fdata().__array__()
             header = input.header
             return nib.Nifti1Image(np.multiply(nd_array, self._mask), None, header)
 
         elif isinstance(input, Sample):
             sample = input
-            if not (isinstance(sample.x, nib.Nifti1Image) and isinstance(sample.y,
-                                                                         nib.Nifti1Header)) or (
-                    isinstance(sample.x, nib.Nifti2Image) and isinstance(sample.y,
-                                                                         nib.Nifti2Image)):
+            transformed_sample = Sample.from_sample(sample)
+            if not ((isinstance(sample.x, nib.nifti1.Nifti1Image) and isinstance(sample.y,
+                                                                                 nib.nifti1.Nifti1Image)) or (
+                            isinstance(sample.x, nib.nifti2.Nifti2Image) and isinstance(sample.y,
+                                                                                        nib.nifti2.Nifti2Image))):
                 raise TypeError("Only Nifti1Image and Nifti2Images are supported.")
 
-            return nib.Nifti1Image(np.multiply(sample.x.get_fdata.__array__(), self._mask), None, sample.x.header)
+            transformed_sample.x = nib.Nifti1Image(
+                np.multiply(sample.x.get_fdata().__array__(), sample.y.get_fdata().__array__()),
+                None, sample.x.header)
 
+            return sample.update(transformed_sample)
         else:
             raise TypeError("Image type must be Nifti1Image, Nifti2Image or a Sample, but got {}".format(type(input)))
 

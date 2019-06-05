@@ -449,12 +449,41 @@ class NiftiToDiskTest(unittest.TestCase):
 
 class ApplyMaskToNiftiImageTest(unittest.TestCase):
     TEST_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data")
+    OUTPUT_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data/generated/ApplyMaskToNiftiImage")
     VALID_MASK_FILE = os.path.join(TEST_DATA_FOLDER_PATH, "Mask.nii")
     INVALID_MASK_FILE = os.path.join(TEST_DATA_FOLDER_PATH, "invalid_mask.nii")
     VALID_3D_NIFTI_FILE = os.path.join(TEST_DATA_FOLDER_PATH, "T1.nii")
+    MASKED_FILE_FROM_SAMPLE = os.path.join(OUTPUT_DATA_FOLDER_PATH, "masked_file_from_sample.nii")
+
+    ALL = [MASKED_FILE_FROM_SAMPLE]
+
+    @classmethod
+    def _flatten(cls, l):
+        for el in l:
+            if isinstance(el, collections.Iterable) and not isinstance(el, (str, bytes)):
+                yield from cls._flatten(el)
+            else:
+                yield el
 
     def setUp(self):
         pass
+
+    @classmethod
+    def setUpClass(cls):
+        all_files = cls._flatten(cls.ALL)
+        for element in all_files:
+            if os.path.exists(element):
+                os.remove(element)
+            else:
+                print('File does not exists')
+
+        if not os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH):
+            os.makedirs(cls.OUTPUT_DATA_FOLDER_PATH)
+
+        assert_that(len(os.listdir(cls.OUTPUT_DATA_FOLDER_PATH)), is_(0))
+        assert_that(os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH), is_(True))
+
+        print("Files deleted.")
 
     def test_should_initialize_mask_correctly(self):
         transformer = ApplyMaskToNiftiImage(self.VALID_MASK_FILE)
@@ -472,6 +501,26 @@ class ApplyMaskToNiftiImageTest(unittest.TestCase):
         nifti = nib.load(self.VALID_3D_NIFTI_FILE)
         transformed_nifti = transformer.__call__(nifti)
         np.testing.assert_array_equal(transformed_nifti.shape, nifti.shape)
+
+    def test_should_return_sample_with_masked_image(self):
+        sample = Sample(x=self.VALID_3D_NIFTI_FILE, y=self.VALID_MASK_FILE, is_labeled=True)
+        transformed_sample = LoadNifti().__call__(sample)
+        transformed_sample = ApplyMaskToNiftiImage().__call__(transformed_sample)
+
+        assert_that(transformed_sample.x, instance_of(nib.Nifti1Image))
+
+    def test_should_raise_TypeError_exception_with_invalid_masked_image(self):
+        sample = Sample(x=self.VALID_3D_NIFTI_FILE, y=self.VALID_MASK_FILE, is_labeled=True)
+        transformed_sample = LoadNifti().__call__(sample)
+        transformed_sample.y = "incorrect_input"
+        transform_ = ApplyMaskToNiftiImage()
+
+        assert_that(calling(transform_).with_args(transformed_sample), raises(TypeError))
+
+    def test_should_raise_TypeError_exception_with_invalid_argument(self):
+        transform_ = ApplyMaskToNiftiImage()
+
+        assert_that(calling(transform_).with_args("invalid_argument"), raises(TypeError))
 
 
 class ApplyMaskToNiftiTensor(unittest.TestCase):
