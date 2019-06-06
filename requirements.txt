@@ -10,3 +10,4 @@ pytorch-ignite>=0.2.0
 pynrrd>=0.4.0
 Sphinx>=2.0.1
 opencv-python>=4.1.0
+PyYAML>=5.1
