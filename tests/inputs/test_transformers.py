@@ -348,13 +348,13 @@ class ToNifti1ImageTest(unittest.TestCase):
 
         assert_that(calling(transform_).with_args(sample), raises(TypeError))
 
-    def test_should_raise_ValueError_with_non_list_header_while_sample_is_labeled(self):
+    def test_should_return_a_nifti1Image_sample_with_non_list_header_while_sample_is_labeled(self):
         header_image = nib.load(self.VALID_3D_LABELS).header
         sample = Sample(x=self.VALID_3D_LABELS, y=self.VALID_3D_NIFTI_FILE, is_labeled=True)
         nd_array_sample = ToNumpyArray().__call__(sample)
         transform_ = ToNifti1Image(header_image)
 
-        assert_that(calling(transform_).with_args(nd_array_sample), raises(ValueError))
+        assert_that(calling(transform_).with_args(nd_array_sample), raises(AssertionError))
 
     def test_should_raise_AssertionError_with_non_list_header_while_sample_is_mislabeled(self):
         header_image = nib.load(self.VALID_3D_LABELS).header
@@ -363,14 +363,14 @@ class ToNifti1ImageTest(unittest.TestCase):
         nd_array_sample = ToNumpyArray().__call__(sample)
         transform_ = ToNifti1Image([header_image, header_labels])
 
-        assert_that(calling(transform_).with_args(nd_array_sample), raises(AssertionError))
+        assert_that(calling(transform_).with_args(nd_array_sample), raises(AttributeError))
 
     def test_should_raise_AssertionError_with_non_list_header_while_sample_has_bad_header(self):
         sample = Sample(x=self.VALID_3D_LABELS, y=self.VALID_3D_NIFTI_FILE, is_labeled=True)
         nd_array_sample = ToNumpyArray().__call__(sample)
         transform_ = ToNifti1Image(["bad_header", np.random.randint(0, 255, (32, 32))])
 
-        assert_that(calling(transform_).with_args(nd_array_sample), raises(TypeError))
+        assert_that(calling(transform_).with_args(nd_array_sample), raises(NotImplementedError))
 
 
 class NiftiToDiskTest(unittest.TestCase):
@@ -436,7 +436,7 @@ class NiftiToDiskTest(unittest.TestCase):
         transformed_sample = ToNifti1Image([header_image, header_label]).__call__(transformed_sample)
         transform_ = NiftiToDisk("bad_input")
 
-        assert_that(calling(transform_).with_args(transformed_sample), raises(TypeError))
+        assert_that(calling(transform_).with_args(transformed_sample), raises(ValueError))
 
 
 class ApplyMaskTest(unittest.TestCase):
@@ -663,8 +663,14 @@ class RemapClassIDsTest(unittest.TestCase):
     def test_should_raise_TypeError_exception_with_2D_Numpy_ndarray(self):
         nd_array = np.random.randint(0, 3, (32, 32))
         transform_ = RemapClassIDs([1, 2, 3], [4, 8, 12])
+        remapped_nd_array = transform_(nd_array)
+        expected_nd_array = nd_array * 4
 
-        assert_that(calling(transform_).with_args(nd_array), raises(TypeError))
+        assert_that(np.isnan(np.all(remapped_nd_array)), is_(False))
+        assert_that(np.isnan(np.all(remapped_nd_array)), is_(False))
+        assert_that(np.isnan(np.all(expected_nd_array)), is_(False))
+        assert_that(np.isnan(np.all(expected_nd_array)), is_(False))
+        np.testing.assert_array_equal(remapped_nd_array, expected_nd_array)
 
 
 class To2DNifti1ImageTest(unittest.TestCase):
