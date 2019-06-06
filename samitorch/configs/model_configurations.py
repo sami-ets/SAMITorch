@@ -43,10 +43,10 @@ class UNetModelConfiguration(ModelConfiguration):
         self._num_levels = config["num_levels"]
         self._conv_kernel_size = config["conv_kernel_size"]
         self._pool_kernel_size = config["pool_kernel_size"]
-        self._pooling_type = PoolingLayers.from_string(config["pooling_type"])
+        self._pooling_type = PoolingLayers(config["pooling_type"])
         self._num_groups = config["num_groups"]
         self._padding = config["padding"]
-        self._activation = ActivationLayers.from_string(config["activation"])
+        self._activation = ActivationLayers(config["activation"])
         self._interpolation = config["interpolation"]
         self._scale_factor = config["scale_factor"]
 
@@ -155,7 +155,7 @@ class ResNetModelConfiguration(ModelConfiguration):
         self._conv_groups = config["conv_groups"]
         self._width_per_group = config["width_per_group"]
         self._padding = config["padding"]
-        self._activation = ActivationLayers.from_string(config["activation"])
+        self._activation = ActivationLayers(config["activation"])
         self._zero_init_residual = config["zero_init_residual"]
         self._replace_stride_with_dilation = config["replace_stride_with_dilation"]
 
