@@ -108,7 +108,7 @@ class ToNumpyArray(object):
             elif Image.is_nrrd(input):
                 nd_array, header = nrrd.read(input)
             else:
-                raise NotImplementedError("Only {} files are supported".format(ImageTypes.ALL))
+                raise NotImplementedError("Only {} files are supported".format(ImageTypes.ALL.value))
 
             nd_array = self._expand_dims(nd_array)
             nd_array = self._transpose(nd_array)
@@ -169,7 +169,7 @@ class ToNumpyArray(object):
 
                         else:
                             raise NotImplementedError(
-                                "Only {} files are supported, but got {}".format(ImageTypes.ALL,
+                                "Only {} files are supported, but got {}".format(ImageTypes.ALL.value,
                                                                                  os.path.splitext(sample.x)[1]))
                         nd_array = self._transpose(nd_array)
                         y.append(nd_array)
@@ -211,8 +211,10 @@ class ToNumpyArray(object):
         """
         if nd_darray.ndim == 3:
             nd_darray = np.expand_dims(nd_darray, 3)
+        elif nd_darray.ndim == 4:
+            pass
         else:
-            raise ValueError("Numpy ndarray must be 3D.")
+            raise ValueError("Numpy ndarray must be 3D or 4D.")
         return nd_darray
 
     @staticmethod
@@ -893,7 +895,8 @@ class ToNifti1Image(object):
     """
 
     def __init__(self,
-                 header: Union[nib.Nifti1Header, List[Union[nib.Nifti1Header, nib.Nifti2Header]], None] = None) -> None:
+                 header: Union[nib.Nifti1Header, List[Union[nib.Nifti1Header, nib.Nifti2Header]], None] = None,
+                 affine: Union[List[np.ndarray], np.ndarray, None] = None) -> None:
         """
         Transformer initializer.
 
@@ -903,8 +906,11 @@ class ToNifti1Image(object):
         if isinstance(header, list):
             if not len(header) == 2:
                 raise ValueError("List of headers must contain 2 elements.")
-
+        if isinstance(affine, list):
+            if not len(affine) == 2:
+                raise ValueError("List of affine transforms must contain 2 elements.")
         self._header = header
+        self._affine = affine
 
     def __call__(self, input: Union[np.ndarray, Sample]) -> Union[nib.Nifti1Image, Sample]:
         """
@@ -922,10 +928,10 @@ class ToNifti1Image(object):
                 raise TypeError("Only 3D (DxHxW) or 4D (CxDxHxW) ndarrays are supported")
 
             if isinstance(self._header, nib.Nifti1Header):
-                return nib.Nifti1Image(input.transpose((3, 2, 1, 0)), None, self._header)
+                return nib.Nifti1Image(input.transpose((3, 2, 1, 0)), self._affine, self._header)
 
             else:
-                return nib.Nifti1Image(input.transpose((3, 2, 1, 0)), None)
+                return nib.Nifti1Image(input.transpose((3, 2, 1, 0)), self._affine)
 
         elif isinstance(input, Sample):
             sample = input
@@ -935,25 +941,9 @@ class ToNifti1Image(object):
                 raise TypeError("Only 3D (DxHxW) or 4D (CxDxHxW) ndarrays are supported")
 
             if isinstance(self._header, nib.Nifti1Header) or isinstance(self._header, nib.Nifti2Header):
-                assert not sample.is_labeled, "Provided a Sample which is labeled, but not enough header objects. Axes won't follow Y image."
+                assert not sample.is_labeled, "Provided a Sample which is labeled, but not enough header objects."
 
-                transformed_sample.x = nib.Nifti1Image(sample.x.transpose((3, 2, 1, 0)), None, self._header)
-
-                return sample.update(transformed_sample)
-
-            elif self._header is None:
-                transformed_sample.x = nib.Nifti1Image(sample.x.transpose((3, 2, 1, 0)), None, None)
-
-                if sample.is_labeled:
-                    if isinstance(sample.y, np.ndarray) and sample.y.ndim in [3, 4]:
-                        y = nib.Nifti1Image(sample.y.transpose((3, 2, 1, 0)), None, None)
-
-                    elif isinstance(sample.y, np.ndarray) and sample.y.ndim == 1:
-                        y = sample.y
-
-                    else:
-                        raise NotImplementedError("Incorrect parameters.")
-                    transformed_sample.y = y
+                transformed_sample.x = nib.Nifti1Image(sample.x.transpose((3, 2, 1, 0)), self._affine, self._header)
 
                 return sample.update(transformed_sample)
 
@@ -964,8 +954,8 @@ class ToNifti1Image(object):
                         isinstance(self._header[0], nib.Nifti2Header) and isinstance(self._header[1],
                                                                                      nib.Nifti2Header)):
 
-                    transformed_sample.x = nib.Nifti1Image(sample.x.transpose((3, 2, 1, 0)), None, self._header[0])
-                    transformed_sample.y = nib.Nifti1Image(sample.y.transpose((3, 2, 1, 0)), None, self._header[1])
+                    transformed_sample.x = nib.Nifti1Image(sample.x.transpose((3, 2, 1, 0)), self._affine[0], self._header[0])
+                    transformed_sample.y = nib.Nifti1Image(sample.y.transpose((3, 2, 1, 0)), self._affine[1], self._header[1])
 
                     return sample.update(transformed_sample)
 
