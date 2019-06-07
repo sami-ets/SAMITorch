@@ -28,7 +28,7 @@ from samitorch.inputs.sample import Sample
 
 from samitorch.inputs.transformers import LoadNifti, ToNifti1Image, RemapClassIDs, ApplyMask, \
     ToNumpyArray, RandomCrop, NiftiToDisk, To2DNifti1Image, ToPNGFile, RandomCrop3D, \
-    NiftiImageToNumpy, ResampleNiftiImageToTemplate
+    NiftiImageToNumpy, ResampleNiftiImageToTemplate, CropToContent
 
 
 class ToNumpyArrayTest(unittest.TestCase):
@@ -992,3 +992,67 @@ class ToPNGFileTest(unittest.TestCase):
 
         for file_name in self.PNG_SAMPLE_3D:
             assert_that(os.path.exists(os.path.join(self.OUTPUT_DATA_FOLDER_PATH, file_name)))
+
+
+class CropToContentTest(unittest.TestCase):
+    TEST_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data")
+    OUTPUT_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data/generated/CropToContent")
+    VALID_3D_NIFTI_FILE = os.path.join(TEST_DATA_FOLDER_PATH, "T1.nii")
+    VALID_MASK_FILE = os.path.join(TEST_DATA_FOLDER_PATH, "Mask.nii")
+    CROPPED_NIFTI_IMAGE_FROM_SAMPLE = os.path.join(OUTPUT_DATA_FOLDER_PATH, "cropped_image_sample.nii")
+    CROPPED_NIFTI_LABELS_FROM_SAMPLE = os.path.join(OUTPUT_DATA_FOLDER_PATH, "cropped_labels_sample.nii")
+    CROPPED_NIFTI_IMAGE_FROM_NUMPY_NDARRAY = os.path.join(OUTPUT_DATA_FOLDER_PATH, "cropped_image_ndarray.nii")
+    ALL = [CROPPED_NIFTI_IMAGE_FROM_NUMPY_NDARRAY, CROPPED_NIFTI_IMAGE_FROM_SAMPLE, CROPPED_NIFTI_LABELS_FROM_SAMPLE]
+
+    @classmethod
+    def _flatten(cls, l):
+        for el in l:
+            if isinstance(el, collections.Iterable) and not isinstance(el, (str, bytes)):
+                yield from cls._flatten(el)
+            else:
+                yield el
+
+    def setUp(self):
+        pass
+
+    @classmethod
+    def setUpClass(cls):
+        all_files = cls._flatten(cls.ALL)
+        for element in all_files:
+            if os.path.exists(element):
+                os.remove(element)
+        if not os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH):
+            os.makedirs(cls.OUTPUT_DATA_FOLDER_PATH)
+
+        assert_that(len(os.listdir(cls.OUTPUT_DATA_FOLDER_PATH)), is_(0))
+        assert_that(os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH), is_(True))
+
+    def test_should_produce_cropped_to_content_from_sample(self):
+        image = nib.load(self.VALID_3D_NIFTI_FILE)
+        label = nib.load(self.VALID_MASK_FILE)
+
+        image_data = np.expand_dims(image.get_data().__array__(), axis=-1).transpose((3, 2, 1, 0))
+        label_data = np.expand_dims(label.get_data().__array__(), axis=-1).transpose((3, 2, 1, 0))
+
+        sample = Sample(x=image_data, y=label_data, is_labeled=True)
+
+        cropped_sample = CropToContent().__call__(sample)
+
+        assert_that(cropped_sample.x.ndim, equal_to(image_data.ndim))
+        assert_that(cropped_sample.x.shape, less_than_or_equal_to(sample.x.shape))
+
+        nifti_image = nib.Nifti1Image(cropped_sample.x.transpose((3, 2, 1, 0)), None, image.header)
+        nib.save(nifti_image, self.CROPPED_NIFTI_IMAGE_FROM_SAMPLE)
+        nifti_image = nib.Nifti1Image(cropped_sample.y.transpose((3, 2, 1, 0)), None, label.header)
+        nib.save(nifti_image, self.CROPPED_NIFTI_LABELS_FROM_SAMPLE)
+
+    def test_should_produce_cropped_to_content_from_ndarray(self):
+        image = nib.load(self.VALID_3D_NIFTI_FILE)
+        image_data = image.get_data().__array__()
+        image_data = np.expand_dims(image_data, axis=-1).transpose((3, 2, 1, 0))
+        cropped = CropToContent().__call__(image_data)
+        assert_that(cropped.ndim, equal_to(image_data.ndim))
+        assert_that(cropped.shape, less_than_or_equal_to(image_data.shape))
+
+        image = nib.Nifti1Image(cropped.transpose((3, 2, 1, 0)), None, image.header)
+        nib.save(image, self.CROPPED_NIFTI_IMAGE_FROM_NUMPY_NDARRAY)

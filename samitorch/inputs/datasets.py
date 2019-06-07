@@ -14,10 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-import abc
-import numpy as np
-import nibabel as nib
-
 from typing import Callable, List, Optional
 
 from torch.utils.data.dataset import Dataset
@@ -71,7 +67,7 @@ class MultimodalDataset(Dataset):
         Args:
             source_dirs (List[str]): Paths to source images.
             target_dirs (List[str]): paths to target (labels) images.
-            transform (Callable): transform to apply to both source and target images.
+            transform (Callable): transform to apply to both source and target images.w
         """
         self._source_dirs, self._target_dirs = source_dirs, target_dirs
         self._source_paths, self._target_paths = [glob_imgs(sd) for sd in source_dirs], [glob_imgs(td) for td

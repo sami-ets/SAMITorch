@@ -892,7 +892,8 @@ class ToNifti1Image(object):
     The Numpy arrays are transposed to respect the standard Nifti dimensions (WxHxDxC)
     """
 
-    def __init__(self, header: Union[nib.Nifti1Header, List[Union[nib.Nifti1Header, nib.Nifti2Header]], None]) -> None:
+    def __init__(self,
+                 header: Union[nib.Nifti1Header, List[Union[nib.Nifti1Header, nib.Nifti2Header]], None] = None) -> None:
         """
         Transformer initializer.
 
@@ -987,14 +988,32 @@ class CropToContent(object):
     The content's bounding box is defined by the first non-zero slice in each direction (D, H, W)
     """
 
-    def __call__(self, nd_array: np.ndarray) -> np.ndarray:
-        if not isinstance(nd_array, np.ndarray) or (nd_array.ndim not in [3, 4]):
-            raise TypeError("Only 3D (DxHxW) or 4D (CxDxHxW) ndarrays are supported")
+    def __call__(self, input: Union[np.ndarray, Sample]) -> Union[np.ndarray, Sample]:
+        if isinstance(input, np.ndarray):
 
-        d_min, d_max, h_min, h_max, w_min, w_max = self.extract_content_bounding_box_from(nd_array)
+            if not input.ndim is 4:
+                raise TypeError("Only 4D (CxDxHxW) ndarrays are supported")
 
-        return nd_array[:, d_min:d_max, h_min:h_max, w_min:w_max] if nd_array.ndim is 4 else \
-            nd_array[d_min:d_max, h_min:h_max, w_min:w_max]
+            d_min, d_max, h_min, h_max, w_min, w_max = self.extract_content_bounding_box_from(input)
+
+            return input[:, d_min:d_max, h_min:h_max, w_min:w_max]
+
+        elif isinstance(input, Sample):
+            sample = input
+            transformed_sample = Sample.from_sample(sample)
+
+            d_min, d_max, h_min, h_max, w_min, w_max = self.extract_content_bounding_box_from(sample.x)
+
+            transformed_sample.x = sample.x[:, d_min:d_max, h_min:h_max,
+                                   w_min:w_max]
+
+            transformed_sample.y = sample.y[:, d_min:d_max, h_min:h_max,
+                                   w_min:w_max]
+
+            return sample.update(transformed_sample)
+
+        else:
+            raise TypeError("Only Numpy ndarrays and Sample objects are supported.")
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
