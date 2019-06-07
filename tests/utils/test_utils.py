@@ -16,11 +16,15 @@
 
 import unittest
 import torch
+import os
 
-from samitorch.utils.utils import to_onehot, flatten
+from hamcrest import *
+
+from samitorch.utils.utils import to_onehot, flatten, glob_imgs
 
 
 class UtilsTest(unittest.TestCase):
+    TEST_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data")
 
     def setUp(self):
         pass
@@ -52,3 +56,13 @@ class UtilsTest(unittest.TestCase):
         x = torch.randint(0, 255, size=(15, 3, 10, 10))
         flattened_x = flatten(x)
         assert flattened_x.size() == torch.Size([3, 1500])
+
+    def test_glob_imgs(self):
+        all_paths = [os.path.join(self.TEST_DATA_FOLDER_PATH, "DTI.nii"),
+                     os.path.join(self.TEST_DATA_FOLDER_PATH, "FA.nii"),
+                     os.path.join(self.TEST_DATA_FOLDER_PATH, "Mask.nii"),
+                     os.path.join(self.TEST_DATA_FOLDER_PATH, "T1.nii")]
+
+        paths = glob_imgs(self.TEST_DATA_FOLDER_PATH)
+
+        assert_that(paths, equal_to(all_paths))

@@ -99,7 +99,7 @@ class ToNumpyArray(object):
 
         if isinstance(input, nib.Nifti1Image) or isinstance(input, nib.Nifti2Image):
             nd_array = input.get_fdata().__array__()
-            nd_array = self._expand_dims_and_transpose(nd_array)
+            nd_array = self._expand_dims(nd_array)
             return nd_array
 
         elif isinstance(input, str):
@@ -109,48 +109,116 @@ class ToNumpyArray(object):
                 nd_array, header = nrrd.read(input)
             else:
                 raise NotImplementedError("Only {} files are supported".format(ImageTypes.ALL))
-            nd_array = self._expand_dims_and_transpose(nd_array)
+
+            nd_array = self._expand_dims(nd_array)
+            nd_array = self._transpose(nd_array)
             return nd_array
 
         elif isinstance(input, Sample):
             sample = input
             transformed_sample = Sample.from_sample(sample)
 
-            if not os.path.exists(sample.x):
-                raise FileNotFoundError("Provided image path is not valid.")
+            if isinstance(sample.x, list):
+                x = list()
+                for path in sample.x:
+                    if not os.path.exists(path):
+                        raise FileNotFoundError("Provided image path is not valid.")
 
-            if Image.is_nifti(sample.x):
-                x = nib.load(sample.x).get_fdata().__array__()
-            elif Image.is_nrrd(sample.x):
-                x, header = nrrd.read(sample.x)
-            else:
-                raise NotImplementedError(
-                    "Only {} files are supported, but got {}".format(ImageTypes.ALL, os.path.splitext(sample.x)[1]))
+                    if Image.is_nifti(path):
+                        nd_array = nib.load(path).get_fdata().__array__()
+                    elif Image.is_nrrd(path):
+                        nd_array, header = nrrd.read(path)
+                    else:
+                        raise NotImplementedError(
+                            "Only {} files are supported, but got {}".format(ImageTypes.ALL,
+                                                                             os.path.splitext(sample.x)[1]))
+                    nd_array = self._transpose(nd_array)
+                    x.append(nd_array)
 
-            x = self._expand_dims_and_transpose(x)
-            transformed_sample.x = x
+                transformed_sample.x = np.concatenate(x, axis=0)
 
-            if sample.is_labeled:
-                if not os.path.exists(sample.x):
-                    raise FileNotFoundError("Provided image path is not valid.")
-                if Image.is_nifti(sample.y):
-                    y = nib.load(sample.y).get_fdata().__array__()
-                elif Image.is_nrrd(sample.y):
-                    y, header = nrrd.read(sample.y)
-                elif isinstance(sample.y, np.ndarray) and sample.y.ndim == 1:
-                    y = sample.y
+            elif isinstance(sample.x, str):
+                if Image.is_nifti(sample.x):
+                    x = nib.load(sample.x).get_fdata().__array__()
+                elif Image.is_nrrd(sample.x):
+                    x, header = nrrd.read(sample.x)
                 else:
                     raise NotImplementedError(
-                        "Only Nifti, NRRD or Numpy ndarray types are supported but got {}".format(type(sample.y)))
-                y = self._expand_dims_and_transpose(y)
-                transformed_sample.y = y
+                        "Only {} files are supported, but got {}".format(ImageTypes.ALL, os.path.splitext(sample.x)[1]))
+
+                x = self._expand_dims(x)
+                x = self._transpose(x)
+
+                transformed_sample.x = x
+
+            else:
+                raise ValueError("X in Sample must either be a String or List of Strings.")
+
+            if sample.is_labeled:
+                if isinstance(sample.y, list):
+                    y = list()
+                    for path in sample.y:
+                        if not os.path.exists(path):
+                            raise FileNotFoundError("Provided image path is not valid.")
+
+                        if Image.is_nifti(path):
+                            nd_array = nib.load(path).get_fdata().__array__()
+
+                        elif Image.is_nrrd(path):
+                            nd_array, header = nrrd.read(path)
+
+                        else:
+                            raise NotImplementedError(
+                                "Only {} files are supported, but got {}".format(ImageTypes.ALL,
+                                                                                 os.path.splitext(sample.x)[1]))
+                        nd_array = self._transpose(nd_array)
+                        y.append(nd_array)
+
+                    transformed_sample.y = np.concatenate(y, axis=0)
+
+                elif isinstance(sample.y, str):
+                    if not os.path.exists(sample.y):
+                        raise FileNotFoundError("Provided image path is not valid.")
+                    if Image.is_nifti(sample.y):
+                        nd_array = nib.load(sample.y).get_fdata().__array__()
+
+                    elif Image.is_nrrd(sample.y):
+                        nd_array, header = nrrd.read(sample.y)
+
+                    elif isinstance(sample.y, np.ndarray) and sample.y.ndim == 1:
+                        nd_array = sample.y
+
+                    else:
+                        raise NotImplementedError(
+                            "Only Nifti, NRRD or Numpy ndarray types are supported but got {}".format(type(sample.y)))
+
+                    nd_array = self._expand_dims(nd_array)
+                    nd_array = self._transpose(nd_array)
+                    transformed_sample.y = nd_array
 
             return sample.update(transformed_sample)
 
     @staticmethod
-    def _expand_dims_and_transpose(nd_darray: np.ndarray) -> np.ndarray:
+    def _expand_dims(nd_darray: np.ndarray) -> np.ndarray:
         """
-        Expands an Numpy ndarray and transpose its axes to respect the standard dimensions (DxHxW) for 3D or (CxDxHxW) for 4D arrays.
+        Expands an Numpy ndarray (DxHxW) from 3D to 4D array.
+
+        Args:
+            nd_darray (:obj:`Numpy.ndarray`): A Numpy array.
+
+        Returns:
+            :obj:`Numpy.ndarray`: An expanded Numpy array.
+        """
+        if nd_darray.ndim == 3:
+            nd_darray = np.expand_dims(nd_darray, 3)
+        else:
+            raise ValueError("Numpy ndarray must be 3D.")
+        return nd_darray
+
+    @staticmethod
+    def _transpose(nd_darray: np.ndarray) -> np.ndarray:
+        """
+        Transpose axes of an Numpy ndarray to respect the standard dimensions (DxHxW) for 3D or (CxDxHxW) for 4D arrays.
 
         Args:
             nd_darray (:obj:`Numpy.ndarray`): A Numpy array.
@@ -159,9 +227,11 @@ class ToNumpyArray(object):
             :obj:`Numpy.ndarray`: A transposed, expanded Numpy array.
         """
         if nd_darray.ndim == 3:
-            nd_darray = np.expand_dims(nd_darray, 3).transpose((3, 2, 1, 0))
+            nd_darray = np.transpose(nd_darray, (2, 1, 0))
         elif nd_darray.ndim == 4:
-            nd_darray = nd_darray.transpose((3, 2, 1, 0))
+            nd_darray = np.transpose(nd_darray, (3, 2, 1, 0))
+        else:
+            raise ValueError("Numpy ndarray must be 3D or 4D.")
         return nd_darray
 
     def __repr__(self):
