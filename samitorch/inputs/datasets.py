@@ -23,6 +23,7 @@ from typing import Callable, List, Optional
 from torch.utils.data.dataset import Dataset
 
 from samitorch.utils.utils import glob_imgs
+from samitorch.inputs.sample import Sample
 
 
 class NiftiDataset(Dataset):
@@ -30,38 +31,28 @@ class NiftiDataset(Dataset):
     Create a dataset class in PyTorch for reading NIfTI files.
     """
 
-    def __init__(self, source_dir: str, target_dir: str, transform: Optional[Callable] = None,
-                 preload: bool = False) -> None:
+    def __init__(self, source_dir: str, target_dir: str, transform: Optional[Callable] = None) -> None:
         """
         Dataset initializer.
 
         Args:
             source_dir (str): Path to source images.
             target_dir (str): Path to target (labels) images.
-            transform (Callable): transform to apply to both source and target images
-            preload (bool): load all data when initializing the dataset
+            transform (Callable): transform to apply to both source and target images.
         """
         self._source_dir, self._target_dir = source_dir, target_dir
         self._source_paths, self._target_paths = glob_imgs(source_dir), glob_imgs(target_dir)
         self._transform = transform
-        self._preload = preload
 
         if len(self._source_paths) != len(self._target_paths) or len(self._source_paths) == 0:
             raise ValueError("Number of source and target images must be equal and non-zero.")
-
-        if preload:
-            self._images = [(nib.load(s).get_fdata(), nib.load(t).get_fdata())
-                            for s, t in zip(self._source_paths, self._target_paths)]
 
     def __len__(self):
         return len(self._source_paths)
 
     def __getitem__(self, idx: int):
-        if not self._preload:
-            source_path, target_path = self._source_paths[idx], self._target_paths[idx]
-            sample = (nib.load(source_path).get_fdata(), nib.load(target_path).get_fdata())
-        else:
-            sample = self._images[idx]
+        source_path, target_path = self._source_paths[idx], self._target_paths[idx]
+        sample = Sample(x=source_path, y=target_path, is_labeled=True)
 
         if self._transform is not None:
             sample = self._transform(sample)
@@ -83,9 +74,9 @@ class MultimodalDataset(Dataset):
             transform (Callable): transform to apply to both source and target images.
         """
         self._source_dirs, self._target_dirs = source_dirs, target_dirs
-        self._source_paths, self._target_paths = [self.glob_imgs(sd) for sd in source_dirs], [self.glob_imgs(td) for td
-                                                                                              in
-                                                                                              target_dirs]
+        self._source_paths, self._target_paths = [glob_imgs(sd) for sd in source_dirs], [glob_imgs(td) for td
+                                                                                         in
+                                                                                         target_dirs]
         self._transform = transform
 
         if any([len(self._source_paths[0]) != len(sfn) for sfn in self._source_paths]) or \
@@ -101,25 +92,12 @@ class MultimodalDataset(Dataset):
         source_image, target_image = [source_path[idx] for source_path in self._source_paths], [target_path[idx] for
                                                                                                 target_path in
                                                                                                 self._target_paths]
-        sample = (self.stack([self.get_data(s) for s in source_image]),
-                  self.stack([self.get_data(t) for t in target_image]))
+        sample = Sample(x=source_image, y=target_image, is_labeled=True)
 
         if self._transform is not None:
             sample = self._transform(sample)
 
         return sample
-
-    @abc.abstractmethod
-    def glob_imgs(self, path):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def get_data(self, fn):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def stack(self, imgs):
-        raise NotImplementedError
 
 
 class MultimodalNiftiDataset(MultimodalDataset):
@@ -130,9 +108,3 @@ class MultimodalNiftiDataset(MultimodalDataset):
 
     def __init__(self, source_dirs: List[str], target_dirs: List[str], transform: Optional[Callable] = None) -> None:
         super(MultimodalNiftiDataset, self).__init__(source_dirs, target_dirs, transform)
-
-    def glob_imgs(self, path): return glob_imgs(path, ext='*.nii*')
-
-    def get_data(self, fn): return nib.load(fn).get_fdata().astype(np.float32)
-
-    def stack(self, imgs): return np.stack(imgs, axis=0)

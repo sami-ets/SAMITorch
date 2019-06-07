@@ -19,7 +19,7 @@ import unittest
 import numpy as np
 from hamcrest import *
 
-from samitorch.metrics.gauges import AccuracyGauge
+from samitorch.metrics.gauges import RunningAverageGauge
 
 
 class AccuracyGaugeTest(unittest.TestCase):
@@ -29,7 +29,7 @@ class AccuracyGaugeTest(unittest.TestCase):
     INVALID_VALUE = "DARTH VADER"
 
     def setUp(self):
-        self.gauge = AccuracyGauge()
+        self.gauge = RunningAverageGauge()
         self.gauge.reset()
 
     def tearDown(self):

@@ -1,0 +1,16 @@
+model:
+  name: "unet3d"
+  type: "unet3d"
+  feature_maps: 64
+  in_channel: 1 # BAD PARAMETER. SHOULD BE 'in_channels'
+  out_channels: 1
+  num_levels: 4
+  conv_kernel_size: 3
+  pool_kernel_size: 2
+  pooling_type: "MaxPool3d"
+  num_groups: 8
+  padding: !!python/tuple [1, 1, 1, 1, 1, 1]
+  activation: "ReLU"
+  interpolation: True
+  scale_factor: !!python/tuple [2, 2, 2] # Used as the multiplier for the image H/W/D in torch.nn.Upsample or as stride in case of ConvTranspose3d, must reverse the MaxPool3d operation from the corresponding encoder.
+

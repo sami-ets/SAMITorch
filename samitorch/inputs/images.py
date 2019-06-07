@@ -14,24 +14,45 @@
 # limitations under the License.
 # ==============================================================================
 
-class ImageType(object):
+from enum import Enum
+
+
+class ImageTypes(Enum):
     NIFTI = 'nifti'
     NRRD = 'nrrd'
     ALL = [NIFTI, NRRD]
 
-    EXTENSION = {
-        NIFTI: '.nii',
-        NRRD: '.nrrd'
-    }
+    @classmethod
+    def from_string(cls, name: str):
+        for member in cls:
+            if member.name == name:
+                return member
 
 
-class Modality(object):
+class Extensions(Enum):
+    NIFTI = ".nii"
+    NRRD = ".nrrd"
+
+    @classmethod
+    def from_string(cls, name: str):
+        for member in cls:
+            if member.name == name:
+                return member
+
+
+class Modalities(Enum):
     DTI = 'DTI'
     T1 = 'T1'
     T2 = 'T2'
     MD = 'MD'
     FA = 'FA'
     ALL = [DTI, T1, T2, MD, FA]
+
+    @classmethod
+    def from_string(cls, name: str):
+        for member in cls:
+            if member.name == name:
+                return member
 
 
 class Image(object):
@@ -66,27 +87,27 @@ class Image(object):
 
     @staticmethod
     def is_nifti(file):
-        return ImageType.EXTENSION[ImageType.NIFTI] in file
+        return Extensions.NIFTI.value in file
 
     @staticmethod
     def is_nrrd(file):
-        return ImageType.EXTENSION[ImageType.NRRD] in file
+        return Extensions.NRRD.value in file
 
     @staticmethod
     def is_t1(file):
-        return Modality.T1 in file
+        return Modalities.T1 in file
 
     @staticmethod
     def is_dti(file):
-        return Modality.DTI in file
+        return Modalities.DTI in file
 
     @staticmethod
     def is_fa(file):
-        return Modality.FA in file
+        return Modalities.FA in file
 
     @staticmethod
     def is_md(file):
-        return Modality.MD in file
+        return Modalities.MD in file
 
     @staticmethod
     def is_processed(file):
