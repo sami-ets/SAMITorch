@@ -879,7 +879,7 @@ class To2DNifti1Image(object):
         elif isinstance(input, np.ndarray) and (
                 isinstance(self._header, nib.Nifti1Header) or isinstance(self._header, nib.Nifti2Header)):
             if not isinstance(input, np.ndarray) and not input.ndim == 3:
-                raise TypeError("Only 2D (HxW) or 3D (CxHxW) ndarrays are supported")
+                raise TypeError("Only 3D (CxHxW) ndarrays are supported")
 
             return nib.Nifti1Image(input.transpose((2, 1, 0)), None, self._header)
 
@@ -895,7 +895,7 @@ class ToNifti1Image(object):
     """
 
     def __init__(self,
-                 header: Union[nib.Nifti1Header, List[Union[nib.Nifti1Header, nib.Nifti2Header]], None] = None,
+                 header: Union[nib.Nifti1Header, List[Union[nib.Nifti1Header, nib.Nifti2Header, None]], None] = None,
                  affine: Union[List[np.ndarray], np.ndarray, None] = None) -> None:
         """
         Transformer initializer.
@@ -903,12 +903,6 @@ class ToNifti1Image(object):
         Args:
             header (:obj:`nibabel.Nifti1Header): The Nifti image header.
         """
-        if isinstance(header, list):
-            if not len(header) == 2:
-                raise ValueError("List of headers must contain 2 elements.")
-        if isinstance(affine, list):
-            if not len(affine) == 2:
-                raise ValueError("List of affine transforms must contain 2 elements.")
         self._header = header
         self._affine = affine
 
@@ -927,11 +921,9 @@ class ToNifti1Image(object):
             if not isinstance(input, np.ndarray) or (input.ndim not in [3, 4]):
                 raise TypeError("Only 3D (DxHxW) or 4D (CxDxHxW) ndarrays are supported")
 
-            if isinstance(self._header, nib.Nifti1Header):
-                return nib.Nifti1Image(input.transpose((3, 2, 1, 0)), self._affine, self._header)
-
-            else:
-                return nib.Nifti1Image(input.transpose((3, 2, 1, 0)), self._affine)
+            return nib.Nifti1Image(input.transpose((3, 2, 1, 0)),
+                                   self._affine if self._affine is not None else None,
+                                   self._header if self._header is not None else None)
 
         elif isinstance(input, Sample):
             sample = input
@@ -940,35 +932,25 @@ class ToNifti1Image(object):
             if not (isinstance(sample.x, np.ndarray) and (sample.x.ndim in [3, 4])):
                 raise TypeError("Only 3D (DxHxW) or 4D (CxDxHxW) ndarrays are supported")
 
-            if isinstance(self._header, nib.Nifti1Header) or isinstance(self._header, nib.Nifti2Header):
-                assert not sample.is_labeled, "Provided a Sample which is labeled, but not enough header objects."
+            if not isinstance(self._header, list):
+                raise TypeError("A sample requires a list of headers.")
 
-                transformed_sample.x = nib.Nifti1Image(sample.x.transpose((3, 2, 1, 0)), self._affine, self._header)
+            transformed_sample.x = nib.Nifti1Image(sample.x.transpose((3, 2, 1, 0)),
+                                                   self._affine[0] if self._affine is not None else None,
+                                                   self._header[0] if self._header is not None else None)
 
-                return sample.update(transformed_sample)
+            if sample.is_labeled:
+                transformed_sample.y = nib.Nifti1Image(sample.y.transpose((3, 2, 1, 0)),
+                                                       self._affine[1] if self._affine is not None else None,
+                                                       self._header[1] if self._header is not None else None)
 
-            elif isinstance(self._header, list):
+            return sample.update(transformed_sample)
 
-                if (isinstance(self._header[0], nib.Nifti1Header) and isinstance(self._header[1],
-                                                                                 nib.Nifti1Header)) or (
-                        isinstance(self._header[0], nib.Nifti2Header) and isinstance(self._header[1],
-                                                                                     nib.Nifti2Header)):
+        else:
+            raise ValueError("Incorrect parameters.")
 
-                    transformed_sample.x = nib.Nifti1Image(sample.x.transpose((3, 2, 1, 0)), self._affine[0], self._header[0])
-                    transformed_sample.y = nib.Nifti1Image(sample.y.transpose((3, 2, 1, 0)), self._affine[1], self._header[1])
-
-                    return sample.update(transformed_sample)
-
-                else:
-                    raise NotImplementedError("Incorrect parameters.")
-
-            else:
-                raise ValueError(
-                    "Transformer doesn't have a header or a list of Nifti1Header or Nifti2Header headers.")
-
-
-def __repr__(self):
-    return self.__class__.__name__ + '()'
+    def __repr__(self):
+        return self.__class__.__name__ + '()'
 
 
 class CropToContent(object):

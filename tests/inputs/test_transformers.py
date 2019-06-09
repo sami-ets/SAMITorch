@@ -306,24 +306,24 @@ class ToNifti1ImageTest(unittest.TestCase):
         header_image = nib.load(self.VALID_3D_LABELS).header
         sample = Sample(x=self.VALID_3D_LABELS)
         nd_array_sample = ToNumpyArray().__call__(sample)
-        transform_ = ToNifti1Image(header_image)
+        transform_ = ToNifti1Image([header_image])
         nifti_image_sample = transform_(nd_array_sample)
 
         assert_that(nifti_image_sample.x, instance_of(nib.Nifti1Image))
         assert_that(nifti_image_sample.y, is_(None))
 
-    def test_should_return_a_Nifti1Image_Sample_from_single_element_Sample_without_header(self):
+    def test_should_return_sample_from_single_element_Sample_with_one_None_Header(self):
         sample = Sample(x=self.VALID_3D_LABELS)
         nd_array_sample = ToNumpyArray().__call__(sample)
-        transform_ = ToNifti1Image(None)
-        nifti_image_sample = transform_(nd_array_sample)
-        assert_that(nifti_image_sample.x, instance_of(nib.Nifti1Image))
-        assert_that(nifti_image_sample.y, is_(None))
+        transform_ = ToNifti1Image([None])
+        transformed_sample = transform_(nd_array_sample)
+
+        assert_that(transformed_sample.x, instance_of(nib.Nifti1Image))
 
     def test_should_return_a_Nifti1Image_Sample_from_Sample_without_header(self):
         sample = Sample(x=self.VALID_3D_LABELS, y=self.VALID_3D_NIFTI_FILE, is_labeled=True)
         nd_array_sample = ToNumpyArray().__call__(sample)
-        transform_ = ToNifti1Image(None)
+        transform_ = ToNifti1Image([None, None])
         nifti_image_sample = transform_(nd_array_sample)
 
         assert_that(nifti_image_sample.x, instance_of(nib.Nifti1Image))
@@ -331,20 +331,20 @@ class ToNifti1ImageTest(unittest.TestCase):
 
     def test_should_raise_TypeErrorException_with_non_ndarray_sample(self):
         sample = Sample(x=self.VALID_3D_LABELS, y=self.VALID_3D_NIFTI_FILE, is_labeled=True)
-        transform_ = ToNifti1Image(None)
+        transform_ = ToNifti1Image([None])
 
         assert_that(calling(transform_).with_args(sample), raises(TypeError))
 
     def test_should_raise_TypeErrorException_with_incorrect_dims_ndarray_in_x_sample(self):
         sample = Sample(x=np.random.randint(0, 255, (32, 32), dtype=np.int16))
-        transform_ = ToNifti1Image(None)
+        transform_ = ToNifti1Image([None])
 
         assert_that(calling(transform_).with_args(sample), raises(TypeError))
 
     def test_should_raise_TypeErrorException_with_incorrect_dims_ndarray_in_y_sample(self):
         sample = Sample(x=np.random.randint(0, 255, (32, 32), dtype=np.int16),
                         y=np.random.randint(0, 255, (32, 32), dtype=np.int16), is_labeled=True)
-        transform_ = ToNifti1Image(None)
+        transform_ = ToNifti1Image([None, None])
 
         assert_that(calling(transform_).with_args(sample), raises(TypeError))
 
@@ -354,23 +354,23 @@ class ToNifti1ImageTest(unittest.TestCase):
         nd_array_sample = ToNumpyArray().__call__(sample)
         transform_ = ToNifti1Image(header_image)
 
-        assert_that(calling(transform_).with_args(nd_array_sample), raises(AssertionError))
+        assert_that(calling(transform_).with_args(nd_array_sample), raises(TypeError))
 
-    def test_should_raise_AssertionError_with_non_list_header_while_sample_is_mislabeled(self):
-        header_image = nib.load(self.VALID_3D_LABELS).header
+    def test_should_raise_TypeError_with_non_list_header_with_Sample(self):
+        header_image = nib.load(self.VALID_3D_NIFTI_FILE).header
         header_labels = nib.load(self.VALID_3D_LABELS).header
-        sample = Sample(x=self.VALID_3D_LABELS, y=self.VALID_3D_NIFTI_FILE, is_labeled=False)
+        sample = Sample(x=self.VALID_3D_NIFTI_FILE, y=self.VALID_3D_LABELS, is_labeled=True)
         nd_array_sample = ToNumpyArray().__call__(sample)
-        transform_ = ToNifti1Image([header_image, header_labels])
+        transform_ = ToNifti1Image(header_image)
 
-        assert_that(calling(transform_).with_args(nd_array_sample), raises(AttributeError))
+        assert_that(calling(transform_).with_args(nd_array_sample), raises(TypeError))
 
     def test_should_raise_AssertionError_with_non_list_header_while_sample_has_bad_header(self):
         sample = Sample(x=self.VALID_3D_LABELS, y=self.VALID_3D_NIFTI_FILE, is_labeled=True)
         nd_array_sample = ToNumpyArray().__call__(sample)
         transform_ = ToNifti1Image(["bad_header", np.random.randint(0, 255, (32, 32))])
 
-        assert_that(calling(transform_).with_args(nd_array_sample), raises(NotImplementedError))
+        assert_that(calling(transform_).with_args(nd_array_sample), raises(AttributeError))
 
 
 class NiftiToDiskTest(unittest.TestCase):
@@ -891,7 +891,7 @@ class RandomCrop3DTest(unittest.TestCase):
         file_names = [self.CROPPED_NIFTI_IMAGE, self.CROPPED_NIFTI_LABELS]
 
         transform_ = transforms.Compose([RandomCrop3D(output_size=32),
-                                         ToNifti1Image(None),
+                                         ToNifti1Image([None, None]),
                                          NiftiToDisk(
                                              [os.path.join(self.OUTPUT_DATA_FOLDER_PATH, file_path) for file_path in
                                               file_names])])
