@@ -895,7 +895,7 @@ class ToNifti1Image(object):
     """
 
     def __init__(self,
-                 header: Union[nib.Nifti1Header, List[Union[nib.Nifti1Header, nib.Nifti2Header, None]], None] = None,
+                 header: Union[nib.Nifti1Header, List[Union[nib.Nifti1Header, nib.Nifti2Header, None]]] = None,
                  affine: Union[List[np.ndarray], np.ndarray, None] = None) -> None:
         """
         Transformer initializer.
