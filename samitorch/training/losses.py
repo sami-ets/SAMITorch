@@ -120,9 +120,9 @@ class WeightedCrossEntropyLoss(torch.nn.Module):
         Computes the Weighted Cross Entropy Loss (WCE) as described in https://arxiv.org/pdf/1707.03237.pdf
 
         Args:
-            nputs (:obj:`torch.Tensor`): A tensor of shape (B, C, ..). The model's prediction on which the loss has to be computed.
-           targets (:obj:`torch.Tensor`): A tensor of shape (B, C, ..). The ground truth.
-           ignore_index (int): An index to ignore for computation.
+            inputs (:obj:`torch.Tensor`): A tensor of shape (B, C, ..). The model's prediction on which the loss has to be computed.
+            targets (:obj:`torch.Tensor`): A tensor of shape (B, C, ..). The ground truth.
+            ignore_index (int): An index to ignore for computation.
 
        Returns:
            float: the weighted Cross-Entropy loss value.

@@ -4,14 +4,6 @@ samitorch.training package
 Submodules
 ----------
 
-samitorch.training.base\_trainer module
----------------------------------------
-
-.. automodule:: samitorch.training.base_trainer
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 samitorch.training.losses module
 --------------------------------
 

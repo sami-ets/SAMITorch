@@ -7,7 +7,7 @@ Submodules
 samitorch.callbacks.base\_callback module
 -----------------------------------------
 
-.. automodule:: samitorch.callbacks.base_callback
+.. automodule:: samitorch.callbacks.callbacks.Callback
     :members:
     :undoc-members:
     :show-inheritance:
