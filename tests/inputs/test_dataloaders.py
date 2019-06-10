@@ -46,7 +46,7 @@ class DataLoaderTest(unittest.TestCase):
                                 shuffle=True,
                                 validation_split=1,
                                 num_workers=2)
-        valid_dataloader = dataloader.split_validation()
+        valid_dataloader = dataloader.get_validation_dataloader()
 
         assert_that(dataloader, is_not(None))
         assert_that(valid_dataloader, is_not(None))

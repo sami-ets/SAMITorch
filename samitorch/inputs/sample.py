@@ -29,6 +29,8 @@ class Sample(object):
         Args:
             x (any): Source element.
             y (any): Associated ground truth.
+            template (any): A template image (for resampling).
+            is_labeled (bool): Whether or not the sample has a label image (y).
         """
         self._x = x
         self._y = y
@@ -37,18 +39,42 @@ class Sample(object):
 
     @property
     def is_labeled(self):
+        """
+        Define if Sample is labeled.
+
+        Returns:
+            bool: True if sample is labeled (has a non-None `y` property, else False.
+        """
         return self._is_labeled
 
     @property
     def x(self):
+        """
+        The `x` property of the Sample (generally an image).
+
+        Returns:
+            The `x` property.
+        """
         return self._x
 
     @property
     def y(self):
+        """
+        The `y` property of the Sample (generally an image).
+
+        Returns:
+           The `y` property.
+        """
         return self._y
 
     @property
     def template(self):
+        """
+        The `template` property of the Sample (generally an image from which a transformer is based to resample the `x` image).
+
+        Returns:
+           The `template` property.
+        """
         return self._template
 
     @x.setter
@@ -68,14 +94,40 @@ class Sample(object):
         self._is_labeled = is_labeled
 
     def update(self, sample):
+        """
+        Update an existing sample from another Sample.
+
+        Args:
+            sample (:obj:`samitorch.inputs.sample.Sample`): Takes the properties of this Sample to update an existing
+                Sample.
+
+        Returns:
+            :obj:`samitorch.inputs.sample.Sample`: The updated Sample.
+        """
         self._x = sample.x
         self._y = sample.y
         self._is_labeled = sample.is_labeled
         return self
 
-    def unpack(self):
+    def unpack(self) -> tuple:
+        """
+        Unpack a Sample.
+
+        Returns:
+            tuple: A Tuple of elements representing the (X, y) properties of the Sample.
+        """
         return self._x, self._y
 
     @classmethod
     def from_sample(cls, sample):
+        """
+        Create a new Sample from an existing Sample passed in parameter.
+
+        Args:
+            sample (:obj:`samitorch.inputs.sample.Sample`): A template Sample.
+
+        Returns:
+            :obj:`samitorch.inputs.sample.Sample`: A new Sample object with same properties as the one passed in
+                parameter.
+        """
         return cls(sample.x, sample.y, sample.template, sample.is_labeled)

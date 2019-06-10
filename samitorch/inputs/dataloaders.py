@@ -17,6 +17,7 @@
 import torch
 import numpy as np
 
+from typing import Union, Tuple
 from torch.utils.data._utils.collate import default_collate
 from torch.utils.data.sampler import SubsetRandomSampler
 
@@ -26,7 +27,20 @@ class DataLoader(torch.utils.data.DataLoader):
     Base class for all data loaders.
     """
 
-    def __init__(self, dataset, batch_size, shuffle, validation_split, num_workers, collate_fn=default_collate):
+    def __init__(self, dataset: torch.utils.data.dataset.Dataset, batch_size: int, shuffle: bool,
+                 validation_split: Union[int, float], num_workers: int, collate_fn=default_collate):
+        """
+        DataLoader initializer.
+
+        Args:
+            dataset (:obj:`torch.utils.data.dataset.Dataset`): A PyTorch Dataset object which contains the training data.
+            batch_size (int): The number of elements to load at each batch.
+            shuffle (bool): Whether to shuffle the batch or not.
+            validation_split (int_or_float): If int, takes this number of elements to produce a validation set.
+                If float, computes the proportion of the training set to place in a validation set.
+            num_workers (int): Number of parallel workers to execute.
+            collate_fn: The collate function that merges a list of samples to form a mini-batch.
+        """
         self._validation_split = validation_split
         self._shuffle = shuffle
         self._batch_idx = 0
@@ -43,7 +57,19 @@ class DataLoader(torch.utils.data.DataLoader):
         }
         super().__init__(sampler=self._sampler, **self._init_kwargs)
 
-    def _split_sampler(self, split):
+    def _split_sampler(self, split: Union[int, float]) -> Tuple[Union[
+                                                                    torch.utils.data.sampler.Sampler, None], Union[
+                                                                    torch.utils.data.sampler.Sampler, None]]:
+        """
+        Split a sampler for training and validation split.
+
+        Args:
+            split (int_or_float): If int, takes this number of elements to produce a validation set.
+                If float, computes the proportion of the training set to place in a validation set.
+
+        Returns:
+            Tuple_of_:obj:`torch.utils.data.sampler.Sampler`: A tuple of samplers for training and validation sets.
+        """
         if split == 0.0:
             return None, None
 
@@ -71,7 +97,14 @@ class DataLoader(torch.utils.data.DataLoader):
 
         return train_sampler, valid_sampler
 
-    def split_validation(self):
+    def get_validation_dataloader(self) -> Union[torch.utils.data.dataloader.DataLoader, None]:
+        """
+        Get the validation dataloader object based on previously created validation sampler.
+
+        Returns:
+            :obj:`torch.utils.data.dataloader.Dataloader`: A PyTorch DataLoader with the validation sampler (if exists),
+                else returns None.
+        """
         if self._valid_sampler is None:
             return None
         else:
