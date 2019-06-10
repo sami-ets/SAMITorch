@@ -205,7 +205,7 @@ class ResampleNiftiImageToTemplateTest(unittest.TestCase):
     @classmethod
     def _flatten(cls, l):
         for el in l:
-            if isinstance(el, collections.Iterable) and not isinstance(el, (str, bytes)):
+            if isinstance(el, collections.abc.Iterable) and not isinstance(el, (str, bytes)):
                 yield from cls._flatten(el)
             else:
                 yield el
@@ -386,7 +386,7 @@ class NiftiToDiskTest(unittest.TestCase):
     @classmethod
     def _flatten(cls, l):
         for el in l:
-            if isinstance(el, collections.Iterable) and not isinstance(el, (str, bytes)):
+            if isinstance(el, collections.abc.Iterable) and not isinstance(el, (str, bytes)):
                 yield from cls._flatten(el)
             else:
                 yield el
@@ -453,7 +453,7 @@ class ApplyMaskTest(unittest.TestCase):
     @classmethod
     def _flatten(cls, l):
         for el in l:
-            if isinstance(el, collections.Iterable) and not isinstance(el, (str, bytes)):
+            if isinstance(el, collections.abc.Iterable) and not isinstance(el, (str, bytes)):
                 yield from cls._flatten(el)
             else:
                 yield el
@@ -565,7 +565,7 @@ class RemapClassIDsTest(unittest.TestCase):
     @classmethod
     def _flatten(cls, l):
         for el in l:
-            if isinstance(el, collections.Iterable) and not isinstance(el, (str, bytes)):
+            if isinstance(el, collections.abc.Iterable) and not isinstance(el, (str, bytes)):
                 yield from cls._flatten(el)
             else:
                 yield el
@@ -686,7 +686,7 @@ class To2DNifti1ImageTest(unittest.TestCase):
     @classmethod
     def _flatten(cls, l):
         for el in l:
-            if isinstance(el, collections.Iterable) and not isinstance(el, (str, bytes)):
+            if isinstance(el, collections.abc.Iterable) and not isinstance(el, (str, bytes)):
                 yield from cls._flatten(el)
             else:
                 yield el
@@ -764,7 +764,7 @@ class RandomCropTest(unittest.TestCase):
     @classmethod
     def _flatten(cls, l):
         for el in l:
-            if isinstance(el, collections.Iterable) and not isinstance(el, (str, bytes)):
+            if isinstance(el, collections.abc.Iterable) and not isinstance(el, (str, bytes)):
                 yield from cls._flatten(el)
             else:
                 yield el
@@ -848,7 +848,7 @@ class RandomCrop3DTest(unittest.TestCase):
     @classmethod
     def _flatten(cls, l):
         for el in l:
-            if isinstance(el, collections.Iterable) and not isinstance(el, (str, bytes)):
+            if isinstance(el, collections.abc.Iterable) and not isinstance(el, (str, bytes)):
                 yield from cls._flatten(el)
             else:
                 yield el
@@ -918,7 +918,7 @@ class ToPNGFileTest(unittest.TestCase):
     @classmethod
     def _flatten(cls, l):
         for el in l:
-            if isinstance(el, collections.Iterable) and not isinstance(el, (str, bytes)):
+            if isinstance(el, collections.abc.Iterable) and not isinstance(el, (str, bytes)):
                 yield from cls._flatten(el)
             else:
                 yield el
@@ -1007,7 +1007,7 @@ class CropToContentTest(unittest.TestCase):
     @classmethod
     def _flatten(cls, l):
         for el in l:
-            if isinstance(el, collections.Iterable) and not isinstance(el, (str, bytes)):
+            if isinstance(el, collections.abc.Iterable) and not isinstance(el, (str, bytes)):
                 yield from cls._flatten(el)
             else:
                 yield el

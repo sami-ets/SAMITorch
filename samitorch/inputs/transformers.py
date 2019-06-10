@@ -132,6 +132,8 @@ class ToNumpyArray(object):
                         raise NotImplementedError(
                             "Only {} files are supported, but got {}".format(ImageTypes.ALL,
                                                                              os.path.splitext(sample.x)[1]))
+                    if nd_array.ndim == 3:
+                        nd_array = self._expand_dims(nd_array)
                     nd_array = self._transpose(nd_array)
                     x.append(nd_array)
 
@@ -146,7 +148,8 @@ class ToNumpyArray(object):
                     raise NotImplementedError(
                         "Only {} files are supported, but got {}".format(ImageTypes.ALL, os.path.splitext(sample.x)[1]))
 
-                x = self._expand_dims(x)
+                if x.ndim == 3:
+                    x = self._expand_dims(x)
                 x = self._transpose(x)
 
                 transformed_sample.x = x
@@ -171,6 +174,8 @@ class ToNumpyArray(object):
                             raise NotImplementedError(
                                 "Only {} files are supported, but got {}".format(ImageTypes.ALL.value,
                                                                                  os.path.splitext(sample.x)[1]))
+                        if nd_array.ndim == 3:
+                            nd_array = self._expand_dims(nd_array)
                         nd_array = self._transpose(nd_array)
                         y.append(nd_array)
 
@@ -192,7 +197,8 @@ class ToNumpyArray(object):
                         raise NotImplementedError(
                             "Only Nifti, NRRD or Numpy ndarray types are supported but got {}".format(type(sample.y)))
 
-                    nd_array = self._expand_dims(nd_array)
+                    if nd_array.ndim == 3:
+                        nd_array = self._expand_dims(nd_array)
                     nd_array = self._transpose(nd_array)
                     transformed_sample.y = nd_array
 
