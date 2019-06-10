@@ -9,5 +9,6 @@ scikit-learn>=0.20.3
 pytorch-ignite>=0.2.0
 pynrrd>=0.4.0
 Sphinx>=2.0.1
+sphinxcontrib-bibtex>=0.4.2
 opencv-python>=4.1.0
 PyYAML>=5.1
