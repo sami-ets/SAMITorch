@@ -20,7 +20,7 @@ from hamcrest import *
 
 from samitorch.factories.parsers import ModelConfigurationParserFactory
 
-from samitorch.configs.model_configurations import UNetModelConfiguration
+from samitorch.configs.configurations import UNetModelConfiguration
 
 
 class ConfigurationParserFactoryTest(unittest.TestCase):

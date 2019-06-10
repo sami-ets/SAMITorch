@@ -18,7 +18,7 @@ import torch
 
 from samitorch.factories.enums import ActivationLayers, NormalizationLayers
 from samitorch.factories.layers import ActivationLayerFactory, NormalizationLayerFactory
-from samitorch.configs.model_configurations import ModelConfiguration
+from samitorch.configs.configurations import ModelConfiguration
 
 
 def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1):

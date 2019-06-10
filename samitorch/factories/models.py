@@ -23,7 +23,7 @@ from samitorch.models.resnet3d import ResNet18, ResNet34, ResNet50, ResNet101, R
 
 from samitorch.models.unet3d import UNet3D
 
-from samitorch.configs.model_configurations import ModelConfiguration
+from samitorch.configs.configurations import ModelConfiguration
 
 
 class AbstractModelFactory(metaclass=abc.ABCMeta):

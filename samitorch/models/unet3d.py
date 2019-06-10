@@ -16,7 +16,7 @@
 
 import torch
 
-from samitorch.configs.model_configurations import ModelConfiguration
+from samitorch.configs.configurations import ModelConfiguration
 from samitorch.factories.layers import ActivationLayerFactory, PaddingLayerFactory, PoolingLayerFactory, \
     NormalizationLayerFactory
 

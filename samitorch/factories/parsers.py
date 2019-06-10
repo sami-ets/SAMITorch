@@ -18,7 +18,7 @@ import abc
 import yaml
 import logging
 
-from samitorch.configs.model_configurations import UNetModelConfiguration, ResNetModelConfiguration, ModelConfiguration
+from samitorch.configs.configurations import UNetModelConfiguration, ResNetModelConfiguration, ModelConfiguration
 
 
 class AbstractConfigurationParserFactory(metaclass=abc.ABCMeta):
@@ -28,7 +28,7 @@ class AbstractConfigurationParserFactory(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def register(self, model_type: str, model_configuration_class: ModelConfiguration):
+    def register(self, model_type: str, configuration_class):
         raise NotImplementedError
 
 

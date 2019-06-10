@@ -19,9 +19,30 @@ import abc
 from samitorch.factories.enums import ActivationLayers, PoolingLayers
 
 
-class ModelConfiguration(metaclass=abc.ABCMeta):
+class Configuration(metaclass=abc.ABCMeta):
+    """
+    A standard Configuration object.
+    """
+    pass
+
+
+class DatasetConfiguration(Configuration):
+    """
+    A base class for storing dataset configuration as an object.
+    """
+    pass
+
+
+class ModelConfiguration(Configuration):
     """
     A base class for storing model configuration as an object.
+    """
+    pass
+
+
+class TrainingConfiguration(Configuration):
+    """
+    A base class for storing training configuration as an object.
     """
     pass
 
@@ -96,9 +117,9 @@ class UNetModelConfiguration(ModelConfiguration):
         return self._pool_kernel_size
 
     @property
-    def pooling_type(self) -> str:
+    def pooling_type(self) -> PoolingLayers:
         """
-        str: The pooling type.
+        :obj:`samitorch.models.enums.PoolingLayers`: The pooling type.
         """
         return self._pooling_type
 
