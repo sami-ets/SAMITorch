@@ -42,8 +42,7 @@ def to_onehot(indices: torch.Tensor, num_classes: int) -> torch.Tensor:
 def flatten(tensor: torch.Tensor) -> torch.Tensor:
     """
     Flattens a given tensor such that the channel axis is first.
-    The shapes are transformed as follows:
-       (N, C, D, H, W) -> (C, N * D * H * W)
+    The shapes are transformed as follows: (N, C, D, H, W) -> (C, N * D * H * W)
 
     Args:
         tensor (:obj:`torch.Tensor`): Tensor to flatten.

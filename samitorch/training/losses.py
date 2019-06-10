@@ -32,7 +32,7 @@ class DiceLoss(torch.nn.Module):
         assert reduction in SUPPORTED_REDUCTIONS, "Reduction type not supported."
         self._reduction = reduction
 
-    def forward(self, inputs: torch.Tensor, targets: torch.Tensor, ignore_index: int = None):
+    def forward(self, inputs: torch.Tensor, targets: torch.Tensor, ignore_index: int = None) -> float:
         """
         Computes the Sørensen–Dice loss.
 
@@ -65,7 +65,7 @@ class GeneralizedDiceLoss(torch.nn.Module):
         assert reduction in SUPPORTED_REDUCTIONS, "Reduction is not supported."
         self._reduction = reduction
 
-    def forward(self, inputs: torch.Tensor, targets: torch.Tensor, ignore_index: int = None):
+    def forward(self, inputs: torch.Tensor, targets: torch.Tensor, ignore_index: int = None) -> float:
         """
         Computes the Generalized Dice Loss as described in https://arxiv.org/pdf/1707.03237.pdf
         Note that PyTorch optimizers minimize a loss. In this case, we would like to maximize the dice loss so we
@@ -115,14 +115,14 @@ class WeightedCrossEntropyLoss(torch.nn.Module):
         assert ignore_index < input_shape, "ignore index must be lower than the number of classes in " \
                                            "confusion matrix, but {} was given.".format(ignore_index)
 
-    def forward(self, inputs: torch.Tensor, targets: torch.Tensor, ignore_index: int = None):
+    def forward(self, inputs: torch.Tensor, targets: torch.Tensor, ignore_index: int = None) -> float:
         """
         Computes the Weighted Cross Entropy Loss (WCE) as described in https://arxiv.org/pdf/1707.03237.pdf
 
         Args:
-            nputs (:obj:`torch.Tensor`): A tensor of shape (B, C, ..). The model's prediction on which the loss has to be computed.
-           targets (:obj:`torch.Tensor`): A tensor of shape (B, C, ..). The ground truth.
-           ignore_index (int): An index to ignore for computation.
+            inputs (:obj:`torch.Tensor`): A tensor of shape (B, C, ..). The model's prediction on which the loss has to be computed.
+            targets (:obj:`torch.Tensor`): A tensor of shape (B, C, ..). The ground truth.
+            ignore_index (int): An index to ignore for computation.
 
        Returns:
            float: the weighted Cross-Entropy loss value.

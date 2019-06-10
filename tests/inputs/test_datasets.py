@@ -32,9 +32,9 @@ class NiftiDatasetTest(unittest.TestCase):
     PATH_TO_SOURCE = os.path.join(TEST_DATA_FOLDER_PATH, "T1")
     PATH_TO_TARGET = os.path.join(TEST_DATA_FOLDER_PATH, "label")
     TEST_SOURCE_IMAGE = nib.load(
-        os.path.join(TEST_DATA_FOLDER_PATH, "T1/Normalized_Processed_subject-1-T1.nii")).get_fdata()
+        os.path.join(TEST_DATA_FOLDER_PATH, "T1/1-T1.nii")).get_fdata()
     TEST_LABEL_IMAGE = nib.load(
-        os.path.join(TEST_DATA_FOLDER_PATH, "label/Normalized_Processed_subject-1-label.nii")).get_fdata()
+        os.path.join(TEST_DATA_FOLDER_PATH, "label/1-Labels.nii")).get_fdata()
 
     def setUp(self):
         pass
@@ -60,11 +60,11 @@ class MultimodalNiftiDatasetTest(unittest.TestCase):
     PATH_TO_TARGET = os.path.join(TEST_DATA_FOLDER_PATH, "label")
     PATHS_TO_TARGETS = [PATH_TO_TARGET]
     TEST_SOURCE_IMAGE_T1 = nib.load(
-        os.path.join(TEST_DATA_FOLDER_PATH, "T1/Normalized_Processed_subject-1-T1.nii")).get_fdata()
+        os.path.join(TEST_DATA_FOLDER_PATH, "T1/1-T1.nii")).get_fdata()
     TEST_SOURCE_IMAGE_T2 = nib.load(
-        os.path.join(TEST_DATA_FOLDER_PATH, "T2/Normalized_Processed_subject-1-T2.nii")).get_fdata()
+        os.path.join(TEST_DATA_FOLDER_PATH, "T2/1-T2.nii")).get_fdata()
     TEST_LABEL_IMAGE = nib.load(
-        os.path.join(TEST_DATA_FOLDER_PATH, "label/Normalized_Processed_subject-1-label.nii")).get_fdata()
+        os.path.join(TEST_DATA_FOLDER_PATH, "label/1-Labels.nii")).get_fdata()
 
     def setUp(self):
         pass

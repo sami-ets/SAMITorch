@@ -7,7 +7,7 @@ README_CONTENT = (pathlib.Path(__file__).parent / "README.md").read_text()
 
 setup(
     name='SAMITorch',
-    version='0.1.5',
+    version='0.1.6',
     description='Deep Learning Framework For Medical Image Analysis',
     long_description=README_CONTENT,
     long_description_content_type='text/markdown',
@@ -27,5 +27,7 @@ setup(
                       'nipype>=1.1.9',
                       'nilearn>=0.5.0',
                       'scikit-learn>=0.20.3',
-                      'pytorch-ignite>=0.2.0']
+                      'pytorch-ignite>=0.2.0',
+                      'pynrrd>=0.4.0',
+                      'opencv-python>=4.1.0']
 )

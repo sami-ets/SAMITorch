@@ -209,8 +209,11 @@ class Bottleneck(torch.nn.Module):
 
 class ResNet3D(torch.nn.Module):
     """
-    3D ResNet adaptation from the original ResNet paper `"Deep Residual Learning for Image Recognition"
-        <https://arxiv.org/abs/1512.03385>`.
+    3D ResNet adaptation from the original ResNet paper :cite:`2016:He`
+
+    .. bibliography:: resnet.bib
+    :encoding: utf
+    :cited:
     """
 
     def __init__(self, block: torch.nn.Module, n_blocks_per_layer: list, config: ModelConfiguration):

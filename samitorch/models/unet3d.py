@@ -25,8 +25,11 @@ from samitorch.factories.enums import ActivationLayers, PaddingLayers, Normaliza
 
 class UNet3D(torch.nn.Module):
     """
-     3DUnet model from `"3D U-Net: Learning Dense Volumetric Segmentation from Sparse Annotation"
-        <https://arxiv.org/pdf/1606.06650.pdf>`.
+     3D UNet model from :cite:`2016:Çiçek`.
+
+    .. bibliography:: unet.bib
+    :encoding: utf
+    :cited:
 
     Args:
         config (ModelConfiguration): Object containing the various model's configuration.
@@ -119,7 +122,8 @@ class SingleConv(torch.nn.Module):
 
         if num_groups is not None:
             assert isinstance(num_groups, int)
-            self._norm = self._normalization_factory.create_layer(NormalizationLayers.GroupNorm, num_groups, out_channels)
+            self._norm = self._normalization_factory.create_layer(NormalizationLayers.GroupNorm, num_groups,
+                                                                  out_channels)
         else:
             self._norm = self._normalization_factory.create_layer(NormalizationLayers.BatchNorm3d, out_channels)
 

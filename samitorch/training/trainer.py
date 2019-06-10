@@ -125,8 +125,8 @@ class Trainer(object):
         """Run validation phase.
 
          Args:
-            epoch_num (int): current epoch number.
-            **kwargs: keyword arguments
+            epoch_num (int): Current epoch number.
+            kwargs: keyword arguments
 
         Raises:
             NotImplementedError: if not overwritten by subclass.
