@@ -7,6 +7,8 @@ Subpackages
 .. toctree::
 
     samitorch.callbacks
+    samitorch.configs
+    samitorch.factories
     samitorch.initializers
     samitorch.inputs
     samitorch.metrics

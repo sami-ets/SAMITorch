@@ -17,7 +17,7 @@
 import torch
 import unittest
 
-from samitorch.factories.parsers import ConfigurationParserFactory
+from samitorch.factories.parsers import ModelConfigurationParserFactory
 from samitorch.models.resnet3d import ResNet3D
 from samitorch.factories.models import ModelFactory
 from samitorch.factories.enums import ResNetModels
@@ -29,7 +29,7 @@ class ResNet3DTest(unittest.TestCase):
     CONFIGURATION_PATH = "samitorch/configs/resnet3d.yaml"
 
     def setUp(self):
-        self.configurationParserFactory = ConfigurationParserFactory()
+        self.configurationParserFactory = ModelConfigurationParserFactory()
         self.model_factory = ModelFactory()
         self.config = self.configurationParserFactory.parse(self.CONFIGURATION_PATH)
         self.input = torch.rand((2, 1, 32, 32, 32))

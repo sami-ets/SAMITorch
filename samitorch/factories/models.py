@@ -54,8 +54,7 @@ class ModelFactory(AbstractModelFactory):
 
         Args:
             model_name (str): The model's name (e.g. 'UNet3D').
-            config (:obj:`samitorch.configs.model_configuration.ModelConfiguration): An object containing model's
-                parameters.
+            config (:obj:`samitorch.configs.model_configuration.ModelConfiguration`): An object containing model's parameters.
 
         Returns:
             :obj:`torch.nn.Module`: A PyTorch model.

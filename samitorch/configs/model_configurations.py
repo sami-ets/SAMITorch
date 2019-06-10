@@ -20,6 +20,9 @@ from samitorch.factories.enums import ActivationLayers, PoolingLayers
 
 
 class ModelConfiguration(metaclass=abc.ABCMeta):
+    """
+    A base class for storing model configuration as an object.
+    """
     pass
 
 
@@ -193,8 +196,7 @@ class ResNetModelConfiguration(ModelConfiguration):
         int: The width of convolution groups.
 
         Notes:
-            Variable used in the width calculation formula of ResNet convolutional groups:
-                `width = int(planes * (width_per_group / 64.)) * groups`
+            Variable used in the width calculation formula of ResNet convolutional groups: `width = int(planes * (width_per_group / 64.)) * groups`
             And then used in torch.nn.conv3d operations as in_channels and out_channels parameters.
         """
         return self._width_per_group

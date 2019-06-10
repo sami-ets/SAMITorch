@@ -32,7 +32,7 @@ class AbstractConfigurationParserFactory(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
-class ConfigurationParserFactory(AbstractConfigurationParserFactory):
+class ModelConfigurationParserFactory(AbstractConfigurationParserFactory):
 
     def __init__(self) -> None:
         self._supported_model_configuration = {

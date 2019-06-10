@@ -22,7 +22,7 @@ from hamcrest import *
 
 from samitorch.factories.models import ModelFactory
 
-from samitorch.factories.parsers import ConfigurationParserFactory
+from samitorch.factories.parsers import ModelConfigurationParserFactory
 
 from samitorch.factories.enums import UNetModels, ResNetModels
 
@@ -41,7 +41,7 @@ class ModelFactoryTest(unittest.TestCase):
 
     def setUp(self):
         self.model_factory = ModelFactory()
-        self.configurationParserFactory = ConfigurationParserFactory()
+        self.configurationParserFactory = ModelConfigurationParserFactory()
         self.resnet_config = self.configurationParserFactory.parse(self.RESNET_CONFIGURATION_PATH)
         self.unet_config = self.configurationParserFactory.parse(self.UNET_CONFIGURATION_PATH)
 
