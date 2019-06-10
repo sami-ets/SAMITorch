@@ -7,7 +7,7 @@ README_CONTENT = (pathlib.Path(__file__).parent / "README.md").read_text()
 
 setup(
     name='SAMITorch',
-    version='0.1.6',
+    version='0.1.7',
     description='Deep Learning Framework For Medical Image Analysis',
     long_description=README_CONTENT,
     long_description_content_type='text/markdown',
@@ -21,7 +21,7 @@ setup(
     ],
     packages=find_packages(exclude=("tests",)),
     install_requires=['numpy>=1.16.1',
-                      'torch>=1.0.1',
+                      'torch>=1.1.0',
                       'torchvision>=0.2.2',
                       'nibabel>=2.4.0',
                       'nipype>=1.1.9',
