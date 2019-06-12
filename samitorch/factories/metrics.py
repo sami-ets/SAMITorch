@@ -28,7 +28,7 @@ from samitorch.factories.enums import Metrics
 class AbstractMetricFactory(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def create_metric(self, function: str, *args, **kwargs):
+    def create_metric(self, function: Union[str, Metrics], *args, **kwargs):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -49,7 +49,7 @@ class MetricsFactory(AbstractMetricFactory):
         Instanciate an optimizer based on its name.
 
         Args:
-            metric (Enum): The optimizer's name.
+            metric (str_or_Enum): The optimizer's name.
             *args: Other arguments.
 
         Returns:

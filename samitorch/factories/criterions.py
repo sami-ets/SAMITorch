@@ -19,17 +19,18 @@ import torch
 
 from enum import Enum
 
-from samitorch.losses.losses import DiceLoss
+from typing import Union
 
+from samitorch.losses.losses import DiceLoss
 
 class AbstractCriterionFactory(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def create_criterion(self, function: str, *args):
+    def create_criterion(self, criterion: Union[str, Enum], *args):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def register(self, function: str, creator):
+    def register(self, criterion: str, creator):
         raise NotImplementedError
 
 
@@ -42,12 +43,12 @@ class CriterionFactory(AbstractCriterionFactory):
             "Cross_Entropy": torch.nn.functional.cross_entropy
         }
 
-    def create_criterion(self, function: Enum, *args):
+    def create_criterion(self, criterion: Union[str, Enum], *args):
         """
         Instanciate a loss function based on its name.
 
         Args:
-           function (Enum): The criterion's name.
+           criterion (str_or_Enum): The criterion's name.
            *args: Other arguments.
 
         Returns:
@@ -56,7 +57,7 @@ class CriterionFactory(AbstractCriterionFactory):
         Raises:
            KeyError: Raises KeyError Exception if Activation Function is not found.
         """
-        optimizer = self._criterion[function.name]
+        optimizer = self._criterion[criterion.name if isinstance(criterion, Enum) else criterion]
         return optimizer
 
     def register(self, function: str, creator):

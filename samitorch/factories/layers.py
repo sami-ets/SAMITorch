@@ -181,7 +181,7 @@ class NormalizationLayerFactory(AbstractLayerFactory):
         Instantiate a new normalization layer.
 
         Args:
-            strategy (str): The normalization strategy layer.
+            strategy (str_or_Enum): The normalization strategy layer.
             *args: Optional keywords arguments.
 
         Returns:
