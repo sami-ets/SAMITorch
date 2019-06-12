@@ -47,6 +47,59 @@ class TrainingConfiguration(Configuration):
     pass
 
 
+class MetricConfiguration(Configuration):
+    """
+    A base case for storing metric configuration as an object.
+    """
+    pass
+
+
+class DiceMetricConfiguration(MetricConfiguration):
+    def __init__(self, config):
+        super(DiceMetricConfiguration, self).__init__()
+
+        self._num_classes = config["num_classes"]
+        self._method = config["method"]
+        self._reduction = config["reduction"]
+        self._ignore_index = config["ignore_index"]
+        self._average = config["average"]
+
+    @property
+    def num_classes(self) -> int:
+        """
+        int: The number of classes of the problem.
+        """
+        return self._num_classes
+
+    @property
+    def method(self) -> str:
+        """
+        str: The method (in case of dice, e.g. "normal" or "generalized".
+        """
+        return self._method
+
+    @property
+    def reduction(self) -> str:
+        """
+        str: The reduction method (e.g. "mean").
+        """
+        return self._reduction
+
+    @property
+    def ignore_index(self) -> int:
+        """
+        int: The ignored index in a problem.
+        """
+        return self._ignore_index
+
+    @property
+    def average(self) -> str:
+        """
+        str: The average method in case the metric uses a Confusion Matrix
+        """
+        return self._average
+
+
 class UNetModelConfiguration(ModelConfiguration):
     """
     Configuration properties for a UNet model.

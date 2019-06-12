@@ -14,48 +14,25 @@
 # limitations under the License.
 # ==============================================================================
 
+import unittest
 
 from enum import Enum
 
+from hamcrest import *
 
-class ActivationLayers(Enum):
-    ReLU = "ReLU"
-    LeakyReLU = "LeakyReLU"
-    PReLU = "PReLU"
-
-
-class PaddingLayers(Enum):
-    ReplicationPad3d = "ReplicatonPad3d"
+from samitorch.factories.optimizers import OptimizerFactory
+from samitorch.factories.enums import Optimizers
 
 
-class PoolingLayers(Enum):
-    MaxPool3d = "MaxPool3d"
-    AvgPool3d = "AvgPool3d"
-    Conv3d = "Conv3d"
+class IncorrectMetrics(Enum):
+    Incorrect = "Incorrect"
 
 
-class NormalizationLayers(Enum):
-    GroupNorm = "GroupNorm"
-    BatchNorm3d = "BatchNorm3d"
+class ModelFactoryTest(unittest.TestCase):
 
+    def setUp(self):
+        self.optimizer_factory = OptimizerFactory()
 
-class ResNetModels(Enum):
-    ResNet18 = "ResNet18"
-    ResNet34 = "ResNet34"
-    ResNet50 = "ResNet50"
-    ResNet101 = "ResNet101"
-    ResNet152 = "ResNet152"
-
-
-class UNetModels(Enum):
-    UNet3D = "UNet3D"
-
-
-class Optimizers(Enum):
-    SGD = "SGD"
-    Adam = "Adam"
-    Adagrad = "Adagrad"
-
-
-class Metrics(Enum):
-    Dice = "Dice"
+    def test_should_instantiate_dice_metric(self):
+        optim = self.optimizer_factory.create_optimizer(Optimizers.SGD)
+        assert_that(optim, is_not(None))

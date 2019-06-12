@@ -62,8 +62,8 @@ class Dice(Metric):
     The Dice Metric.
     """
 
-    def __init__(self, num_classes: int, method: str = "dice", reduction: str = None, average: str = None, ignore_index: int = None,
-                 output_transform: callable = lambda x: x) -> None:
+    def __init__(self, num_classes: int, method: str = "normal", reduction: str = None, average: str = None,
+                 ignore_index: int = None, output_transform: callable = lambda x: x) -> None:
         """
         Metric initializer.
 
@@ -114,7 +114,7 @@ class Dice(Metric):
             weights (:obj:`torch.Tensor`, optional): A weight vector which length equals to the number of classes.
 
         """
-        if self._method == "dice":
+        if self._method == "normal":
             self._metric = compute_dice_coefficient(self._cm, self._ignore_index)
         elif self._method == "generalized":
             self._metric = compute_generalized_dice_coefficient(self._cm, weights, self._ignore_index)

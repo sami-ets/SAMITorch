@@ -20,7 +20,7 @@ import torch
 import numpy as np
 
 from hamcrest import *
-from samitorch.training.losses import DiceLoss, GeneralizedDiceLoss, WeightedCrossEntropyLoss
+from losses.losses import DiceLoss, GeneralizedDiceLoss, WeightedCrossEntropyLoss
 
 
 def get_y_true_y_pred():
