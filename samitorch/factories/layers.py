@@ -17,6 +17,8 @@
 import abc
 import torch
 
+from typing import Union
+
 from samitorch.factories.enums import ActivationLayers, PaddingLayers, PoolingLayers, NormalizationLayers
 
 
@@ -45,7 +47,7 @@ class ActivationLayerFactory(AbstractLayerFactory):
             'PReLU': torch.nn.PReLU
         }
 
-    def create_layer(self, function: ActivationLayers, **kwargs):
+    def create_layer(self, function: Union[str, ActivationLayers], *args, **kwargs):
         """
         Instantiate an activation layer based on its name.
 
@@ -59,8 +61,9 @@ class ActivationLayerFactory(AbstractLayerFactory):
         Raises:
             KeyError: Raises KeyError Exception if Activation Function is not found.
         """
-        activation_function = self._activation_functions[function.name]
-        return activation_function(**kwargs)
+        activation_function = self._activation_functions[
+            function.name if isinstance(function, ActivationLayers) else function]
+        return activation_function(*args, **kwargs)
 
     def register(self, function: str, creator: torch.nn.Module):
         """
@@ -84,7 +87,7 @@ class PaddingLayerFactory(AbstractLayerFactory):
             "ReplicationPad3d": torch.nn.ReplicationPad3d
         }
 
-    def create_layer(self, strategy: PaddingLayers, dims: tuple, **kwargs):
+    def create_layer(self, strategy: Union[str, PaddingLayers], dims: tuple, *args, **kwargs):
         """
         Instantiate a new padding layer.
 
@@ -99,8 +102,8 @@ class PaddingLayerFactory(AbstractLayerFactory):
         Raises:
             KeyError: Raises KeyError Exception if Padding Function is not found.
         """
-        padding = self._padding_strategies[strategy.name]
-        return padding(dims, **kwargs)
+        padding = self._padding_strategies[strategy.name if isinstance(strategy, PaddingLayers) else strategy]
+        return padding(dims, *args, **kwargs)
 
     def register(self, strategy: str, creator: torch.nn.Module):
         """
@@ -126,7 +129,7 @@ class PoolingLayerFactory(AbstractLayerFactory):
             "Conv3d": torch.nn.Conv3d
         }
 
-    def create_layer(self, strategy: PoolingLayers, kernel_size: int, stride: int = None, *args, **kwargs):
+    def create_layer(self, strategy: Union[str, PoolingLayers], kernel_size: int, stride: int = None, *args, **kwargs):
         """
         Instantiate a new pooling layer with mandatory parameters.
 
@@ -142,7 +145,7 @@ class PoolingLayerFactory(AbstractLayerFactory):
         Raises:
             KeyError: Raises KeyError Exception if Pooling Function is not found.
         """
-        pooling = self._pooling_strategies[strategy.name]
+        pooling = self._pooling_strategies[strategy.name if isinstance(strategy, PoolingLayers) else strategy]
 
         if not "Conv3d" in strategy.name:
             return pooling(kernel_size, stride, *args, **kwargs)
@@ -173,7 +176,7 @@ class NormalizationLayerFactory(AbstractLayerFactory):
             "BatchNorm3d": torch.nn.BatchNorm3d
         }
 
-    def create_layer(self, strategy: NormalizationLayers, *args, **kwargs):
+    def create_layer(self, strategy: Union[str, NormalizationLayers], *args, **kwargs):
         """
         Instantiate a new normalization layer.
 
@@ -187,7 +190,7 @@ class NormalizationLayerFactory(AbstractLayerFactory):
         Raises:
             KeyError: Raises KeyError Exception if Normalization Function is not found.
         """
-        norm = self._normalization_strategies[strategy.name]
+        norm = self._normalization_strategies[strategy.name if isinstance(strategy, NormalizationLayers) else strategy]
         return norm(*args, **kwargs)
 
     def register(self, strategy: str, creator: torch.nn.Module):

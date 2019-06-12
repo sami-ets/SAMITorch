@@ -21,7 +21,9 @@ from enum import Enum
 from hamcrest import *
 
 from samitorch.factories.optimizers import OptimizerFactory
-from samitorch.factories.enums import Optimizers
+from samitorch.factories.enums import Optimizers, UNetModels
+from samitorch.factories.models import ModelFactory
+from samitorch.factories.parsers import ModelConfigurationParserFactory
 
 
 class IncorrectMetrics(Enum):
@@ -29,10 +31,14 @@ class IncorrectMetrics(Enum):
 
 
 class ModelFactoryTest(unittest.TestCase):
+    UNET_CONFIGURATION_PATH = "samitorch/configs/unet3d.yaml"
 
     def setUp(self):
         self.optimizer_factory = OptimizerFactory()
+        self.configurationParserFactory = ModelConfigurationParserFactory()
+        self.unet_config = self.configurationParserFactory.parse(self.UNET_CONFIGURATION_PATH)
 
-    def test_should_instantiate_dice_metric(self):
-        optim = self.optimizer_factory.create_optimizer(Optimizers.SGD)
+    def test_should_instantiate_optimizer(self):
+        model = ModelFactory().create_model(UNetModels.UNet3D, self.unet_config)
+        optim = self.optimizer_factory.create_optimizer(Optimizers.SGD, model.parameters(), lr=0.01)
         assert_that(optim, is_not(None))

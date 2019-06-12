@@ -34,5 +34,5 @@ class ModelFactoryTest(unittest.TestCase):
         self.metric_factory = MetricsFactory()
 
     def test_should_instantiate_dice_metric(self):
-        metric = self.metric_factory.create_metric(Metrics.Dice)
+        metric = self.metric_factory.create_metric(Metrics.Dice, num_classes=3)
         assert_that(metric, is_not(None))

@@ -18,12 +18,15 @@ import abc
 import torch
 
 from enum import Enum
+from typing import Union
+
+from samitorch.factories.enums import Optimizers
 
 
 class AbstractOptimizerFactory(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def create_optimizer(self, function: str, *args):
+    def create_optimizer(self, function: Union[str, Optimizers], *args, **kwargs):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -42,7 +45,7 @@ class OptimizerFactory(AbstractOptimizerFactory):
             "SGD": torch.optim.SGD
         }
 
-    def create_optimizer(self, function: Enum, *args):
+    def create_optimizer(self, function: Union[str, Optimizers], *args, **kwargs):
         """
         Instanciate an optimizer based on its name.
 
@@ -56,8 +59,8 @@ class OptimizerFactory(AbstractOptimizerFactory):
         Raises:
             KeyError: Raises KeyError Exception if Activation Function is not found.
         """
-        optimizer = self._optimizers[function.name]
-        return optimizer
+        optimizer = self._optimizers[function.name if isinstance(function, Optimizers) else function]
+        return optimizer(*args, **kwargs)
 
     def register(self, function: str, creator: torch.optim.Optimizer):
         """

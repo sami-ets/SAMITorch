@@ -19,6 +19,8 @@ import torch
 
 from enum import Enum
 
+from typing import Union
+
 from samitorch.models.resnet3d import ResNet18, ResNet34, ResNet50, ResNet101, ResNet152
 
 from samitorch.models.unet3d import UNet3D
@@ -48,7 +50,7 @@ class ModelFactory(AbstractModelFactory):
             'UNet3D': UNet3D
         }
 
-    def create_model(self, model_name: Enum, config: ModelConfiguration) -> torch.nn.Module:
+    def create_model(self, model_name: Union[str, Enum], config: ModelConfiguration) -> torch.nn.Module:
         """
         Instantiate a new support model.
 
@@ -59,7 +61,7 @@ class ModelFactory(AbstractModelFactory):
         Returns:
             :obj:`torch.nn.Module`: A PyTorch model.
         """
-        model = self._models.get(model_name.name)
+        model = self._models.get(model_name.name if isinstance(model_name, Enum) else model_name)
         if not model:
             raise ValueError("Model {} is not supported.".format(model_name))
         return model(config)

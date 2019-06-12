@@ -18,13 +18,17 @@ import abc
 
 from enum import Enum
 
+from typing import Union
+
 from samitorch.metrics.metrics import Dice
+
+from samitorch.factories.enums import Metrics
 
 
 class AbstractMetricFactory(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def create_metric(self, function: str, *args):
+    def create_metric(self, function: str, *args, **kwargs):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -40,7 +44,7 @@ class MetricsFactory(AbstractMetricFactory):
             "Dice": Dice
         }
 
-    def create_metric(self, metric: Enum, *args):
+    def create_metric(self, metric: Union[str, Metrics], *args, **kwargs):
         """
         Instanciate an optimizer based on its name.
 
@@ -54,8 +58,8 @@ class MetricsFactory(AbstractMetricFactory):
         Raises:
             KeyError: Raises KeyError Exception if Activation Function is not found.
         """
-        metric = self._metrics[metric.name]
-        return metric(*args)
+        metric = self._metrics[metric.name if isinstance(metric, Metrics) else metric]
+        return metric(*args, **kwargs)
 
     def register(self, metric: str, creator):
         """
