@@ -21,7 +21,7 @@ import unittest
 
 from samitorch.metrics.metrics import compute_dice_coefficient, compute_mean_dice_coefficient, \
     compute_generalized_dice_coefficient, compute_mean_generalized_dice_coefficient, validate_weights_size, \
-    validate_num_classes, validate_ignore_index
+    validate_num_classes, validate_ignore_index, Dice
 from ignite.metrics.confusion_matrix import ConfusionMatrix
 from hamcrest import *
 
@@ -148,6 +148,56 @@ class TestDiceMetric(unittest.TestCase):
             res = mean_dice_coefficient.compute().numpy()
             true_res = np.mean(self.dice_truth[:ignore_index] + self.dice_truth[ignore_index + 1:])
             assert_that(res, equal_to(true_res)), "{}: {} vs {}".format(ignore_index, res, true_res)
+
+
+class DiceTest(unittest.TestCase):
+    INVALID_VALUE_1 = -1
+    INVALID_VALUE_2 = "STEVE JOBS"
+    INVALID_VALUE_3 = 10
+    INVALID_VALUE_4 = 11
+
+    def setUp(self):
+        self.y_true, self.y_pred = get_y_true_y_pred()
+        self.y_true_tensor, self.y_logits = compute_tensor_y_true_y_logits(self.y_true, self.y_pred)
+        self.dice_truth = compute_dice_truth(self.y_true, self.y_pred)
+        self.generalized_dice_truth, weights = compute_generalized_dice_truth(self.y_true, self.y_pred)
+        self.weights = torch.from_numpy(np.array(weights))
+        self.mean_dice_truth = np.mean(self.dice_truth)
+        self.generalized_mean_dice_truth = np.mean(self.generalized_dice_truth)
+
+    def test_should_compute_dice_metric(self):
+        self.dice = Dice(num_classes=3)
+        self.dice.update((self.y_logits, self.y_true_tensor))
+        res = self.dice.compute()
+        np.testing.assert_almost_equal(res, self.dice_truth)
+
+    def test_should_compute_dice_metric_with_sample_average(self):
+        self.dice = Dice(num_classes=3, average="samples")
+        self.dice.update((self.y_logits, self.y_true_tensor))
+        res = self.dice.compute()
+        np.testing.assert_almost_equal(res, self.dice_truth)
+
+    def test_should_compute_generalized_dice_for_multiclass(self):
+        self.dice = Dice(num_classes=3, method="generalized")
+        self.dice.update((self.y_logits, self.y_true_tensor), self.weights)
+        res = self.dice.compute()
+        np.testing.assert_almost_equal(res, self.generalized_dice_truth)
+
+    def test_should_compute_mean_dice_metric(self):
+        self.dice = Dice(num_classes=3, reduction="mean")
+        self.dice.update((self.y_logits, self.y_true_tensor))
+        res = self.dice.compute()
+        assert_that(res, instance_of(torch.Tensor))
+        assert_that(res.dtype, is_(torch.float64))
+        np.testing.assert_almost_equal(res.mean(), self.mean_dice_truth)
+
+    def test_should_compute_mean_generalized_dice_for_multiclass(self):
+        self.dice = Dice(num_classes=3, method="generalized", reduction="mean")
+        self.dice.update((self.y_logits, self.y_true_tensor), self.weights)
+        res = self.dice.compute()
+        assert_that(res, instance_of(torch.Tensor))
+        assert_that(res.dtype, is_(torch.float64))
+        np.testing.assert_almost_equal(res.mean(), self.generalized_mean_dice_truth)
 
 
 class TestGeneralizedDiceMetric(unittest.TestCase):

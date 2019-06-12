@@ -17,8 +17,11 @@
 """Define a metric computed during the training phase."""
 
 import torch
+
+from typing import Tuple
+
 from ignite.metrics.confusion_matrix import ConfusionMatrix
-from ignite.metrics import MetricsLambda
+from ignite.metrics import MetricsLambda, Metric
 
 EPSILON = 1e-15
 
@@ -52,6 +55,76 @@ def validate_weights_size(weights_size: int, num_classes: int):
     """
     assert weights_size == num_classes, "Weights vector must be the same length than the number of " \
                                         "classes, but a size of {} was given".format(weights_size)
+
+
+class Dice(Metric):
+    """
+    The Dice Metric.
+    """
+
+    def __init__(self, num_classes: int, method: str = "dice", reduction: str = None, average: str = None, ignore_index: int = None,
+                 output_transform: callable = lambda x: x) -> None:
+        """
+        Metric initializer.
+
+        Args:
+            num_classes (int): The number of classes in the problem. In case of images, num_classes should also count the background index 0.
+            average (str, optional): Confusion matrix values averaging schema: None, "samples", "recall", "precision".
+                Default is None. If `average="samples"` then confusion matrix values are normalized by the number of seen
+                samples. If `average="recall"` then confusion matrix values are normalized such that diagonal values
+                represent class recalls. If `average="precision"` then confusion matrix values are normalized such that
+                diagonal values represent class precisions.
+            ignore_index (int, optional): To ignore an index in Dice computation.
+            output_transform (callable, optional): a callable that is used to transform the
+                :class:`~ignite.engine.Engine`'s `process_function`'s output into the
+                form expected by the metric. This can be useful if, for example, you have a multi-output model and
+                you want to compute the metric with respect to one of the outputs.
+        """
+        self._num_classes = num_classes
+        self._average = average
+        self._ignore_index = ignore_index
+        self._metric = None
+        self._method = method
+        self._reduction = reduction
+        self._cm = ConfusionMatrix(num_classes=num_classes, average=average,
+                                   output_transform=output_transform)
+        super(Dice, self).__init__(output_transform=output_transform)
+
+    def reset(self) -> None:
+        """
+        Reset the confusion matrix object.
+        """
+        self._cm.confusion_matrix = torch.zeros(self._num_classes, self._num_classes, dtype=torch.float)
+
+    def compute(self) -> torch.Tensor:
+        """
+        Compute the metric.
+
+        Returns:
+            :obj:`torch.Tensor`: The dice coefficient for each class.
+        """
+        return self._metric.compute()
+
+    def update(self, output: Tuple[torch.Tensor, torch.Tensor], weights: torch.Tensor = None) -> None:
+        """
+        Update the confusion matrix with output values.
+
+        Args:
+            output (tuple_of_:obj:`torch.Tensor`): A tuple containing predictions and ground truth.
+            weights (:obj:`torch.Tensor`, optional): A weight vector which length equals to the number of classes.
+
+        """
+        if self._method == "dice":
+            self._metric = compute_dice_coefficient(self._cm, self._ignore_index)
+        elif self._method == "generalized":
+            self._metric = compute_generalized_dice_coefficient(self._cm, weights, self._ignore_index)
+        else:
+            raise NotImplementedError("Method of Dice computation not implemented.")
+
+        if self._reduction == "mean":
+            self._metric = self._metric.mean()
+
+        self._cm.update(output)
 
 
 def compute_dice_coefficient(cm: ConfusionMatrix, ignore_index: int = None):

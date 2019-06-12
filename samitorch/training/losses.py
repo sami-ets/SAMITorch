@@ -53,6 +53,9 @@ class DiceLoss(torch.nn.Module):
         if self._reduction == "mean":
             dice_coefficient = compute_mean_dice_coefficient(cm, ignore_index=ignore_index)
 
+        else:
+            raise ValueError("Reduction type not supported.")
+
         cm.update((inputs, targets))
 
         return 1.0 - dice_coefficient.compute().numpy()
@@ -91,6 +94,8 @@ class GeneralizedDiceLoss(torch.nn.Module):
         if self._reduction == "mean":
             generalized_dice = compute_mean_generalized_dice_coefficient(cm, weights, ignore_index=ignore_index)
 
+        else:
+            raise ValueError("Reduction type not supported.")
         cm.update((inputs, targets))
 
         return 1.0 - generalized_dice.compute().numpy()
