@@ -43,7 +43,7 @@ class CriterionFactory(AbstractCriterionFactory):
             "Cross_Entropy": torch.nn.functional.cross_entropy
         }
 
-    def create_criterion(self, criterion: Union[str, Enum], *args):
+    def create_criterion(self, criterion: Union[str, Enum], *args, **kwargs):
         """
         Instanciate a loss function based on its name.
 
@@ -58,7 +58,7 @@ class CriterionFactory(AbstractCriterionFactory):
            KeyError: Raises KeyError Exception if Activation Function is not found.
         """
         optimizer = self._criterion[criterion.name if isinstance(criterion, Enum) else criterion]
-        return optimizer
+        return optimizer(*args, **kwargs)
 
     def register(self, function: str, creator):
         """

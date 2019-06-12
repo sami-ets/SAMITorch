@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-# Copyright 2019 SAMITorch Authors. All Rights Reserved.
-#
 # Licensed under the MIT License;
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -28,7 +26,7 @@ SUPPORTED_REDUCTIONS = ["mean"]
 class DiceLoss(torch.nn.Module):
 
     def __init__(self, reduction: str = "mean"):
-        super(DiceLoss).__init__()
+        super(DiceLoss, self).__init__()
         assert reduction in SUPPORTED_REDUCTIONS, "Reduction type not supported."
         self._reduction = reduction
 
