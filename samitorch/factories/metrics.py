@@ -55,7 +55,7 @@ class MetricsFactory(AbstractMetricFactory):
             KeyError: Raises KeyError Exception if Activation Function is not found.
         """
         metric = self._metrics[metric.name]
-        return metric
+        return metric(*args)
 
     def register(self, metric: str, creator):
         """
