@@ -48,7 +48,7 @@ class ModelFactory(AbstractModelFactory):
             'UNet3D': UNet3D
         }
 
-    def create_model(self, model_name: Enum, config: ModelConfiguration) -> torch.nn.Module:
+    def create_model(self, model_name: str, config: ModelConfiguration) -> torch.nn.Module:
         """
         Instantiate a new support model.
 
@@ -59,7 +59,7 @@ class ModelFactory(AbstractModelFactory):
         Returns:
             :obj:`torch.nn.Module`: A PyTorch model.
         """
-        model = self._models.get(model_name.name)
+        model = self._models.get(model_name)
         if not model:
-            raise ValueError("Model {} is not supported.".format(model_name.name))
+            raise ValueError("Model {} is not supported.".format(model_name))
         return model(config)
