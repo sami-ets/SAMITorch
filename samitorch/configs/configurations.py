@@ -59,7 +59,6 @@ class DiceMetricConfiguration(MetricConfiguration):
         super(DiceMetricConfiguration, self).__init__()
 
         self._num_classes = config["num_classes"]
-        self._method = config["method"]
         self._reduction = config["reduction"]
         self._ignore_index = config["ignore_index"]
         self._average = config["average"]
@@ -70,13 +69,6 @@ class DiceMetricConfiguration(MetricConfiguration):
         int: The number of classes of the problem.
         """
         return self._num_classes
-
-    @property
-    def method(self) -> str:
-        """
-        str: The method (in case of dice, e.g. "normal" or "generalized".
-        """
-        return self._method
 
     @property
     def reduction(self) -> str:
