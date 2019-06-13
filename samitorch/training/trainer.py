@@ -22,24 +22,28 @@ Declare methods a Trainer object must have.
 import abc
 import torch
 
+from typing import List, Optional
 from samitorch.callbacks.callbacks import Callback
 from samitorch.training.training_config import TrainingConfig
 
 
 class Trainer(object):
-    def __init__(self, configs: list, callbacks: list):
+    def __init__(self, config: TrainingConfig, callbacks: Optional[List[Callback]]):
         """Class initializer.
 
         Args:
-            configs (:obj:`list` of :obj:`TrainingConfig`): A dictionary containing configuration.
-            callbacks (:obj:`list` of :obj:`Callback`): A list of callbacks to register.
+            config (:obj:`samitorch.training.training_config.TrainingConfig`): A TrainingConfig containing training configuration.
+            callbacks (:obj:`list` of :obj:`Callback`): A list of Callback objects to register.
         """
-        self._configs = list()
-        for config in configs:
-            self._register_config(config)
-        self._callbacks = list()
-        for cbck in callbacks:
-            self._register_callback(cbck)
+        assert config is not None, "Training must at least have a list of one configuration."
+        self._config = None
+
+        self._register_config(config)
+
+        if callbacks is not None:
+            self._callbacks = list()
+            for cbck in callbacks:
+                self._register_callback(cbck)
         self._epoch = 0
 
     @property
@@ -48,9 +52,9 @@ class Trainer(object):
         return self._epoch
 
     @property
-    def configs(self):
+    def config(self):
         """:obj:`list` of :obj:`TrainingConfig`: A list of registered training configuration, one per model."""
-        return self._configs
+        return self._config
 
     @property
     def callbacks(self):
@@ -270,4 +274,4 @@ class Trainer(object):
 
         assert isinstance(config, TrainingConfig), assertion_str
 
-        self._configs.append(config)
+        self._config = config

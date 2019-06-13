@@ -52,7 +52,7 @@ class NiftiDataset(Dataset):
 
         if self._transform is not None:
             sample = self._transform(sample)
-        return sample
+        return sample.unpack()
 
 
 class MultimodalDataset(Dataset):

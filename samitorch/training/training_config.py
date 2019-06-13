@@ -17,18 +17,21 @@
 """Utility class to declare attributes a Trainer object must have for training a model.
 """
 
-import torch.nn
+import torch
+from torch.utils import data
 from typing import Union, List
 
 
 class TrainingConfig(object):
 
-    def __init__(self, checkpoint_every: int, criterion: Union[List[torch.nn.Module], torch.nn.Module], metric,
+    def __init__(self, checkpoint_every: int, max_epoch: int, criterion: Union[List[torch.nn.Module], torch.nn.Module],
+                 metric,
                  model: Union[List[torch.nn.Module], torch.nn.Module],
                  optimizer: Union[List[torch.nn.Module], torch.nn.Module],
                  dataloader: Union[List[torch.utils.data.DataLoader], torch.utils.data.DataLoader]) -> None:
-        super(TrainingConfig).__init__()
+        super(TrainingConfig, self).__init__()
         self._checkpoint_every = checkpoint_every
+        self._max_epoch = max_epoch
         self._criterion = criterion
         self._metric = metric
         self._model = model
@@ -41,6 +44,13 @@ class TrainingConfig(object):
         int: The frequency (in epoch) at which we should save a model checkpoint.
         """
         return self._checkpoint_every
+
+    @property
+    def max_epoch(self) -> int:
+        """
+        int: The max number of epoch.
+        """
+        return self._max_epoch
 
     @property
     def criterion(self):
