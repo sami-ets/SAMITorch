@@ -17,10 +17,10 @@
 import torch
 
 from samitorch.configs.configurations import ModelConfiguration
-from samitorch.factories.layers import ActivationLayerFactory, PaddingLayerFactory, PoolingLayerFactory, \
+from samitorch.factories.factories import ActivationLayerFactory, PaddingLayerFactory, PoolingLayerFactory, \
     NormalizationLayerFactory
 
-from samitorch.factories.enums import ActivationLayers, PaddingLayers, NormalizationLayers
+from samitorch.factories.enums import *
 
 
 class UNet3D(torch.nn.Module):

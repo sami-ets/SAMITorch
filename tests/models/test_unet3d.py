@@ -23,7 +23,7 @@ from samitorch.models.unet3d import UNet3D, SingleConv, DoubleConv, Encoder, Dec
 from tests.models.model_helper_test import TestModelHelper
 from samitorch.factories.enums import UNetModels, ActivationLayers
 
-from samitorch.factories.models import ModelFactory
+from samitorch.factories.factories import ModelFactory
 
 
 class Unet3DTest(unittest.TestCase):

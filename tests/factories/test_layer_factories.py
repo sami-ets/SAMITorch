@@ -21,7 +21,7 @@ from enum import Enum
 
 from hamcrest import *
 
-from samitorch.factories.layers import PaddingLayerFactory, ActivationLayerFactory, PoolingLayerFactory, \
+from samitorch.factories.factories import PaddingLayerFactory, ActivationLayerFactory, PoolingLayerFactory, \
     NormalizationLayerFactory
 from samitorch.factories.enums import ActivationLayers, PoolingLayers, PaddingLayers, NormalizationLayers
 

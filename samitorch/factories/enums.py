@@ -25,7 +25,7 @@ class ActivationLayers(Enum):
 
 
 class PaddingLayers(Enum):
-    ReplicationPad3d = "ReplicatonPad3d"
+    ReplicationPad3d = "ReplicationPad3d"
 
 
 class PoolingLayers(Enum):
@@ -55,7 +55,23 @@ class Optimizers(Enum):
     SGD = "SGD"
     Adam = "Adam"
     Adagrad = "Adagrad"
+    Adadelta = "Adadelta"
+    SparseAdam = "SparseAdam"
+    Adamax = "Adamax"
+    Rprop = "Rprop"
+    RMSprop = "RMSprop"
+    ASGD = "ASGD"
 
 
 class Metrics(Enum):
     Dice = "Dice"
+    Accuracy = "Accuracy"
+    Precision = "Precision"
+    MeanAbsoluteError = "MeanAbsoluteError"
+    MeanPairwiseDistance = "MeanPairwiseDistance"
+    MeanSquaredError = "MeanSquaredError"
+    Recall = "Recall"
+    RootMeanSquaredError = "RootMeanSquaredError"
+    TopKCategoricalAccuracy = "TopKCategoricalAccuracy"
+    IoU = "IoU"
+    mIoU = "mIoU"

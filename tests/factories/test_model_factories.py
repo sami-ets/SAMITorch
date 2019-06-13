@@ -20,7 +20,7 @@ from enum import Enum
 
 from hamcrest import *
 
-from samitorch.factories.models import ModelFactory
+from samitorch.factories.factories import ModelFactory
 
 from samitorch.factories.parsers import ModelConfigurationParserFactory
 

@@ -26,43 +26,12 @@ from ignite.metrics import MetricsLambda, Metric
 EPSILON = 1e-15
 
 
-def validate_ignore_index(ignore_index: int):
-    """
-    Check whether the ignore index is valid or not.
-    Args:
-        ignore_index (int): An index of a class to ignore for computation.
-    """
-    assert ignore_index >= 0, "ignore_index must be non-negative, but given {}".format(ignore_index)
-
-
-def validate_num_classes(ignore_index: int, num_classes: int):
-    """
-    Check whether the num_classes is valid or not.
-    Args:
-        ignore_index (int): An index of a class to ignore for computation.
-        num_classes (int): The number of classes in the problem (number of rows in the
-    """
-    assert ignore_index < num_classes, "ignore index must be lower than the number of classes in confusion matrix, " \
-                                       "but {} was given".format(ignore_index)
-
-
-def validate_weights_size(weights_size: int, num_classes: int):
-    """
-    Check whether if the size of given weights matches the number of classes of the problem.
-    Args:
-        weights_size (int): The size of a weight vector used in the loss computation.
-        num_classes (int): The number of classes of the problem.
-    """
-    assert weights_size == num_classes, "Weights vector must be the same length than the number of " \
-                                        "classes, but a size of {} was given".format(weights_size)
-
-
 class Dice(Metric):
     """
     The Dice Metric.
     """
 
-    def __init__(self, num_classes: int, method: str = "normal", reduction: str = None, average: str = None,
+    def __init__(self, num_classes: int, reduction: str = None, average: str = None,
                  ignore_index: int = None, output_transform: callable = lambda x: x) -> None:
         """
         Metric initializer.
@@ -74,6 +43,7 @@ class Dice(Metric):
                 samples. If `average="recall"` then confusion matrix values are normalized such that diagonal values
                 represent class recalls. If `average="precision"` then confusion matrix values are normalized such that
                 diagonal values represent class precisions.
+            reduction (str): The type of reduction to apply (e.g. 'mean').
             ignore_index (int, optional): To ignore an index in Dice computation.
             output_transform (callable, optional): a callable that is used to transform the
                 :class:`~ignite.engine.Engine`'s `process_function`'s output into the
@@ -84,11 +54,74 @@ class Dice(Metric):
         self._average = average
         self._ignore_index = ignore_index
         self._metric = None
-        self._method = method
         self._reduction = reduction
         self._cm = ConfusionMatrix(num_classes=num_classes, average=average,
                                    output_transform=output_transform)
         super(Dice, self).__init__(output_transform=output_transform)
+
+    def reset(self) -> None:
+        """
+        Reset the confusion matrix object.
+        """
+        self._cm.confusion_matrix = torch.zeros(self._num_classes, self._num_classes, dtype=torch.float)
+
+    def compute(self) -> torch.Tensor:
+        """
+        Compute the metric.
+
+        Returns:
+            :obj:`torch.Tensor`: The dice coefficient for each class.
+        """
+        return self._metric.compute()
+
+    def update(self, output: Tuple[torch.Tensor, torch.Tensor]) -> None:
+        """
+        Update the confusion matrix with output values.
+
+        Args:
+            output (tuple_of_:obj:`torch.Tensor`): A tuple containing predictions and ground truth.
+        """
+
+        self._metric = compute_dice_coefficient(self._cm, self._ignore_index)
+
+        if self._reduction == "mean":
+            self._metric = self._metric.mean()
+
+        self._cm.update(output)
+
+
+class GeneralizedDice(Metric):
+    """
+    The Generalized Dice Metric.
+    """
+
+    def __init__(self, num_classes: int, reduction: str = None, average: str = None,
+                 ignore_index: int = None, output_transform: callable = lambda x: x) -> None:
+        """
+        Metric initializer.
+
+        Args:
+            num_classes (int): The number of classes in the problem. In case of images, num_classes should also count the background index 0.
+            average (str, optional): Confusion matrix values averaging schema: None, "samples", "recall", "precision".
+                Default is None. If `average="samples"` then confusion matrix values are normalized by the number of seen
+                samples. If `average="recall"` then confusion matrix values are normalized such that diagonal values
+                represent class recalls. If `average="precision"` then confusion matrix values are normalized such that
+                diagonal values represent class precisions.
+            reduction (str): The type of reduction to apply (e.g. 'mean').
+            ignore_index (int, optional): To ignore an index in Dice computation.
+            output_transform (callable, optional): a callable that is used to transform the
+                :class:`~ignite.engine.Engine`'s `process_function`'s output into the
+                form expected by the metric. This can be useful if, for example, you have a multi-output model and
+                you want to compute the metric with respect to one of the outputs.
+        """
+        self._num_classes = num_classes
+        self._average = average
+        self._ignore_index = ignore_index
+        self._metric = None
+        self._reduction = reduction
+        self._cm = ConfusionMatrix(num_classes=num_classes, average=average,
+                                   output_transform=output_transform)
+        super(GeneralizedDice, self).__init__(output_transform=output_transform)
 
     def reset(self) -> None:
         """
@@ -112,14 +145,9 @@ class Dice(Metric):
         Args:
             output (tuple_of_:obj:`torch.Tensor`): A tuple containing predictions and ground truth.
             weights (:obj:`torch.Tensor`, optional): A weight vector which length equals to the number of classes.
-
         """
-        if self._method == "normal":
-            self._metric = compute_dice_coefficient(self._cm, self._ignore_index)
-        elif self._method == "generalized":
-            self._metric = compute_generalized_dice_coefficient(self._cm, weights, self._ignore_index)
-        else:
-            raise NotImplementedError("Method of Dice computation not implemented.")
+
+        self._metric = compute_generalized_dice_coefficient(self._cm, weights, self._ignore_index)
 
         if self._reduction == "mean":
             self._metric = self._metric.mean()
@@ -216,3 +244,34 @@ def compute_mean_generalized_dice_coefficient(cm: ConfusionMatrix, weights: torc
         float: The mean Generalized Dice Coefficient.
     """
     return compute_generalized_dice_coefficient(cm=cm, ignore_index=ignore_index, weights=weights).mean()
+
+
+def validate_ignore_index(ignore_index: int) -> None:
+    """
+    Check whether the ignore index is valid or not.
+    Args:
+        ignore_index (int): An index of a class to ignore for computation.
+    """
+    assert ignore_index >= 0, "ignore_index must be non-negative, but given {}".format(ignore_index)
+
+
+def validate_num_classes(ignore_index: int, num_classes: int) -> None:
+    """
+    Check whether the num_classes is valid or not.
+    Args:
+        ignore_index (int): An index of a class to ignore for computation.
+        num_classes (int): The number of classes in the problem (number of rows in the
+    """
+    assert ignore_index < num_classes, "ignore index must be lower than the number of classes in confusion matrix, " \
+                                       "but {} was given".format(ignore_index)
+
+
+def validate_weights_size(weights_size: int, num_classes: int) -> None:
+    """
+    Check whether if the size of given weights matches the number of classes of the problem.
+    Args:
+        weights_size (int): The size of a weight vector used in the loss computation.
+        num_classes (int): The number of classes of the problem.
+    """
+    assert weights_size == num_classes, "Weights vector must be the same length than the number of " \
+                                        "classes, but a size of {} was given".format(weights_size)
