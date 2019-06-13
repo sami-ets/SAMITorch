@@ -20,6 +20,7 @@
 import torch
 from torch.utils import data
 from typing import Union, List
+from samitorch.configs.configurations import RunningConfiguration
 
 
 class TrainingConfig(object):
@@ -28,7 +29,8 @@ class TrainingConfig(object):
                  metric,
                  model: Union[List[torch.nn.Module], torch.nn.Module],
                  optimizer: Union[List[torch.nn.Module], torch.nn.Module],
-                 dataloader: Union[List[torch.utils.data.DataLoader], torch.utils.data.DataLoader]) -> None:
+                 dataloader: Union[List[torch.utils.data.DataLoader], torch.utils.data.DataLoader],
+                 running_config: RunningConfiguration) -> None:
         super(TrainingConfig, self).__init__()
         self._checkpoint_every = checkpoint_every
         self._max_epoch = max_epoch
@@ -37,6 +39,7 @@ class TrainingConfig(object):
         self._model = model
         self._optimizer = optimizer
         self._dataloader = dataloader
+        self._running_config = running_config
 
     @property
     def checkpoint_every(self) -> int:
@@ -86,3 +89,13 @@ class TrainingConfig(object):
         :obj:`torch.utils.data.DataLoader`: A PyTorch dataloader object.
         """
         return self._dataloader
+
+    @property
+    def running_config(self):
+        """
+        The running configuration, which groups multiple execution environment related variables.
+
+        Returns:
+            :obj:`samitorch.configs.configurations.RunningConfiguration`: The running configuration.
+        """
+        return self._running_config

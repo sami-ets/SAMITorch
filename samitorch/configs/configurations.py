@@ -54,6 +54,102 @@ class MetricConfiguration(Configuration):
     pass
 
 
+class RunningConfiguration(Configuration):
+    def __init__(self, config: dict):
+        self._opt_level = config.get("opt_level", default="00")
+        self._num_workers = config.get("num_workers", default=0)
+        self._local_rank = config.get("local_rank", default=0)
+        self._sync_batch_norm = config.get("sync_batch_norm", None)
+        self._keep_batch_norm_fp32 = config.get("keep_batch_norm_fp32", None)
+        self._loss_scale = config.get("loss_scale", None)
+        self._num_gpus = config.get("num_gpus", 1)
+        self._log_path = config.get("log", "/tmp")
+
+    @property
+    def opt_level(self) -> str:
+        """
+        The optimization level.
+            - 00: FP32 training
+            - 01: Mixed Precision (recommended)
+            - 02: Almost FP16 Mixed Precision
+            - 03: FP16 Training.
+
+        Returns:
+            str: The optimization level.
+        """
+        return self._opt_level
+
+    @property
+    def num_workers(self) -> int:
+        """
+        The number of data loading workers (default: 4).
+
+        Returns:
+            int: The number of parallel threads.
+        """
+        return self._num_workers
+
+    @property
+    def local_rank(self) -> int:
+        """
+        The local rank of the distributed node.
+
+        Returns:
+            int: The local rank.
+        """
+        return self._local_rank
+
+    @property
+    def sync_batch_norm(self) -> bool:
+        """
+        Enables the APEX sync of batch normalization.
+
+        Returns:
+            bool: Whether if synchronization is enabled or not.
+        """
+        return self._sync_batch_norm
+
+    @property
+    def keep_batch_norm_fp32(self) -> bool:
+        """
+        Whether to keep the batch normalization in 32-bit floating point (Mixed Precision).
+
+        Returns:
+            bool: True will keep 32-bit FP batch norm, False will convert it to 16-bit FP.
+        """
+        return self._keep_batch_norm_fp32
+
+    @property
+    def loss_scale(self) -> str:
+        """
+        The loss scale in Mixed Precision training.
+
+        Returns:
+            The loss scale.
+        """
+        return self._loss_scale
+
+    @property
+    def num_gpus(self) -> int:
+        """
+        The number of GPUs on the Node to be used for training.
+
+        Returns:
+            int: The number of allowed GPU to be used for training.
+        """
+        return self._num_gpus
+
+    @property
+    def log_path(self) -> str:
+        """
+        The path where logs are saved.
+
+        Returns:
+            str: The path to log directory.
+        """
+        return self._log_path
+
+
 class DiceMetricConfiguration(MetricConfiguration):
     def __init__(self, config):
         super(DiceMetricConfiguration, self).__init__()
