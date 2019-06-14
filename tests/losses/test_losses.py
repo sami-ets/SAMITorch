@@ -21,6 +21,7 @@ import numpy as np
 
 from hamcrest import *
 from losses.losses import DiceLoss, GeneralizedDiceLoss, WeightedCrossEntropyLoss
+from samitorch.utils.utils import to_onehot
 
 
 def get_y_true_y_pred():
@@ -41,9 +42,9 @@ def compute_tensor_y_true_y_logits(y_true, y_pred):
     y_true_tensor = torch.from_numpy(y_true).unsqueeze(0)
     # Create logits torch.tensor:
     num_classes = max(np.max(y_true), np.max(y_pred)) + 1
-    y_probas = np.ones((num_classes,) + y_true.shape) * 0.02
+    y_probas = np.ones((num_classes,) + y_true.shape) * 0.0
     for i in range(num_classes):
-        y_probas[i, (y_pred == i)] = 0.98
+        y_probas[i, (y_pred == i)] = 1.0
     y_logits = torch.from_numpy(y_probas).unsqueeze(0).type(torch.float32)
     return y_true_tensor, y_logits
 
@@ -54,7 +55,7 @@ def compute_dice_truth(y_true, y_pred):
         bin_y_true = y_true == index
         bin_y_pred = y_pred == index
         intersection = bin_y_true & bin_y_pred
-        true_res[index] = 2 * intersection.sum() / (bin_y_pred.sum() + bin_y_true.sum())
+        true_res[index] = 2.0 * intersection.sum() / (bin_y_pred.sum() + bin_y_true.sum())
     return true_res
 
 
@@ -103,17 +104,32 @@ class TestDiceLoss(unittest.TestCase):
                                                          ignore_index=self.INVALID_VALUE_4), raises(AssertionError))
 
     def test_should_compute_dice(self):
-        dice_loss = DiceLoss()
-        loss = dice_loss.forward(self.y_logits, self.y_true_tensor)
+        dice_loss = DiceLoss(reduction=None)
+        loss = dice_loss.forward(self.y_logits, to_onehot(self.y_true_tensor, num_classes=3))
 
-        assert_that(loss, equal_to(self.mean_dice_loss))
+        np.testing.assert_almost_equal(loss.numpy(), np.subtract(1.0, self.dice))
 
     def test_should_compute_dice_for_multiclass_with_ignored_index(self):
         for ignore_index in range(3):
+            dice_loss = DiceLoss(reduction=None)
+            res = dice_loss.forward(self.y_logits, to_onehot(self.y_true_tensor, num_classes=3),
+                                    ignore_index=ignore_index)
+            true_res = np.subtract(1.0, self.dice[:ignore_index] + self.dice[ignore_index + 1:])
+            np.testing.assert_almost_equal(res.numpy(), true_res), "{}: {} vs {}".format(ignore_index, res, true_res)
+
+    def test_should_compute_mean_dice(self):
+        dice_loss = DiceLoss()
+        loss = dice_loss.forward(self.y_logits, to_onehot(self.y_true_tensor, num_classes=3))
+
+        np.testing.assert_almost_equal(loss.numpy(), self.mean_dice_loss)
+
+    def test_should_compute_mean_dice_for_multiclass_with_ignored_index(self):
+        for ignore_index in range(3):
             dice_loss = DiceLoss()
-            res = dice_loss.forward(self.y_logits, self.y_true_tensor, ignore_index=ignore_index)
-            true_res = np.subtract(1.0, np.mean(self.dice[:ignore_index] + self.dice[ignore_index + 1:]))
-            np.testing.assert_array_equal(res.numpy(), true_res), "{}: {} vs {}".format(ignore_index, res, true_res)
+            res = dice_loss.forward(self.y_logits, to_onehot(self.y_true_tensor, num_classes=3),
+                                    ignore_index=ignore_index)
+            true_res = np.subtract(1.0, self.dice[:ignore_index] + self.dice[ignore_index + 1:])
+            np.testing.assert_almost_equal(res.numpy(), true_res), "{}: {} vs {}".format(ignore_index, res, true_res)
 
 
 class TestGeneralizedDiceLoss(unittest.TestCase):
@@ -153,23 +169,33 @@ class TestGeneralizedDiceLoss(unittest.TestCase):
                                                                      ignore_index=self.INVALID_VALUE_4),
                     raises(AssertionError))
 
-    def test_should_compute_dice(self):
-        generalized_dice_loss = GeneralizedDiceLoss()
-        loss = generalized_dice_loss.forward(self.y_logits, self.y_true_tensor)
-        assert_that(loss, equal_to(self.mean_generalized_dice_loss))
-
-    def test_should_compute_dice_for_multiclass_with_ignored_index(self):
-        for ignore_index in range(3):
-            generalized_dice_loss = GeneralizedDiceLoss()
-            res = generalized_dice_loss.forward(self.y_logits, self.y_true_tensor, ignore_index=ignore_index)
-            true_res = np.subtract(1.0, np.mean(
-                self.generalized_dice_loss[:ignore_index] + self.generalized_dice_loss[ignore_index + 1:]))
-            np.testing.assert_array_equal(res.numpy(), true_res), "{}: {} vs {}".format(ignore_index, res, true_res)
-
     def test_should_compute_generalized_dice(self):
         generalized_dice_loss = GeneralizedDiceLoss()
-        loss = generalized_dice_loss.forward(self.y_logits, self.y_true_tensor)
-        assert_that(loss, equal_to(self.mean_generalized_dice_loss))
+        loss = generalized_dice_loss.forward(self.y_logits, to_onehot(self.y_true_tensor, num_classes=3))
+        np.testing.assert_almost_equal(loss.numpy(), self.mean_generalized_dice_loss)
+
+    def test_should_compute_generalized_dice_for_multiclass_with_ignored_index(self):
+        for ignore_index in range(3):
+            generalized_dice_loss = GeneralizedDiceLoss()
+            res = generalized_dice_loss.forward(self.y_logits, to_onehot(self.y_true_tensor, num_classes=3),
+                                                ignore_index=ignore_index)
+            true_res = np.subtract(1.0, self.generalized_dice_loss[:ignore_index] + self.generalized_dice_loss[ignore_index + 1:])
+            np.testing.assert_almost_equal(res.numpy(), true_res), "{}: {} vs {}".format(ignore_index, res, true_res)
+
+    def test_should_compute_mean_generalized_dice(self):
+        dice_loss = GeneralizedDiceLoss()
+        loss = dice_loss.forward(self.y_logits, to_onehot(self.y_true_tensor, num_classes=3))
+
+        np.testing.assert_almost_equal(loss.numpy(), self.mean_generalized_dice_loss)
+
+    def test_should_compute_mean_generalized_dice_for_multiclass_with_ignored_index(self):
+        for ignore_index in range(3):
+            dice_loss = GeneralizedDiceLoss()
+            res = dice_loss.forward(self.y_logits, to_onehot(self.y_true_tensor, num_classes=3),
+                                    ignore_index=ignore_index)
+            true_res = np.subtract(1.0, self.generalized_dice_loss[:ignore_index] + self.generalized_dice_loss[
+                                                                                    ignore_index + 1:])
+            np.testing.assert_almost_equal(res.numpy(), true_res), "{}: {} vs {}".format(ignore_index, res, true_res)
 
 
 class TestWeightedCrossEntropy(unittest.TestCase):
@@ -215,4 +241,4 @@ class TestWeightedCrossEntropy(unittest.TestCase):
     def test_should_compute_weights(self):
         weighted_cross_entropy_loss = WeightedCrossEntropyLoss()
         weights = weighted_cross_entropy_loss._compute_class_weights(self.y_logits)
-        np.testing.assert_almost_equal(weights.numpy(), np.array([0.3043478, 6.8947377, 6.8947353]), decimal=7)
+        np.testing.assert_almost_equal(weights.numpy(), np.array([0.2857143, 8.0, 8.0]), decimal=7)

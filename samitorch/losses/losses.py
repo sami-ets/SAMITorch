@@ -14,23 +14,31 @@
 
 import torch.nn
 
+from typing import Union
 from ignite.metrics.confusion_matrix import ConfusionMatrix
+from ignite.metrics import MetricsLambda
 from torch.autograd import Variable
 
-from samitorch.metrics.metrics import compute_mean_dice_coefficient, compute_mean_generalized_dice_coefficient
+from samitorch.metrics.metrics import validate_ignore_index
 from samitorch.utils.utils import flatten, to_onehot
 
-SUPPORTED_REDUCTIONS = ["mean"]
+SUPPORTED_REDUCTIONS = [None, "mean"]
+
+EPSILON = 1e-15
 
 
 class DiceLoss(torch.nn.Module):
+    """
+    The Sørensen-Dice Loss.
+    """
 
-    def __init__(self, reduction: str = "mean"):
+    def __init__(self, reduction: Union[None, str] = "mean"):
         super(DiceLoss, self).__init__()
         assert reduction in SUPPORTED_REDUCTIONS, "Reduction type not supported."
         self._reduction = reduction
 
-    def forward(self, inputs: torch.Tensor, targets: torch.Tensor, ignore_index: int = None) -> float:
+    def forward(self, inputs: torch.Tensor, targets: torch.Tensor, weights: torch.Tensor = None,
+                ignore_index: int = None):
         """
         Computes the Sørensen–Dice loss.
 
@@ -43,59 +51,111 @@ class DiceLoss(torch.nn.Module):
             ignore_index (int): An index to ignore for computation.
 
         Returns:
-            float: The Sørensen–Dice loss.
-         """
+            :obj:`torch.Tensor`: The Sørensen–Dice loss for each class or reduced according to reduction method.
+        """
+        if ignore_index is not None:
+            validate_ignore_index(ignore_index)
 
-        cm = ConfusionMatrix(num_classes=inputs.shape[1])
+        assert inputs.size() == targets.size(), "'Inputs' and 'Targets' must have the same shape."
 
-        if self._reduction == "mean":
-            dice_coefficient = compute_mean_dice_coefficient(cm, ignore_index=ignore_index)
+        inputs = flatten(inputs)
+        targets = flatten(targets)
+
+        targets = targets.float()
+
+        # Compute per channel Dice Coefficient
+        intersect = (inputs * targets).sum(-1)
+
+        if weights is not None:
+            if weights.requires_grad is not False:
+                weights.requires_grad = False
+            intersect = weights * intersect
+
+        denominator = (inputs + targets).sum(-1)
+
+        dice = 1.0 - (2.0 * intersect / denominator.clamp(min=EPSILON))
+
+        if ignore_index is not None:
+
+            def ignore_index_fn(dice_vector):
+                indices = list(range(len(dice_vector)))
+                indices.remove(ignore_index)
+                return dice_vector[indices]
+
+            return MetricsLambda(ignore_index_fn, dice).compute()
 
         else:
-            raise ValueError("Reduction type not supported.")
-
-        cm.update((inputs, targets))
-
-        return 1.0 - dice_coefficient.compute()
+            if self._reduction == "mean":
+                dice = 1.0 - (2.0 * intersect / denominator.clamp(min=EPSILON)).mean()
+            elif self._reduction is None:
+                pass
+            else:
+                raise NotImplementedError("Reduction method not implemented.")
+            return dice
 
 
 class GeneralizedDiceLoss(torch.nn.Module):
+    """
+      The Generalized Sørensen-Dice Loss.
+      """
 
-    def __init__(self, reduction="mean"):
+    def __init__(self, reduction: Union[None, str] = "mean"):
         super(GeneralizedDiceLoss, self).__init__()
-        assert reduction in SUPPORTED_REDUCTIONS, "Reduction is not supported."
+        assert reduction in SUPPORTED_REDUCTIONS, "Reduction type not supported."
         self._reduction = reduction
 
-    def forward(self, inputs: torch.Tensor, targets: torch.Tensor, ignore_index: int = None) -> float:
+    def forward(self, inputs: torch.Tensor, targets: torch.Tensor, ignore_index: int = None):
         """
-        Computes the Generalized Dice Loss as described in https://arxiv.org/pdf/1707.03237.pdf
+        Computes the Sørensen–Dice loss.
+
         Note that PyTorch optimizers minimize a loss. In this case, we would like to maximize the dice loss so we
         return the negated dice loss.
 
         Args:
-           inputs (:obj:`torch.Tensor`): A tensor of shape (B, C, ..). The model's prediction on which the loss has to be computed.
-           targets (:obj:`torch.Tensor`): A tensor of shape (B, C, ..). The ground truth.
-           ignore_index (int): An index to ignore for computation.
+            inputs (:obj:`torch.Tensor`) : A tensor of shape (B, C, ..). The model prediction on which the loss has to be computed.
+            targets (:obj:`torch.Tensor`) : A tensor of shape (B, C, ..). The ground truth.
+            ignore_index (int): An index to ignore for computation.
 
-       Returns:
-           float: the Generalized Dice Loss.
+        Returns:
+            :obj:`torch.Tensor`: The Sørensen–Dice loss for each class or reduced according to reduction method.
         """
-        num_classes = inputs.shape[1]
+        if ignore_index is not None:
+            validate_ignore_index(ignore_index)
 
-        cm = ConfusionMatrix(num_classes)
+        assert inputs.size() == targets.size(), "'Inputs' and 'Targets' must have the same shape."
 
-        flattened_targets = flatten(to_onehot(targets, num_classes))
+        inputs = flatten(inputs)
+        targets = flatten(targets)
 
-        weights = torch.tensor(1.0 / torch.pow(flattened_targets.sum(-1), 2).clamp(min=1e-15), requires_grad=False).type(torch.float64)
+        targets = targets.float()
 
-        if self._reduction == "mean":
-            generalized_dice = compute_mean_generalized_dice_coefficient(cm, weights, ignore_index=ignore_index)
+        class_weights = torch.tensor(1.0 / torch.pow(targets.sum(-1), 2).clamp(min=1e-15), requires_grad=False,
+                                     dtype=torch.float)
+
+        # Compute per channel Dice Coefficient
+        intersect = (inputs * targets).sum(-1) * class_weights
+
+        denominator = (inputs + targets).sum(-1) * class_weights
+
+        dice = 1.0 - (2.0 * intersect / denominator.clamp(min=EPSILON))
+
+        if ignore_index is not None:
+
+            def ignore_index_fn(dice_vector):
+                indices = list(range(len(dice_vector)))
+                indices.remove(ignore_index)
+                return dice_vector[indices]
+
+            return MetricsLambda(ignore_index_fn, dice).compute()
 
         else:
-            raise ValueError("Reduction type not supported.")
-        cm.update((inputs, targets))
-
-        return 1.0 - generalized_dice.compute()
+            if self._reduction == "mean":
+                dice = 1.0 - (2.0 * intersect / denominator.clamp(min=EPSILON)).mean()
+            elif self._reduction is None:
+                pass
+            else:
+                raise NotImplementedError("Reduction method not implemented.")
+            return dice
 
 
 class WeightedCrossEntropyLoss(torch.nn.Module):
@@ -152,6 +212,6 @@ class WeightedCrossEntropyLoss(torch.nn.Module):
             :obj:`torch.Variable`: A variable containing class weights.
         """
         flattened_inputs = flatten(inputs)
-        class_weights = Variable((flattened_inputs.shape[1] - flattened_inputs.sum(-1)) / flattened_inputs.sum(-1),
-                                 requires_grad=False)
+        class_weights = torch.tensor((flattened_inputs.shape[1] - flattened_inputs.sum(-1)) / flattened_inputs.sum(-1),
+                                     requires_grad=False, dtype=torch.float)
         return class_weights
