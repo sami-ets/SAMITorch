@@ -56,7 +56,7 @@ class DiceLoss(torch.nn.Module):
 
         cm.update((inputs, targets))
 
-        return 1.0 - dice_coefficient.compute().numpy()
+        return 1.0 - dice_coefficient.compute()
 
 
 class GeneralizedDiceLoss(torch.nn.Module):
@@ -86,8 +86,7 @@ class GeneralizedDiceLoss(torch.nn.Module):
 
         flattened_targets = flatten(to_onehot(targets, num_classes))
 
-        weights = Variable(1.0 / torch.pow(flattened_targets.sum(-1), 2).clamp(min=1e-15), requires_grad=False).type(
-            torch.float64)
+        weights = torch.tensor(1.0 / torch.pow(flattened_targets.sum(-1), 2).clamp(min=1e-15), requires_grad=False).type(torch.float64)
 
         if self._reduction == "mean":
             generalized_dice = compute_mean_generalized_dice_coefficient(cm, weights, ignore_index=ignore_index)
@@ -96,7 +95,7 @@ class GeneralizedDiceLoss(torch.nn.Module):
             raise ValueError("Reduction type not supported.")
         cm.update((inputs, targets))
 
-        return 1.0 - generalized_dice.compute().numpy()
+        return 1.0 - generalized_dice.compute()
 
 
 class WeightedCrossEntropyLoss(torch.nn.Module):
@@ -139,7 +138,7 @@ class WeightedCrossEntropyLoss(torch.nn.Module):
         class_weights = self._compute_class_weights(inputs)
 
         return torch.nn.functional.cross_entropy(inputs, targets, weight=class_weights,
-                                                 ignore_index=ignore_index).numpy()
+                                                 ignore_index=ignore_index)
 
     @staticmethod
     def _compute_class_weights(inputs: torch.Tensor):

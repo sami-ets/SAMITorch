@@ -113,7 +113,7 @@ class TestDiceLoss(unittest.TestCase):
             dice_loss = DiceLoss()
             res = dice_loss.forward(self.y_logits, self.y_true_tensor, ignore_index=ignore_index)
             true_res = np.subtract(1.0, np.mean(self.dice[:ignore_index] + self.dice[ignore_index + 1:]))
-            assert np.all(res == true_res), "{}: {} vs {}".format(ignore_index, res, true_res)
+            np.testing.assert_array_equal(res.numpy(), true_res), "{}: {} vs {}".format(ignore_index, res, true_res)
 
 
 class TestGeneralizedDiceLoss(unittest.TestCase):
@@ -164,7 +164,7 @@ class TestGeneralizedDiceLoss(unittest.TestCase):
             res = generalized_dice_loss.forward(self.y_logits, self.y_true_tensor, ignore_index=ignore_index)
             true_res = np.subtract(1.0, np.mean(
                 self.generalized_dice_loss[:ignore_index] + self.generalized_dice_loss[ignore_index + 1:]))
-            assert np.all(res == true_res), "{}: {} vs {}".format(ignore_index, res, true_res)
+            np.testing.assert_array_equal(res.numpy(), true_res), "{}: {} vs {}".format(ignore_index, res, true_res)
 
     def test_should_compute_generalized_dice(self):
         generalized_dice_loss = GeneralizedDiceLoss()

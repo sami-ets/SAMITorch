@@ -48,8 +48,8 @@ class NiftiDatasetTest(unittest.TestCase):
 
         sample = dataset.__getitem__(0)
 
-        np.testing.assert_array_equal(nib.load(sample.x).get_fdata(), self.TEST_SOURCE_IMAGE)
-        np.testing.assert_array_equal(nib.load(sample.y).get_fdata(), self.TEST_LABEL_IMAGE)
+        np.testing.assert_array_equal(nib.load(sample[0]).get_fdata(), self.TEST_SOURCE_IMAGE)
+        np.testing.assert_array_equal(nib.load(sample[1]).get_fdata(), self.TEST_LABEL_IMAGE)
 
 
 class MultimodalNiftiDatasetTest(unittest.TestCase):
