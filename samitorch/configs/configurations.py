@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import abc
+import torch
 
 from samitorch.factories.enums import ActivationLayers, PoolingLayers
 
@@ -23,47 +24,101 @@ class Configuration(metaclass=abc.ABCMeta):
     """
     A standard Configuration object.
     """
-    pass
+
+    @abc.abstractmethod
+    def __init__(self) -> None:
+        """
+        Initialize a Configuration object.
+
+        An implementation of Configuration object must take a dictionary as parameter. The __init__ method places the
+        content of the dictionary into Python variables.
+
+        Examples::
+            self._attribute = config["attribute"]
+            self._attribute = config.get("attribute", default=None)
+        """
+        pass
 
 
-class DatasetConfiguration(Configuration):
+class DatasetConfiguration(Configuration, metaclass=abc.ABCMeta):
     """
     A base class for storing dataset configuration as an object.
     """
-    pass
+
+    @abc.abstractmethod
+    def __init__(self, config: dict) -> None:
+        super(DatasetConfiguration, self).__init__()
+        pass
 
 
-class ModelConfiguration(Configuration):
+class ModelConfiguration(Configuration, metaclass=abc.ABCMeta):
     """
     A base class for storing model configuration as an object.
     """
-    pass
+
+    @abc.abstractmethod
+    def __init__(self, config: dict) -> None:
+        super(ModelConfiguration, self).__init__()
+        pass
 
 
-class TrainingConfiguration(Configuration):
+class TrainingConfiguration(Configuration, metaclass=abc.ABCMeta):
     """
     A base class for storing training configuration as an object.
     """
-    pass
+
+    @abc.abstractmethod
+    def __init__(self, config: dict) -> None:
+        super(TrainingConfiguration, self).__init__()
+        pass
 
 
-class MetricConfiguration(Configuration):
+class MetricConfiguration(Configuration, metaclass=abc.ABCMeta):
     """
-    A base case for storing metric configuration as an object.
+    A base class for storing metric configuration as an object.
     """
-    pass
+
+    @abc.abstractmethod
+    def __init__(self, config: dict) -> None:
+        super(MetricConfiguration, self).__init__()
+        pass
+
+
+class VariableConfiguration(Configuration, metaclass=abc.ABCMeta):
+    """
+    A base class for storing various variables using during training as an object.
+    """
+
+    @abc.abstractmethod
+    def __init__(self, config: dict) -> None:
+        super(VariableConfiguration, self).__init__()
+        pass
+
+
+class LoggerConfiguration(Configuration, metaclass=abc.ABCMeta):
+    """
+    A base class for storing logger attributes.
+    """
+
+    @abc.abstractmethod
+    def __init__(self, config: dict) -> None:
+        super(LoggerConfiguration, self).__init__()
+        pass
 
 
 class RunningConfiguration(Configuration):
     def __init__(self, config: dict):
+        super(RunningConfiguration, self).__init__()
         self._opt_level = config.get("opt_level", default="00")
         self._num_workers = config.get("num_workers", default=0)
         self._local_rank = config.get("local_rank", default=0)
         self._sync_batch_norm = config.get("sync_batch_norm", None)
         self._keep_batch_norm_fp32 = config.get("keep_batch_norm_fp32", None)
         self._loss_scale = config.get("loss_scale", None)
-        self._num_gpus = config.get("num_gpus", 1)
+        self._num_gpus = config.get("num_gpus", 0)
         self._log_path = config.get("log", "/tmp")
+        self._device = torch.device("cuda:" + str(self._local_rank)) if torch.cuda.is_available() else torch.device(
+            "cpu")
 
     @property
     def opt_level(self) -> str:
@@ -149,10 +204,20 @@ class RunningConfiguration(Configuration):
         """
         return self._log_path
 
+    @property
+    def device(self) -> torch.device:
+        """
+        Get the device where Tensors are going to be transfered.
+
+        Returns:
+            :obj:`torch.device`: A Torch Device object.
+        """
+        return self._device
+
 
 class DiceMetricConfiguration(MetricConfiguration):
     def __init__(self, config):
-        super(DiceMetricConfiguration, self).__init__()
+        super(DiceMetricConfiguration, self).__init__(config)
 
         self._num_classes = config["num_classes"]
         self._reduction = config["reduction"]
@@ -200,7 +265,7 @@ class UNetModelConfiguration(ModelConfiguration):
         Args:
             config (dict): A dictionary containing model's hyper-parameters.
         """
-        super(UNetModelConfiguration, self).__init__()
+        super(UNetModelConfiguration, self).__init__(config)
 
         self._feature_maps = config["feature_maps"]
         self._in_channels = config["in_channels"]
@@ -312,7 +377,7 @@ class ResNetModelConfiguration(ModelConfiguration):
         Args:
             config (dict): A dictionary containing model's hyper-parameters.
         """
-        super(ResNetModelConfiguration, self).__init__()
+        super(ResNetModelConfiguration, self).__init__(config)
 
         self._in_channels = config["in_channels"]
         self._out_channels = config["out_channels"]

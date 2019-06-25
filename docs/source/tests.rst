@@ -11,6 +11,7 @@ Subpackages
     tests.models
     tests.preprocessing
     tests.training
+    tests.losses
     tests.utils
 
 Module contents

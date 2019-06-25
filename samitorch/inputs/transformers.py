@@ -91,7 +91,7 @@ class ToNumpyArray(object):
         Returns a new Sample with updated `x` property and `y` property if labeled.
 
         Args:
-            input (str__or_:obj:`nibabel.Nifti1Image`_or_:obj:`nibabel.Nifti2Image`_or_:obj:`samitorch.inputs.sample.Sample`): A Sample object.
+            input (str or :obj:`nibabel.Nifti1Image` or :obj:`nibabel.Nifti2Image` or :obj:`samitorch.inputs.sample.Sample`): A Sample object.
 
         Returns:
             :obj:`samitorch.inputs.sample.Sample`_or_:obj:`Numpy.ndarray`: An updated Sample object.
@@ -347,10 +347,10 @@ class LoadNifti(object):
         Load a Nifti Image.
 
         Args:
-             input (str_or_:obj:`samitorch.inputs.sample.Sample`): An input, either a string or a Sample.
+             input (str or :obj:`samitorch.inputs.sample.Sample`): An input, either a string or a Sample.
 
         Returns:
-            :obj:`nibabel.Nifti1Image_or_:obj:`samitorch.inputs.sample.Sample`: A Nifti1Image or a transformed Sample.
+            :obj:`nibabel.Nifti1Image or :obj:`samitorch.inputs.sample.Sample`: A Nifti1Image or a transformed Sample.
 
         Raises:
             FileNotFoundError: If provided file path isn't found.
@@ -498,10 +498,10 @@ class ResampleNiftiImageToTemplate(object):
         Resample an image.
 
         Args:
-            input (str_or_nib.Nifti1Image_or_:obj:`samitorch.inputs.sample.Sample`): An input to be resampled.
+            input (str or nib.Nifti1Image or :obj:`samitorch.inputs.sample.Sample`): An input to be resampled.
 
         Returns:
-            nib.Nifti1Image_or_:obj:`samitorch.inputs.sample.Sample`): A transformed Nibabel Nifti1Image or transformed Sample.
+            nib.Nifti1Image or :obj:`samitorch.inputs.sample.Sample`): A transformed Nibabel Nifti1Image or transformed Sample.
         """
         if isinstance(input, str):
             if Image.is_nifti(input):
@@ -624,7 +624,7 @@ class ApplyMask(object):
         Initialize transformer to register a mask image.
 
         Args:
-            input_mask (str_or_:obj:`nibabel.Nifti1Image`_or_:obj:`nibabel.Nifti2Image`_or_:obj:`Numpy.ndarray`): The
+            input_mask (str or :obj:`nibabel.Nifti1Image` or :obj:`nibabel.Nifti2Image` or :obj:`Numpy.ndarray`): The
                 mask to apply.
         """
         if input_mask is not None:
@@ -662,11 +662,11 @@ class ApplyMask(object):
         Apply mask over an image (matrix multiplication).
 
         Args:
-            input (str_or_:obj:`nibabel.Nifti1Image`_or_:obj:`nibabel.Nifti2Image`_or_:obj:`Numpy.ndarray`): The
+            input (str or :obj:`nibabel.Nifti1Image` or :obj:`nibabel.Nifti2Image` or :obj:`Numpy.ndarray`): The
                 input image or sample on which to apply mask.
 
         Returns:
-            :obj:`nibabel.Nifti1Image`_or_:obj:`nibabel.Nifti2Image`_or_:obj:`Numpy.ndarray`: The transformed image or
+            :obj:`nibabel.Nifti1Image` or :obj:`nibabel.Nifti2Image` or :obj:`Numpy.ndarray`: The transformed image or
                 Sample.
         """
         if isinstance(input, nib.Nifti1Image) or isinstance(input, nib.Nifti2Image):
@@ -845,7 +845,7 @@ class To2DNifti1Image(object):
         Transformer initializer.
 
         Args:
-            header (:obj:`nibabel.Nifti1Header): The Nifti image header.
+            header (:obj:`nibabel.Nifti1Header`): The Nifti image header.
         """
 
         self._header = header
@@ -854,12 +854,13 @@ class To2DNifti1Image(object):
     def __call__(self, input: Union[np.ndarray, Sample]) -> Union[nib.Nifti1Image, Sample]:
         """
         Convert a 2D Numpy ndarray to a nibabel.Nifti1Image.
+
         Args:
-           input (:obj:`Numpy.ndarray`_or_:obj:`samitorch.inputs.sample.Sample`): The input image or sample to convert
+           input (:obj:`Numpy.ndarray` or :obj:`samitorch.inputs.sample.Sample`): The input image or sample to convert
             to a Nifti1Image.
 
         Returns:
-            :obj:`nibabel.Nifti1Image`_or_:obj:`samitorch.inputs.sample.Sample`: The transformed image or Sample.
+            :obj:`nibabel.Nifti1Image` or :obj:`samitorch.inputs.sample.Sample`: The transformed image or Sample.
         """
 
         if isinstance(input, np.ndarray) and (
@@ -915,7 +916,7 @@ class ToNifti1Image(object):
         Transformer initializer.
 
         Args:
-            header (:obj:`nibabel.Nifti1Header): The Nifti image header.
+            header (:obj:`nibabel.Nifti1Header`): The Nifti image header.
         """
         self._header = header
         self._affine = affine

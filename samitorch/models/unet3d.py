@@ -28,11 +28,13 @@ class UNet3D(torch.nn.Module):
      3D UNet model from :cite:`2016:Çiçek`.
 
     .. bibliography:: unet.bib
+
     :encoding: utf
     :cited:
 
     Args:
         config (ModelConfiguration): Object containing the various model's configuration.
+
     """
 
     def __init__(self, config: ModelConfiguration):

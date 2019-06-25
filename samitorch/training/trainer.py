@@ -24,11 +24,11 @@ import torch
 
 from typing import List, Optional
 from samitorch.callbacks.callbacks import Callback
-from samitorch.training.training_config import TrainingConfig
+from samitorch.training.trainer_configuration import TrainerConfiguration
 
 
 class Trainer(object):
-    def __init__(self, config: TrainingConfig, callbacks: Optional[List[Callback]]):
+    def __init__(self, config: TrainerConfiguration, callbacks: Optional[List[Callback]]):
         """Class initializer.
 
         Args:
@@ -260,7 +260,7 @@ class Trainer(object):
 
         self._callbacks.append(callback)
 
-    def _register_config(self, config: TrainingConfig):
+    def _register_config(self, config: TrainerConfiguration):
         """Register a TrainingConfig to Trainer.
 
         Args:
@@ -272,6 +272,6 @@ class Trainer(object):
         """
         assertion_str = "Given config is not valid; Must be instance of 'TrainingConfig'"
 
-        assert isinstance(config, TrainingConfig), assertion_str
+        assert isinstance(config, TrainerConfiguration), assertion_str
 
         self._config = config

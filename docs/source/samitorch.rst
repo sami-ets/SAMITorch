@@ -9,6 +9,7 @@ Subpackages
     samitorch.callbacks
     samitorch.configs
     samitorch.factories
+    samitorch.losses
     samitorch.initializers
     samitorch.inputs
     samitorch.metrics

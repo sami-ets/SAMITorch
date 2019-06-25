@@ -22,7 +22,7 @@ copyright = '2019, Pierre-Luc Delisle, Benoit Anctil-Robitaille'
 author = 'Pierre-Luc Delisle, Benoit Anctil-Robitaille'
 
 # The full version, including alpha/beta/rc tags
-release = '0.1.19'
+release = '0.1.20'
 
 # -- General configuration ---------------------------------------------------
 
@@ -53,3 +53,15 @@ html_theme = 'sphinx_rtd_theme'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+
+def skip(app, what, name, obj, would_skip, options):
+    if name == "__init__":
+        return False
+    if name == "__call__":
+        return False
+    return would_skip
+
+
+def setup(app):
+    app.connect("autodoc-skip-member", skip)

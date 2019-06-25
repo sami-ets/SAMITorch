@@ -158,6 +158,7 @@ class GeneralizedDice(Metric):
 def compute_dice_coefficient(cm: ConfusionMatrix, ignore_index: int = None):
     """
     Computes the Sørensen–Dice Coefficient (https://en.wikipedia.org/wiki/Sørensen–Dice_coefficient)
+
     Args:
         cm (:obj:`ignite.metrics.ConfusionMatrix`): A confusion matrix representing the classification of data.
         ignore_index (int): An index of a class to ignore for computation.
@@ -188,6 +189,7 @@ def compute_dice_coefficient(cm: ConfusionMatrix, ignore_index: int = None):
 def compute_generalized_dice_coefficient(cm: ConfusionMatrix, weights: torch.Tensor, ignore_index: int = None):
     """
     Computes the Sørensen–Dice Coefficient (https://en.wikipedia.org/wiki/Sørensen–Dice_coefficient)
+
     Args:
         cm (:obj:`ignite.metrics.ConfusionMatrix`): A confusion matrix representing the classification of data.
         ignore_index (int): An index of a class to ignore for computation.
@@ -249,6 +251,7 @@ def compute_mean_generalized_dice_coefficient(cm: ConfusionMatrix, weights: torc
 def validate_ignore_index(ignore_index: int) -> None:
     """
     Check whether the ignore index is valid or not.
+
     Args:
         ignore_index (int): An index of a class to ignore for computation.
     """
@@ -258,6 +261,7 @@ def validate_ignore_index(ignore_index: int) -> None:
 def validate_num_classes(ignore_index: int, num_classes: int) -> None:
     """
     Check whether the num_classes is valid or not.
+
     Args:
         ignore_index (int): An index of a class to ignore for computation.
         num_classes (int): The number of classes in the problem (number of rows in the
@@ -269,6 +273,7 @@ def validate_num_classes(ignore_index: int, num_classes: int) -> None:
 def validate_weights_size(weights_size: int, num_classes: int) -> None:
     """
     Check whether if the size of given weights matches the number of classes of the problem.
+
     Args:
         weights_size (int): The size of a weight vector used in the loss computation.
         num_classes (int): The number of classes of the problem.

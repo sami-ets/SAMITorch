@@ -212,6 +212,7 @@ class ResNet3D(torch.nn.Module):
     3D ResNet adaptation from the original ResNet paper :cite:`2016:He`
 
     .. bibliography:: resnet.bib
+
     :encoding: utf
     :cited:
     """

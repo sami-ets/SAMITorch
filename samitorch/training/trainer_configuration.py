@@ -20,10 +20,10 @@
 import torch
 from torch.utils import data
 from typing import Union, List
-from samitorch.configs.configurations import RunningConfiguration
+from samitorch.configs.configurations import RunningConfiguration, Configuration
 
 
-class TrainingConfig(object):
+class TrainerConfiguration(Configuration):
 
     def __init__(self, checkpoint_every: int, max_epoch: int, criterion: Union[List[torch.nn.Module], torch.nn.Module],
                  metric,
@@ -31,7 +31,7 @@ class TrainingConfig(object):
                  optimizer: Union[List[torch.nn.Module], torch.nn.Module],
                  dataloader: Union[List[torch.utils.data.DataLoader], torch.utils.data.DataLoader],
                  running_config: RunningConfiguration) -> None:
-        super(TrainingConfig, self).__init__()
+        super(TrainerConfiguration, self).__init__()
         self._checkpoint_every = checkpoint_every
         self._max_epoch = max_epoch
         self._criterion = criterion

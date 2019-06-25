@@ -12,18 +12,10 @@ samitorch.factories.enums
     :undoc-members:
     :show-inheritance:
 
-samitorch.factories.layers.module
+samitorch.factories.factories
 ---------------------------------
 
-.. automodule:: samitorch.factories.layers
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-samitorch.factories.models.module
----------------------------------
-
-.. automodule:: samitorch.factories.models
+.. automodule:: samitorch.factories.factories
     :members:
     :undoc-members:
     :show-inheritance:
