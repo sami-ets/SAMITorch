@@ -58,7 +58,6 @@ class Unet3DTest(unittest.TestCase):
 
 class UNet3DModulesTest(unittest.TestCase):
     CONFIGURATION_PATH = "samitorch/configs/unet3d.yaml"
-    MODEL_TYPE = "unet3d"
 
     def setUp(self):
         self.configurationParserFactory = ModelConfigurationParserFactory()

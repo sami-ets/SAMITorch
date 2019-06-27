@@ -44,49 +44,100 @@ class TrainerConfiguration(Configuration):
     @property
     def checkpoint_every(self) -> int:
         """
-        int: The frequency (in epoch) at which we should save a model checkpoint.
+        Return the frequency of checkpoints.
+
+        Returns:
+            int: The frequency (in epoch) at which we should save a model checkpoint.
         """
         return self._checkpoint_every
 
     @property
     def max_epoch(self) -> int:
         """
-        int: The max number of epoch.
+        The maximum number of epochs.
+
+        Returns:
+            int: The max number of epoch.
         """
         return self._max_epoch
 
     @property
-    def criterion(self):
+    def criterion(self) -> torch.nn.Module:
         """
-        :obj:`torch.nn.Module`: A PyTorch loss function. Can be a custom made function.
+        The problem's criterion (loss) function.
+
+        Returns:
+            :obj:`torch.nn.Module`: A PyTorch loss function. Can be a custom made function.
         """
         return self._criterion
+
+    @criterion.setter
+    def criterion(self, criterion: torch.nn.Module):
+        """
+        Set a criterion.
+
+        Args:
+            criterion (:obj:`torch.nn.Module`): The modified criterion.
+        """
+        self._criterion = criterion
 
     @property
     def metric(self):
         """
-        :obj:`torch.nn.Module`: A PyTorch metric. Can be a custom made metric.
+        The problem's metric.
+
+        Returns:
+            :obj:`torch.nn.Module`: A PyTorch metric. Can be a custom made metric.
         """
         return self._metric
 
     @property
     def model(self):
         """
-        :obj:`torch.nn.Module`: A PyTorch model implementing the `forward` method.
+        The model.
+
+        Returns:
+            :obj:`torch.nn.Module`: A PyTorch model implementing the `forward` method.
         """
         return self._model
+
+    @model.setter
+    def model(self, model: torch.nn.Module):
+        """
+        Set a model.
+
+        Args:
+            model (:obj:`torch.nn.Module`): A modified model.
+        """
+        self._model = model
 
     @property
     def optimizer(self):
         """
-        :obj:`torch.nn.Module`: A PyTorch optimizer.
+        The problem's optimizer.
+
+        Returns:
+            :obj:`torch.nn.Module`: A PyTorch optimizer.
         """
         return self._optimizer
+
+    @optimizer.setter
+    def optimizer(self, optimizer: torch.optim):
+        """
+        Set an optimizer.
+
+        Args:
+            optimizer (:obj:`torch.optim`): An optimizer.
+        """
+        self._optimizer = optimizer
 
     @property
     def dataloader(self):
         """
-        :obj:`torch.utils.data.DataLoader`: A PyTorch dataloader object.
+        A data loader.
+
+        Returns:
+            :obj:`torch.utils.data.DataLoader`: A PyTorch dataloader object.
         """
         return self._dataloader
 
