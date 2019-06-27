@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import numpy as np
+import random
 import nibabel as nib
 import nrrd
 import math
@@ -1150,7 +1151,7 @@ class CropBase(object):
         mask = np.where(
             nd_array >= (
                 nd_array.mean() if self._threshold is None else self._threshold))  # returns a tuple of length 3
-        c = np.random.randint(0, len(mask[0]))  # choose the set of idxs to use
+        c = random.randint(0, len(mask[0]))  # choose the set of idxs to use
         h, w, d = [m[c] for m in mask]  # pull out the chosen idxs
         return h, w, d
 
@@ -1196,7 +1197,7 @@ class RandomCrop(CropBase):
         """
         transformed_sample = Sample.from_sample(sample)
 
-        axis = self._axis if self._axis is not None else np.random.randint(0, 3)
+        axis = self._axis if self._axis is not None else random.randint(0, 3)
         x, y = sample.x, sample.y
         *cs, h, w, d = x.shape
         *ct, _, _, _ = x.shape
@@ -1324,7 +1325,7 @@ class RandomSlice(object):
         *cs, _, _, _ = x.shape
         *ct, _, _, _ = y.shape
         s = x[0] if len(cs) > 0 else x  # Use the first image to determine sampling if multimodal
-        idx = np.random.choice(self._valid_idxs(s)[self._axis])
+        idx = random.choice(self._valid_idxs(s)[self._axis])
         s = self._get_slice(x, idx)
         t = self._get_slice(y, idx)
         if len(cs) == 0: s = s[np.newaxis, ...]  # Add channel axis if empty
