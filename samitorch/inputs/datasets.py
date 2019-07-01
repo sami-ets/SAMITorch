@@ -14,12 +14,71 @@
 # limitations under the License.
 # ==============================================================================
 
-from typing import Callable, List, Optional
+import numpy as np
+import random
+
+from typing import Callable, List, Optional, Tuple, Union
 
 from torch.utils.data.dataset import Dataset
 
 from samitorch.utils.utils import glob_imgs
 from samitorch.inputs.sample import Sample
+from samitorch.inputs.transformers import ToNumpyArray, ToNDArrayPatches, ToNDTensor
+from torchvision.transforms.transforms import Compose
+
+
+class NiftiPatchDataset(Dataset):
+    """
+    Create a dataset of patches in PyTorch for reading NiFTI files and slicing them into fixed shape.
+    """
+
+    def __init__(self, source_dir: str, target_dir: str, patch_shape: Tuple[int, int, int, int],
+                 step: Tuple[int, int, int, int],
+                 transform: Optional[Callable] = None) -> None:
+        """
+        Dataset initializer.
+
+        Args:
+            source_dir (str): Path to source images.
+            target_dir (str): Path to target (labels) images.
+            transform (Callable): transform to apply to both source and target images.
+        """
+        self._source_dir, self._target_dir = source_dir, target_dir
+        self._source_paths, self._target_paths = glob_imgs(source_dir), glob_imgs(target_dir)
+        self._transform = transform
+
+        if len(self._source_paths) != len(self._target_paths) or len(self._source_paths) == 0:
+            raise ValueError("Number of source and target images must be equal and non-zero.")
+
+        pre_transforms = Compose([ToNumpyArray(),
+                                  ToNDArrayPatches(patch_shape, step)])
+
+        self._images = list()
+        self._labels = list()
+
+        for idx in range(len(self._source_paths)):
+            source_path, target_path = self._source_paths[idx], self._target_paths[idx]
+            sample = Sample(x=source_path, y=target_path, is_labeled=True)
+            transformed_sample = pre_transforms(sample)
+            self._images.append(transformed_sample.x)
+            self._labels.append(transformed_sample.y)
+
+        self._images = np.array(self._images).reshape([-1] + list(patch_shape))
+        self._labels = np.array(self._labels).reshape([-1] + list(patch_shape))
+
+        self._num_patches = self._images.shape[0]
+
+    def __len__(self):
+        return self._num_patches
+
+    def __getitem__(self, idx: int):
+        x, y = self._images[idx], self._labels[idx]
+
+        sample = Sample(x=x, y=y, is_labeled=True)
+
+        if self._transform is not None:
+            sample = self._transform(sample)
+        return sample.unpack()
 
 
 class NiftiDataset(Dataset):
@@ -92,8 +151,7 @@ class MultimodalDataset(Dataset):
 
         if self._transform is not None:
             sample = self._transform(sample)
-
-        return sample
+        return sample.unpack()
 
 
 class MultimodalNiftiDataset(MultimodalDataset):

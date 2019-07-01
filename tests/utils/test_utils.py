@@ -61,7 +61,8 @@ class UtilsTest(unittest.TestCase):
         all_paths = [os.path.join(self.TEST_DATA_FOLDER_PATH, "DTI.nii"),
                      os.path.join(self.TEST_DATA_FOLDER_PATH, "FA.nii"),
                      os.path.join(self.TEST_DATA_FOLDER_PATH, "Mask.nii"),
-                     os.path.join(self.TEST_DATA_FOLDER_PATH, "T1.nii")]
+                     os.path.join(self.TEST_DATA_FOLDER_PATH, "T1.nii"),
+                     os.path.join(self.TEST_DATA_FOLDER_PATH, "T1_1mm.nii")]
 
         paths = glob_imgs(self.TEST_DATA_FOLDER_PATH)
 

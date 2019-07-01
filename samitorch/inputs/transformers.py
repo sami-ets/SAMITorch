@@ -27,6 +27,8 @@ from typing import Optional, Tuple, Union, List
 
 from nilearn.image.resampling import resample_to_img
 
+from sklearn.feature_extraction.image import extract_patches
+
 from samitorch.inputs.images import ImageTypes, Image, Extensions
 from samitorch.inputs.sample import Sample
 
@@ -56,9 +58,9 @@ class ToNDTensor(object):
             raise TypeError("Only {} are supported.".format(np.ndarray))
 
         if sample.x.ndim == 3:
-            transformed_sample.x = torch.Tensor(sample.x.reshape(sample.x.shape + (1,)).transpose((3, 2, 1, 0)))
+            transformed_sample.x = torch.Tensor(sample.x.reshape(sample.x.shape + (1,)))
         elif sample.x.ndim == 4:
-            transformed_sample.x = torch.Tensor(sample.x.transpose((3, 2, 1, 0)))
+            transformed_sample.x = torch.Tensor(sample.x)
         else:
             raise NotImplementedError("Only 3D or 4D arrays are supported.")
 
@@ -68,13 +70,13 @@ class ToNDTensor(object):
             if sample.y.ndim == 1:
                 transformed_sample.y = torch.Tensor(sample.y)
             elif sample.y.ndim == 3:
-                transformed_sample.y = torch.Tensor(sample.y.reshape(sample.x.shape + (1,)).transpose((3, 2, 1, 0)))
+                transformed_sample.y = torch.Tensor(sample.y.reshape(sample.x.shape + (1,)))
             elif sample.y.ndim == 4:
-                transformed_sample.y = torch.Tensor(sample.y.transpose((3, 2, 1, 0)))
+                transformed_sample.y = torch.Tensor(sample.y)
             else:
                 raise NotImplementedError("Only 3D or 4D arrays are supported.")
 
-        return sample.update(transformed_sample).unpack()
+        return sample.update(transformed_sample)
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
@@ -245,6 +247,185 @@ class ToNumpyArray(object):
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
+
+
+class ToNDArrayPatches(object):
+    """
+    Produces patches (slices) of a Numpy ndarray.
+    """
+
+    def __init__(self, patch_size: Union[int, Tuple[int, int, int, int]], step: Union[int, Tuple[int, int, int, int]]):
+        """
+        Transformer initializer.
+
+        Args:
+            patch_size (int or Tuple of int):  The size of the patch to produce.
+            step (int or Tuple of int):  The size of the stride between patches.
+        """
+        self._patch_size = patch_size
+        self._step = step
+
+    def __call__(self, input: Union[np.ndarray, Sample]) -> Union[np.ndarray, Sample]:
+        if isinstance(input, np.ndarray):
+
+            for i in range(1, input.ndim):
+                if not input.shape[i] >= self._patch_size[i]:
+                    raise ValueError("Shape incompatible with patch_size parameter.")
+
+            c, d, h, w, = input.shape
+
+            pad_d, pad_h, pad_w = 0, 0, 0
+
+            if d % self._patch_size[1] != 0:
+                pad_d = int((self._patch_size[1] - d % self._patch_size[1]) / 2)
+            if h % self._patch_size[2] != 0:
+                pad_h = int((self._patch_size[2] - h % self._patch_size[2]) / 2)
+            if w % self._patch_size[3] != 0:
+                pad_w = int((self._patch_size[3] - w % self._patch_size[3]) / 2)
+
+            if pad_d != 0 or pad_h != 0 or pad_w != 0:
+                input = np.pad(input, ((0, 0), (pad_d, pad_d), (pad_h, pad_h), (pad_w, pad_w)), mode="constant",
+                               constant_values=0)
+
+            patches = extract_patches(input, patch_shape=self._patch_size, extraction_step=self._step)
+            patches = patches.reshape([-1] + list(self._patch_size))
+
+            return patches
+
+        elif isinstance(input, Sample):
+            sample = input
+            transformed_sample = Sample.from_sample(sample)
+
+            c, d, h, w, = sample.x.shape
+
+            pad_d, pad_h, pad_w = 0, 0, 0
+
+            if d % self._patch_size[1] != 0:
+                pad_d = int((self._patch_size[1] - d % self._patch_size[1]) / 2)
+            if h % self._patch_size[2] != 0:
+                pad_h = int((self._patch_size[2] - h % self._patch_size[2]) / 2)
+            if w % self._patch_size[3] != 0:
+                pad_w = int((self._patch_size[3] - w % self._patch_size[3]) / 2)
+
+            if pad_d != 0 or pad_h != 0 or pad_w != 0:
+                transformed_sample.x = np.pad(transformed_sample.x,
+                                              ((0, 0), (pad_d, pad_d), (pad_h, pad_h), (pad_w, pad_w)),
+                                              mode="constant",
+                                              constant_values=0)
+
+            transformed_sample.x = extract_patches(transformed_sample.x, patch_shape=self._patch_size,
+                                                   extraction_step=self._step)
+            transformed_sample.x = transformed_sample.x.reshape([-1] + list(self._patch_size))
+
+            if sample.is_labeled:
+                if pad_d != 0 or pad_h != 0 or pad_w != 0:
+                    transformed_sample.y = np.pad(transformed_sample.y,
+                                                  ((0, 0), (pad_d, pad_d), (pad_h, pad_h), (pad_w, pad_w)),
+                                                  mode="constant",
+                                                  constant_values=0)
+                transformed_sample.y = extract_patches(transformed_sample.y, patch_shape=self._patch_size,
+                                                       extraction_step=self._step)
+                transformed_sample.y = transformed_sample.y.reshape([-1] + list(self._patch_size))
+
+            return sample.update(transformed_sample)
+
+
+class ToTensorPatches(object):
+    """
+    Produces patches (slices) of a Tensor.
+    """
+
+    def __init__(self, patch_size: Tuple[int, int, int, int], step: Tuple[int, int, int, int]) -> None:
+        """
+        Transformer initializer.
+
+        Args:
+            patch_size(tuple of int): The size of the patch to produce.
+            step (tuple of int): The size of the stride between patches.
+        """
+        self._patch_size = patch_size
+        self._step = step
+
+    def __call__(self, input: Union[torch.Tensor, Sample]) -> Union[torch.Tensor, Sample]:
+        """
+        Slices a Tensor or Sample of tensors.
+
+        Args:
+            input (:obj:`samitorch.inputs.sample.Sample` or :obj:`torch.Tensor`): Input object to slice.
+
+        Returns:
+            :obj:`samitorch.inputs.sample.Sample` or :obj:`torch.Tensor`): Sliced tensor or a Sample containing sliced
+                tensors.
+        """
+
+        if isinstance(input, torch.Tensor):
+
+            for i in range(1, input.ndimension()):
+                if not input.shape[i] >= self._patch_size[i - 1]:
+                    raise ValueError("Shape incompatible with patch_size parameter.")
+
+            c, d, h, w, = input.shape
+
+            pad_d, pad_h, pad_w = 0, 0, 0
+
+            if d % self._patch_size[1] != 0:
+                pad_d = int((self._patch_size[1] - d % self._patch_size[1]) / 2)
+            if h % self._patch_size[2] != 0:
+                pad_h = int((self._patch_size[2] - h % self._patch_size[2]) / 2)
+            if w % self._patch_size[3] != 0:
+                pad_w = int((self._patch_size[3] - w % self._patch_size[3]) / 2)
+
+            if pad_d != 0 or pad_h != 0 or pad_w != 0:
+                input = torch.nn.functional.pad(input, (pad_w, pad_w, pad_h, pad_h, pad_d, pad_d))
+
+            patches = input.data.unfold(1, self._patch_size[0], self._step[0]). \
+                unfold(1, self._patch_size[1], self._step[1]). \
+                unfold(2, self._patch_size[2], self._step[2]). \
+                unfold(3, self._patch_size[3], self._step[3])
+
+            patches = patches.reshape([-1] + list(self._patch_size))
+
+            return patches
+
+        elif isinstance(input, Sample):
+            sample = input
+            transformed_sample = Sample.from_sample(sample)
+
+            c, d, h, w, = sample.x.shape
+
+            pad_d, pad_h, pad_w = 0, 0, 0
+
+            if d % self._patch_size[1] != 0:
+                pad_d = int((self._patch_size[1] - d % self._patch_size[1]) / 2)
+            if h % self._patch_size[2] != 0:
+                pad_h = int((self._patch_size[2] - h % self._patch_size[2]) / 2)
+            if w % self._patch_size[3] != 0:
+                pad_w = int((self._patch_size[3] - w % self._patch_size[3]) / 2)
+
+            if pad_d != 0 or pad_h != 0 or pad_w != 0:
+                transformed_sample.x = torch.nn.functional.pad(transformed_sample.x,
+                                                               (pad_w, pad_w, pad_h, pad_h, pad_d, pad_d))
+
+            transformed_sample.x = transformed_sample.x.data.data.unfold(1, self._patch_size[0], self._step[0]). \
+                unfold(1, self._patch_size[1], self._step[1]). \
+                unfold(2, self._patch_size[2], self._step[2]). \
+                unfold(3, self._patch_size[3], self._step[3])
+
+            transformed_sample.x = transformed_sample.x.reshape([-1] + list(self._patch_size))
+
+            if sample.is_labeled:
+                if pad_d != 0 or pad_h != 0 or pad_w != 0:
+                    transformed_sample.y = torch.nn.functional.pad(transformed_sample.y,
+                                                                   (pad_w, pad_w, pad_h, pad_h, pad_d, pad_d))
+
+                transformed_sample.y = transformed_sample.y.data.data.unfold(1, self._patch_size[0], self._step[0]). \
+                    unfold(1, self._patch_size[1], self._step[1]). \
+                    unfold(2, self._patch_size[2], self._step[2]). \
+                    unfold(3, self._patch_size[3], self._step[3])
+
+                transformed_sample.y = transformed_sample.y.reshape([-1] + list(self._patch_size))
+
+            return sample.update(transformed_sample)
 
 
 class ToNrrdFile(object):

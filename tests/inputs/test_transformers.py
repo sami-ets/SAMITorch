@@ -19,6 +19,7 @@ import os
 import nibabel as nib
 import numpy as np
 import collections
+import torch
 
 from torchvision.transforms import transforms
 
@@ -28,7 +29,7 @@ from samitorch.inputs.sample import Sample
 
 from samitorch.inputs.transformers import LoadNifti, ToNifti1Image, RemapClassIDs, ApplyMask, \
     ToNumpyArray, RandomCrop, NiftiToDisk, To2DNifti1Image, ToPNGFile, RandomCrop3D, \
-    NiftiImageToNumpy, ResampleNiftiImageToTemplate, CropToContent
+    NiftiImageToNumpy, ResampleNiftiImageToTemplate, CropToContent, ToTensorPatches, ToNDTensor, ToNDArrayPatches
 
 
 class ToNumpyArrayTest(unittest.TestCase):
@@ -1056,3 +1057,124 @@ class CropToContentTest(unittest.TestCase):
 
         image = nib.Nifti1Image(cropped.transpose((3, 2, 1, 0)), None, image.header)
         nib.save(image, self.CROPPED_NIFTI_IMAGE_FROM_NUMPY_NDARRAY)
+
+
+class ToTensorPatchesTest(unittest.TestCase):
+    TEST_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data")
+    OUTPUT_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data/generated/ToTensorPatches")
+    VALID_3D_NIFTI_FILE = os.path.join(TEST_DATA_FOLDER_PATH, "T1_1mm.nii")
+    VALID_MASK_FILE = os.path.join(TEST_DATA_FOLDER_PATH, "Mask.nii")
+    PATCH_SIZE = (1, 96, 128, 128)
+    WRONG_PATCH_SIZE = (1, 256, 384, 384)
+    STEP = (1, 96, 128, 128)
+
+    def setUp(self) -> None:
+        pass
+
+    @classmethod
+    def setUpClass(cls):
+        if not os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH):
+            os.makedirs(cls.OUTPUT_DATA_FOLDER_PATH)
+
+        assert_that(os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH), is_(True))
+
+    def test_should_slice_image(self):
+        sample = Sample(x=self.VALID_3D_NIFTI_FILE)
+
+        transform_ = transforms.Compose([ToNumpyArray(),
+                                         ToNDTensor(),
+                                         ToTensorPatches(self.PATCH_SIZE, self.STEP)])
+
+        transformed_sample = transform_.__call__(sample)
+
+        assert_that(transformed_sample.x.ndimension(), is_(5))
+
+    def test_should_produce_patches_from_tensor(self):
+        transform_ = transforms.Compose([ToNumpyArray()])
+
+        x = torch.from_numpy(transform_.__call__(self.VALID_3D_NIFTI_FILE))
+
+        transformed_x = ToTensorPatches(self.PATCH_SIZE, self.STEP).__call__(x)
+
+        assert_that(transformed_x.ndimension(), is_(5))
+
+    def test_should_raise_value_error_with_patch_too_big(self):
+        transform_ = transforms.Compose([ToNumpyArray()])
+
+        x = torch.from_numpy(transform_.__call__(self.VALID_3D_NIFTI_FILE))
+
+        transform_ = ToTensorPatches(self.WRONG_PATCH_SIZE, self.STEP)
+
+        assert_that(calling(transform_).with_args(x), raises(ValueError))
+
+    def test_should_produce_patches_from_sample(self):
+        sample = Sample(x=self.VALID_3D_NIFTI_FILE)
+
+        transform_ = transforms.Compose([ToNumpyArray(),
+                                         ToNDTensor(),
+                                         ToTensorPatches(self.PATCH_SIZE, self.STEP)])
+
+        transformed_sample = transform_.__call__(sample)
+
+        for i in range(transformed_sample.x.shape[0]):
+            img = nib.Nifti1Image(transformed_sample.x[i, 0].numpy(), None)
+            nib.save(img, os.path.join(self.OUTPUT_DATA_FOLDER_PATH, "patch_{}".format(i)))
+
+
+class ToNDArrayPatchesTest(unittest.TestCase):
+    TEST_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data")
+    OUTPUT_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data/generated/ToNDArrayPatches")
+    VALID_3D_NIFTI_FILE = os.path.join(TEST_DATA_FOLDER_PATH, "T1_1mm.nii")
+    VALID_MASK_FILE = os.path.join(TEST_DATA_FOLDER_PATH, "Mask.nii")
+    PATCH_SIZE = (1, 96, 128, 128)
+    WRONG_PATCH_SIZE = (1, 256, 384, 384)
+    STEP = (1, 96, 128, 128)
+
+    def setUp(self) -> None:
+        pass
+
+    @classmethod
+    def setUpClass(cls):
+        if not os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH):
+            os.makedirs(cls.OUTPUT_DATA_FOLDER_PATH)
+
+        assert_that(os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH), is_(True))
+
+    def test_should_slice_image(self):
+        sample = Sample(x=self.VALID_3D_NIFTI_FILE)
+
+        transform_ = transforms.Compose([ToNumpyArray(),
+                                         ToNDArrayPatches(self.PATCH_SIZE, self.STEP)])
+
+        transformed_sample = transform_.__call__(sample)
+
+        assert_that(transformed_sample.x.ndim, is_(5))
+
+    def test_should_produce_patches_from_ndarray(self):
+        transform_ = transforms.Compose([ToNumpyArray(),
+                                         ToNDArrayPatches(self.PATCH_SIZE, self.STEP)])
+
+        transformed_x = transform_(self.VALID_3D_NIFTI_FILE)
+
+        assert_that(transformed_x.ndim, is_(5))
+
+    def test_should_raise_value_error_with_patch_too_big(self):
+        transform_ = transforms.Compose([ToNumpyArray()])
+
+        x = transform_.__call__(self.VALID_3D_NIFTI_FILE)
+
+        transform_ = ToNDArrayPatches(self.WRONG_PATCH_SIZE, self.STEP)
+
+        assert_that(calling(transform_).with_args(x), raises(ValueError))
+
+    def test_should_produce_patches_from_sample(self):
+        sample = Sample(x=self.VALID_3D_NIFTI_FILE)
+
+        transform_ = transforms.Compose([ToNumpyArray(),
+                                         ToNDArrayPatches(self.PATCH_SIZE, self.STEP)])
+
+        transformed_sample = transform_.__call__(sample)
+
+        for i in range(transformed_sample.x.shape[0]):
+            img = nib.Nifti1Image(transformed_sample.x[i, 0], None)
+            nib.save(img, os.path.join(self.OUTPUT_DATA_FOLDER_PATH, "patch_{}".format(i)))
