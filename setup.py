@@ -9,7 +9,7 @@ setup(
     name='SAMITorch',
     version='0.1.27',
     description='Deep Learning Framework For Medical Image Analysis',
-    long_description=READMCross_EntropyE_CONTENT,
+    long_description=README_CONTENT,
     long_description_content_type='text/markdown',
     author='Benoit Anctil-Robitaille and Pierre-Luc Delisle',
     author_email='benoit.anctil-robitaille.1@ens.etsmtl.ca',
