@@ -82,7 +82,7 @@ class NiftiPatchDataset(Dataset):
 
         if self._transform is not None:
             sample = self._transform(sample)
-        return sample.unpack()
+        return sample
 
 
 class NiftiDataset(Dataset):
@@ -115,7 +115,7 @@ class NiftiDataset(Dataset):
 
         if self._transform is not None:
             sample = self._transform(sample)
-        return sample.unpack()
+        return sample
 
 
 class MultimodalDataset(Dataset):
@@ -155,7 +155,7 @@ class MultimodalDataset(Dataset):
 
         if self._transform is not None:
             sample = self._transform(sample)
-        return sample.unpack()
+        return sample
 
 
 class MultimodalNiftiDataset(MultimodalDataset):
