@@ -195,7 +195,7 @@ class NiftiPatchDatasetWithTransformsTest(unittest.TestCase):
     def test_should_return_a_sample_of_Numpy_ndarrays_for_inspection(self):
         transforms_ = transforms.Compose([ToNDTensor()])
         dataset = NiftiPatchDataset(source_dir=self.PATH_TO_SOURCE, target_dir=self.PATH_TO_TARGET,
-                                    patch_shape=(1, 24, 120, 120), step=(1, 24, 120, 120),
+                                    patch_shape=(1, 32, 32, 32), step=(1, 32, 32, 32),
                                     transform=transforms_)
         sample = dataset.__getitem__(12)
 

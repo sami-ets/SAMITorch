@@ -63,7 +63,7 @@ class Dice(Metric):
         """
         Reset the confusion matrix object.
         """
-        self._cm.confusion_matrix = torch.zeros(self._num_classes, self._num_classes, dtype=torch.float)
+        self._cm.confusion_matrix = torch.zeros(self._num_classes, self._num_classes, dtype=torch.float64)
 
     def compute(self) -> torch.Tensor:
         """
@@ -127,7 +127,7 @@ class GeneralizedDice(Metric):
         """
         Reset the confusion matrix object.
         """
-        self._cm.confusion_matrix = torch.zeros(self._num_classes, self._num_classes, dtype=torch.float)
+        self._cm.confusion_matrix = torch.zeros(self._num_classes, self._num_classes, dtype=torch.float64)
 
     def compute(self) -> torch.Tensor:
         """

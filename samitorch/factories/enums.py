@@ -65,6 +65,7 @@ class Optimizers(Enum):
 
 class Metrics(Enum):
     Dice = "Dice"
+    GeneralizedDice = "GeneralizeDice"
     Accuracy = "Accuracy"
     Precision = "Precision"
     MeanAbsoluteError = "MeanAbsoluteError"
