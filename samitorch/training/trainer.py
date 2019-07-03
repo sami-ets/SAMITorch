@@ -71,7 +71,7 @@ class Trainer(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def train_epoch(self, epoch_num: int, **kwargs):
+    def _train_epoch(self, epoch_num: int, **kwargs):
         """Train a model for one epoch.
 
         Args:
@@ -84,7 +84,7 @@ class Trainer(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def train_batch(self, data_dict: dict, fold=0, **kwargs):
+    def _train_batch(self, data_dict: dict, fold=0, **kwargs):
         """Function which handles prediction from batch, logging, loss calculation and optimizer step.
 
         This function is needed for the framework to provide a generic trainer function which works with all kind of
@@ -108,7 +108,7 @@ class Trainer(object):
         raise NotImplementedError()
 
     @staticmethod
-    def prepare_batch(batch: dict, input_device: torch.device, output_device: torch.device):
+    def _prepare_batch(batch: dict, input_device: torch.device, output_device: torch.device):
         """Converts a numpy batch of data and labels to suitable datatype and pushes them to correct devices
 
         Args
@@ -125,7 +125,7 @@ class Trainer(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def validate_epoch(self, epoch_num: int, **kwargs):
+    def _validate_epoch(self, epoch_num: int, **kwargs):
         """Run validation phase.
 
          Args:
@@ -138,7 +138,7 @@ class Trainer(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def finalize(self, *args, **kwargs):
+    def _finalize(self, *args, **kwargs):
         """Finalize all operations (e.g. save checkpoint, finalize Data Loaders and close logger if required).
 
         Args:

@@ -53,7 +53,8 @@ class DataLoader(torch.utils.data.DataLoader):
             'batch_size': batch_size,
             'shuffle': self._shuffle,
             'collate_fn': collate_fn,
-            'num_workers': num_workers
+            'num_workers': num_workers,
+            'pin_memory': torch.cuda.is_available()
         }
         super().__init__(sampler=self._sampler, **self._init_kwargs)
 
