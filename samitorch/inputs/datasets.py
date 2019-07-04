@@ -63,10 +63,11 @@ class NiftiPatchDataset(Dataset):
             self._images.append(transformed_sample.x)
             self._labels.append(transformed_sample.y)
 
-        self._images = np.array(self._images).reshape([-1] + list(patch_shape))
-        self._labels = np.array(self._labels).reshape([-1] + list(patch_shape))
+        self._images = np.array(self._images).astype(np.float32).reshape([-1] + list(patch_shape))
+        self._labels = np.array(self._labels).astype(np.float32).reshape([-1] + list(patch_shape))
 
         idx = np.where([~np.all(self._images[i] == 0) for i in range(self._images.shape[0])])
+
         self._images = self._images[idx]
         self._labels = self._labels[idx]
 

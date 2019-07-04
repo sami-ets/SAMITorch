@@ -51,8 +51,8 @@ class NiftiDatasetTest(unittest.TestCase):
 
         sample = dataset.__getitem__(0)
 
-        np.testing.assert_array_equal(nib.load(sample.x).get_fdata(), self.TEST_SOURCE_IMAGE)
-        np.testing.assert_array_equal(nib.load(sample.y).get_fdata(), self.TEST_LABEL_IMAGE)
+        np.testing.assert_array_equal(nib.load(sample[0]).get_fdata(), self.TEST_SOURCE_IMAGE)
+        np.testing.assert_array_equal(nib.load(sample[1]).get_fdata(), self.TEST_LABEL_IMAGE)
 
 
 class MultimodalNiftiDatasetTest(unittest.TestCase):
@@ -81,8 +81,8 @@ class MultimodalNiftiDatasetTest(unittest.TestCase):
 
         sample = dataset.__getitem__(0)
 
-        source_t1, source_t2 = sample.x[0], sample.x[1]
-        label = sample.y[0]
+        source_t1, source_t2 = sample[0][0], sample[0][1]
+        label = sample[1][0]
 
         np.testing.assert_array_equal(nib.load(source_t1).get_fdata(), self.TEST_SOURCE_IMAGE_T1)
         np.testing.assert_array_equal(nib.load(source_t2).get_fdata(), self.TEST_SOURCE_IMAGE_T2)
@@ -113,11 +113,11 @@ class NiftiDatasetWithTransformsTest(unittest.TestCase):
                                          transform=transforms_)
         sample = dataset.__getitem__(0)
 
-        assert_that(sample.x, instance_of(np.ndarray))
-        assert_that(sample.x.ndim, is_(4))
-        assert_that(sample.x.shape[0], is_(1))
-        assert_that(sample.y, instance_of(np.ndarray))
-        assert_that(sample.y.shape[0], is_(1))
+        assert_that(sample[0], instance_of(np.ndarray))
+        assert_that(sample[0].ndim, is_(4))
+        assert_that(sample[0].shape[0], is_(1))
+        assert_that(sample[1], instance_of(np.ndarray))
+        assert_that(sample[1].shape[0], is_(1))
 
 
 class MultimodalNiftiDatasetWithTransformsTest(unittest.TestCase):
@@ -146,11 +146,11 @@ class MultimodalNiftiDatasetWithTransformsTest(unittest.TestCase):
                                          transform=transforms_)
         sample = dataset.__getitem__(0)
 
-        assert_that(sample.x, instance_of(np.ndarray))
-        assert_that(sample.x.ndim, is_(4))
-        assert_that(sample.x.shape[0], is_(2))
-        assert_that(sample.y, instance_of(np.ndarray))
-        assert_that(sample.y.shape[0], is_(1))
+        assert_that(sample[0], instance_of(np.ndarray))
+        assert_that(sample[0].ndim, is_(4))
+        assert_that(sample[0].shape[0], is_(2))
+        assert_that(sample[1], instance_of(np.ndarray))
+        assert_that(sample[1].shape[0], is_(1))
 
 
 class NiftiPatchDatasetWithTransformsTest(unittest.TestCase):
@@ -185,12 +185,12 @@ class NiftiPatchDatasetWithTransformsTest(unittest.TestCase):
                                     transform=transforms_)
         sample = dataset.__getitem__(0)
 
-        assert_that(sample.x, instance_of(torch.Tensor))
-        assert_that(sample.x.ndimension(), is_(4))
-        assert_that(sample.x.shape[0], is_(1))
-        assert_that(sample.y.ndimension(), is_(4))
-        assert_that(sample.y, instance_of(torch.Tensor))
-        assert_that(sample.y.shape[0], is_(1))
+        assert_that(sample[0], instance_of(torch.Tensor))
+        assert_that(sample[0].ndimension(), is_(4))
+        assert_that(sample[0].shape[0], is_(1))
+        assert_that(sample[1].ndimension(), is_(4))
+        assert_that(sample[1], instance_of(torch.Tensor))
+        assert_that(sample[1].shape[0], is_(1))
 
     def test_should_return_a_sample_of_Numpy_ndarrays_for_inspection(self):
         transforms_ = transforms.Compose([ToNDTensor()])
@@ -199,8 +199,7 @@ class NiftiPatchDatasetWithTransformsTest(unittest.TestCase):
                                     transform=transforms_)
         sample = dataset.__getitem__(12)
 
-        sample = Sample(x=sample.x.numpy(), y=sample.y.numpy(), is_labeled=True)
+        sample = Sample(x=sample[0].numpy(), y=sample[1].numpy(), is_labeled=True)
 
-        transforms_ = transforms.Compose(
-            [ToNifti1Image([None, None]), NiftiToDisk([self.PATH_TO_SAVE_X, self.PATH_TO_SAVE_Y])])
+        transforms_ = transforms.Compose([ToNifti1Image([None, None]), NiftiToDisk([self.PATH_TO_SAVE_X, self.PATH_TO_SAVE_Y])])
         transforms_(sample)
