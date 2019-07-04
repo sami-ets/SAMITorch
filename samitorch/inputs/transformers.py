@@ -249,6 +249,73 @@ class ToNumpyArray(object):
         return self.__class__.__name__ + '()'
 
 
+class PadToPatchShape(object):
+    def __init__(self, patch_size: Union[int, Tuple[int, int, int, int]], step: Union[int, Tuple[int, int, int, int]]):
+        """
+        Transformer initializer.
+
+        Args:
+            patch_size (int or Tuple of int):  The size of the patch to produce.
+            step (int or Tuple of int):  The size of the stride between patches.
+        """
+        self._patch_size = patch_size
+        self._step = step
+
+    def __call__(self, input: Union[np.ndarray, Sample]) -> Union[np.ndarray, Sample]:
+        if isinstance(input, np.ndarray):
+
+            for i in range(1, input.ndim):
+                if not input.shape[i] >= self._patch_size[i]:
+                    raise ValueError("Shape incompatible with patch_size parameter.")
+
+            c, d, h, w, = input.shape
+
+            pad_d, pad_h, pad_w = 0, 0, 0
+
+            if d % self._patch_size[1] != 0:
+                pad_d = int((self._patch_size[1] - d % self._patch_size[1]) / 2)
+            if h % self._patch_size[2] != 0:
+                pad_h = int((self._patch_size[2] - h % self._patch_size[2]) / 2)
+            if w % self._patch_size[3] != 0:
+                pad_w = int((self._patch_size[3] - w % self._patch_size[3]) / 2)
+
+            if pad_d != 0 or pad_h != 0 or pad_w != 0:
+                input = np.pad(input, ((0, 0), (pad_d, pad_d), (pad_h, pad_h), (pad_w, pad_w)), mode="constant",
+                               constant_values=0)
+
+            return input
+
+        elif isinstance(input, Sample):
+            sample = input
+            transformed_sample = Sample.from_sample(sample)
+
+            c, d, h, w, = sample.x.shape
+
+            pad_d, pad_h, pad_w = 0, 0, 0
+
+            if d % self._patch_size[1] != 0:
+                pad_d = int((self._patch_size[1] - d % self._patch_size[1]) / 2)
+            if h % self._patch_size[2] != 0:
+                pad_h = int((self._patch_size[2] - h % self._patch_size[2]) / 2)
+            if w % self._patch_size[3] != 0:
+                pad_w = int((self._patch_size[3] - w % self._patch_size[3]) / 2)
+
+            if pad_d != 0 or pad_h != 0 or pad_w != 0:
+                transformed_sample.x = np.pad(transformed_sample.x,
+                                              ((0, 0), (pad_d, pad_d), (pad_h, pad_h), (pad_w, pad_w)),
+                                              mode="constant",
+                                              constant_values=0)
+
+            if sample.is_labeled:
+                if pad_d != 0 or pad_h != 0 or pad_w != 0:
+                    transformed_sample.y = np.pad(transformed_sample.y,
+                                                  ((0, 0), (pad_d, pad_d), (pad_h, pad_h), (pad_w, pad_w)),
+                                                  mode="constant",
+                                                  constant_values=0)
+
+            return sample.update(transformed_sample)
+        
+
 class ToNDArrayPatches(object):
     """
     Produces patches (slices) of a Numpy ndarray.

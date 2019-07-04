@@ -23,8 +23,10 @@ from torch.utils.data.dataset import Dataset
 
 from samitorch.utils.utils import glob_imgs
 from samitorch.inputs.sample import Sample
-from samitorch.inputs.transformers import ToNumpyArray, ToNDArrayPatches, ToNDTensor
+from samitorch.inputs.transformers import ToNumpyArray, ToNDArrayPatches, ToNDTensor, PadToPatchShape
 from torchvision.transforms.transforms import Compose
+
+from samitorch.utils.slice_builder import SliceBuilder
 
 
 class NiftiPatchDataset(Dataset):
@@ -50,8 +52,7 @@ class NiftiPatchDataset(Dataset):
         if len(self._source_paths) != len(self._target_paths) or len(self._source_paths) == 0:
             raise ValueError("Number of source and target images must be equal and non-zero.")
 
-        pre_transforms = Compose([ToNumpyArray(),
-                                  ToNDArrayPatches(patch_shape, step)])
+        pre_transforms = Compose([ToNumpyArray(), PadToPatchShape(patch_shape, step)])
 
         self._images = list()
         self._labels = list()
@@ -63,21 +64,26 @@ class NiftiPatchDataset(Dataset):
             self._images.append(transformed_sample.x)
             self._labels.append(transformed_sample.y)
 
-        self._images = np.array(self._images).astype(np.float32).reshape([-1] + list(patch_shape))
-        self._labels = np.array(self._labels).astype(np.float32).reshape([-1] + list(patch_shape))
+        self._slice_builder = SliceBuilder(self._images[0].shape, patch_size=patch_shape, step=step)
 
-        idx = np.where([~np.all(self._images[i] == 0) for i in range(self._images.shape[0])])
+        slices = []
+        for i in range(len(self._images)):
+            slices.append(list(
+                filter(lambda slice: np.count_nonzero(self._images[i][slice]) > 0, self._slice_builder.image_slices)))
 
-        self._images = self._images[idx]
-        self._labels = self._labels[idx]
+        self._slices = [j for sub in slices for j in sub]
 
-        self._num_patches = self._images.shape[0]
+        self._num_patches = len(self._slices)
 
     def __len__(self):
         return self._num_patches
 
     def __getitem__(self, idx: int):
-        x, y = self._images[idx], self._labels[idx]
+        id = random.randint(0, len(self._images)-1)
+        slice = self._slices[idx]
+        img = self._images[id]
+        label = self._labels[id]
+        x, y = img[slice], label[slice]
 
         sample = Sample(x=x, y=y, is_labeled=True)
 

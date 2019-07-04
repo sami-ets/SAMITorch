@@ -172,7 +172,7 @@ class NiftiPatchDatasetWithTransformsTest(unittest.TestCase):
     def test_should_instantiate_dataset_with_transforms(self):
         transforms_ = transforms.Compose([ToNDTensor()])
         dataset = NiftiPatchDataset(source_dir=self.PATH_TO_SOURCE, target_dir=self.PATH_TO_TARGET,
-                                    patch_shape=(1, 32, 32, 32), step=(1, 32, 32, 32),
+                                    patch_shape=(1, 32, 32, 32), step=(1, 8, 8, 8),
                                     transform=transforms_)
 
         assert_that(dataset, is_not(None))
@@ -195,9 +195,9 @@ class NiftiPatchDatasetWithTransformsTest(unittest.TestCase):
     def test_should_return_a_sample_of_Numpy_ndarrays_for_inspection(self):
         transforms_ = transforms.Compose([ToNDTensor()])
         dataset = NiftiPatchDataset(source_dir=self.PATH_TO_SOURCE, target_dir=self.PATH_TO_TARGET,
-                                    patch_shape=(1, 32, 32, 32), step=(1, 32, 32, 32),
+                                    patch_shape=(1, 24, 120, 120), step=(1, 24, 120, 120),
                                     transform=transforms_)
-        sample = dataset.__getitem__(12)
+        sample = dataset.__getitem__(0)
 
         sample = Sample(x=sample[0].numpy(), y=sample[1].numpy(), is_labeled=True)
 
