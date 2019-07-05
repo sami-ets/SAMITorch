@@ -72,18 +72,34 @@ class NiftiPatchDataset(Dataset):
                 filter(lambda slice: np.count_nonzero(self._images[i][slice]) > 0, self._slice_builder.image_slices)))
 
         self._slices = [j for sub in slices for j in sub]
+        self._slices = np.array(self._slices)
+        self._num_patches = self._slices.shape[0]
 
-        self._num_patches = len(self._slices)
+    @property
+    def slices(self):
+        return self._slices
+
+    @slices.setter
+    def slices(self, slices):
+        self._slices = slices
+
+    @property
+    def num_patches(self):
+        return self._num_patches
+
+    @num_patches.setter
+    def num_patches(self, num_patches):
+        self._num_patches = num_patches
 
     def __len__(self):
         return self._num_patches
 
     def __getitem__(self, idx: int):
-        id = random.randint(0, len(self._images)-1)
+        id = random.randint(0, len(self._images) - 1)
         slice = self._slices[idx]
         img = self._images[id]
         label = self._labels[id]
-        x, y = img[slice], label[slice]
+        x, y = img[tuple(slice)], label[tuple(slice)]
 
         sample = Sample(x=x, y=y, is_labeled=True)
 

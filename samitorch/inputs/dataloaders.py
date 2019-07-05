@@ -28,7 +28,8 @@ class DataLoader(torch.utils.data.DataLoader):
     """
 
     def __init__(self, dataset: torch.utils.data.dataset.Dataset, batch_size: int, shuffle: bool,
-                 validation_split: Union[int, float], num_workers: int, collate_fn=default_collate):
+                 validation_split: Union[int, float], num_workers: int, collate_fn=default_collate,
+                 samplers: Union[tuple, list] = None):
         """
         DataLoader initializer.
 
@@ -39,14 +40,19 @@ class DataLoader(torch.utils.data.DataLoader):
             validation_split (int_or_float): If int, takes this number of elements to produce a validation set.
                 If float, computes the proportion of the training set to place in a validation set.
             num_workers (int): Number of parallel workers to execute.
-            collate_fn: The collate function that merges a list of samples to form a mini-batch.
+            collate_fn (callable): The collate function that merges a list of samples to form a mini-batch.
+            samplers: Optional list or tuple containing both a training and validation sampler.
         """
         self._validation_split = validation_split
         self._shuffle = shuffle
         self._batch_idx = 0
         self._n_samples = len(dataset)
 
-        self._sampler, self._valid_sampler = self._split_sampler(self._validation_split)
+        if samplers is None:
+            self._sampler, self._valid_sampler = self._split_sampler(self._validation_split)
+        else:
+            self._sampler, self._valid_sampler = samplers
+            self._shuffle = False
 
         self._init_kwargs = {
             'dataset': dataset,

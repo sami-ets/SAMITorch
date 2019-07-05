@@ -6,7 +6,6 @@
 # You matargets obtain a coptargets of the License at
 #
 #     https://opensource.org/licenses/MIT
-#
 # Unless required btargets applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -53,10 +52,14 @@ class Dice(Metric):
         self._num_classes = num_classes
         self._average = average
         self._ignore_index = ignore_index
-        self._metric = None
         self._reduction = reduction
         self._cm = ConfusionMatrix(num_classes=num_classes, average=average,
                                    output_transform=output_transform)
+        self._metric = compute_dice_coefficient(self._cm, self._ignore_index)
+
+        if self._reduction == "mean":
+            self._metric = self._metric.mean()
+
         super(Dice, self).__init__(output_transform=output_transform)
 
     def reset(self) -> None:
@@ -81,12 +84,6 @@ class Dice(Metric):
         Args:
             output (tuple of :obj:`torch.Tensor`): A tuple containing predictions and ground truth.
         """
-
-        self._metric = compute_dice_coefficient(self._cm, self._ignore_index)
-
-        if self._reduction == "mean":
-            self._metric = self._metric.mean()
-
         self._cm.update(output)
 
 
