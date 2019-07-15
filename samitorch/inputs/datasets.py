@@ -47,6 +47,7 @@ class NiftiPatchDataset(Dataset):
         """
         self._source_dir, self._target_dir = source_dir, target_dir
         self._source_paths, self._target_paths = glob_imgs(source_dir), glob_imgs(target_dir)
+        self._dataset_id = dataset_id
         self._transform = transform
 
         if len(self._source_paths) != len(self._target_paths) or len(self._source_paths) == 0:
@@ -59,7 +60,7 @@ class NiftiPatchDataset(Dataset):
 
         for idx in range(len(self._source_paths)):
             source_path, target_path = self._source_paths[idx], self._target_paths[idx]
-            sample = Sample(x=source_path, y=target_path, is_labeled=True)
+            sample = Sample(x=source_path, y=target_path, dataset_id=self._dataset_id, is_labeled=True)
             transformed_sample = pre_transforms(sample)
             self._images.append(transformed_sample.x)
             self._labels.append(transformed_sample.y)
@@ -101,7 +102,7 @@ class NiftiPatchDataset(Dataset):
         label = self._labels[id]
         x, y = img[tuple(slice)], label[tuple(slice)]
 
-        sample = Sample(x=x, y=y, is_labeled=True)
+        sample = Sample(x=x, y=y, dataset_id=self._dataset_id, is_labeled=True)
 
         if self._transform is not None:
             sample = self._transform(sample)
@@ -113,7 +114,8 @@ class NiftiDataset(Dataset):
     Create a dataset class in PyTorch for reading NIfTI files.
     """
 
-    def __init__(self, source_dir: str, target_dir: str, transform: Optional[Callable] = None) -> None:
+    def __init__(self, source_dir: str, target_dir: str, dataset_id: int = None,
+                 transform: Optional[Callable] = None) -> None:
         """
         Dataset initializer.
 
@@ -124,6 +126,7 @@ class NiftiDataset(Dataset):
         """
         self._source_dir, self._target_dir = source_dir, target_dir
         self._source_paths, self._target_paths = glob_imgs(source_dir), glob_imgs(target_dir)
+        self._dataset_id = dataset_id
         self._transform = transform
 
         if len(self._source_paths) != len(self._target_paths) or len(self._source_paths) == 0:
@@ -134,7 +137,7 @@ class NiftiDataset(Dataset):
 
     def __getitem__(self, idx: int):
         source_path, target_path = self._source_paths[idx], self._target_paths[idx]
-        sample = Sample(x=source_path, y=target_path, is_labeled=True)
+        sample = Sample(x=source_path, y=target_path, dataset_id=self._dataset_id, is_labeled=True)
 
         if self._transform is not None:
             sample = self._transform(sample)
@@ -146,7 +149,8 @@ class MultimodalDataset(Dataset):
     Base class for Multimodal NifTI Dataset.
     """
 
-    def __init__(self, source_dirs: List[str], target_dirs: List[str], transform: Optional[Callable] = None) -> None:
+    def __init__(self, source_dirs: List[str], target_dirs: List[str], dataset_id: int = None,
+                 transform: Optional[Callable] = None) -> None:
         """
         Multimodal Dataset initializer.
 
@@ -159,6 +163,7 @@ class MultimodalDataset(Dataset):
         self._source_paths, self._target_paths = [glob_imgs(sd) for sd in source_dirs], [glob_imgs(td) for td
                                                                                          in
                                                                                          target_dirs]
+        self._dataset_id = dataset_id
         self._transform = transform
 
         if any([len(self._source_paths[0]) != len(sfn) for sfn in self._source_paths]) or \
@@ -174,7 +179,7 @@ class MultimodalDataset(Dataset):
         source_image, target_image = [source_path[idx] for source_path in self._source_paths], [target_path[idx] for
                                                                                                 target_path in
                                                                                                 self._target_paths]
-        sample = Sample(x=source_image, y=target_image, is_labeled=True)
+        sample = Sample(x=source_image, y=target_image, dataset_id=self._dataset_id, is_labeled=True)
 
         if self._transform is not None:
             sample = self._transform(sample)
@@ -187,5 +192,6 @@ class MultimodalNiftiDataset(MultimodalDataset):
     Note that all images must have the same dimensions.
     """
 
-    def __init__(self, source_dirs: List[str], target_dirs: List[str], transform: Optional[Callable] = None) -> None:
-        super(MultimodalNiftiDataset, self).__init__(source_dirs, target_dirs, transform)
+    def __init__(self, source_dirs: List[str], target_dirs: List[str], dataset_id: int = None,
+                 transform: Optional[Callable] = None) -> None:
+        super(MultimodalNiftiDataset, self).__init__(source_dirs, target_dirs, dataset_id, transform)
