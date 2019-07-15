@@ -35,7 +35,7 @@ class NiftiPatchDataset(Dataset):
     """
 
     def __init__(self, source_dir: str, target_dir: str, patch_shape: Tuple[int, int, int, int],
-                 step: Tuple[int, int, int, int],
+                 step: Tuple[int, int, int, int], dataset_id: int = 0,
                  transform: Optional[Callable] = None) -> None:
         """
         Dataset initializer.

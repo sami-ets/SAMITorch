@@ -91,6 +91,16 @@ class TrainerConfiguration(Configuration):
         """
         return self._metric
 
+    @metric.setter
+    def metric(self, metric):
+        """
+        Set a model.
+
+        Args:
+            metric (:obj:`torch.nn.Module`): A modified metric.
+        """
+        self._metric = metric
+
     @property
     def model(self):
         """

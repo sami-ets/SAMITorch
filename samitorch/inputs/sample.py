@@ -22,30 +22,22 @@ Class to describe a Sample object, which contains a source element associated to
 
 class Sample(object):
 
-    def __init__(self, x=None, y=None, template=None, is_labeled=False):
+    def __init__(self, x=None, y=None, template=None, dataset_id: int = None, is_labeled: bool = False):
         """
         Sample initializer.
 
         Args:
             x (any): Source element.
             y (any): Associated ground truth.
-            template (any): A template image (for resampling).
+            template (any): A template image (for resampling purpose).
+            dataset_id (int): The data set identification number (in case of multi-dataset learning). Default: 0
             is_labeled (bool): Whether or not the sample has a label image (y).
         """
         self._x = x
         self._y = y
         self._template = template
+        self._dataset_id = dataset_id
         self._is_labeled = is_labeled
-
-    @property
-    def is_labeled(self):
-        """
-        Define if Sample is labeled.
-
-        Returns:
-            bool: True if sample is labeled (has a non-None `y` property, else False.
-        """
-        return self._is_labeled
 
     @property
     def x(self):
@@ -77,6 +69,25 @@ class Sample(object):
         """
         return self._template
 
+    @property
+    def dataset_id(self):
+        """
+        A label identifying from which data set the sample is coming from
+        Returns:
+
+        """
+        return self._dataset_id
+
+    @property
+    def is_labeled(self):
+        """
+        Define if Sample is labeled.
+
+        Returns:
+            bool: True if sample is labeled (has a non-None `y` property, else False.
+        """
+        return self._is_labeled
+
     @x.setter
     def x(self, x):
         self._x = x
@@ -93,6 +104,10 @@ class Sample(object):
     def is_labeled(self, is_labeled):
         self._is_labeled = is_labeled
 
+    @dataset_id.setter
+    def dataset_id(self, dataset_id):
+        self._dataset_id = dataset_id
+
     def update(self, sample):
         """
         Update an existing sample from another Sample.
@@ -106,6 +121,7 @@ class Sample(object):
         """
         self._x = sample.x
         self._y = sample.y
+        self._dataset_id = sample.dataset_id
         self._is_labeled = sample.is_labeled
         return self
 
@@ -130,4 +146,4 @@ class Sample(object):
             :obj:`samitorch.inputs.sample.Sample`: A new Sample object with same properties as the one passed in
                 parameter.
         """
-        return cls(sample.x, sample.y, sample.template, sample.is_labeled)
+        return cls(sample.x, sample.y, sample.template, sample.dataset_id, sample.is_labeled)

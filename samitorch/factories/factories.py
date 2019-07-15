@@ -412,8 +412,8 @@ class CriterionFactory(AbstractCriterionFactory):
         Raises:
            KeyError: Raises KeyError Exception if Activation Function is not found.
         """
-        optimizer = self._criterion[criterion.name if isinstance(criterion, Enum) else criterion]
-        return optimizer(*args, **kwargs)
+        criterion = self._criterion[criterion.name if isinstance(criterion, Enum) else criterion]
+        return criterion(*args, **kwargs)
 
     def register(self, function: str, creator):
         """
