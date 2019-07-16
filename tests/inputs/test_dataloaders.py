@@ -39,6 +39,7 @@ class DataLoaderTest(unittest.TestCase):
                                                 target_dir="tests/data/test_dataset/label",
                                                 patch_shape=(1, 32, 32, 32),
                                                 step=(1, 8, 8, 8),
+                                                dataset_id=0,
                                                 transform=transforms_)
 
     def test_should_initialize_dataloader(self):

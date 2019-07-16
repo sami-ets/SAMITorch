@@ -34,7 +34,8 @@ class Batch(object):
         self._x = torch.stack([sample.x for sample in samples])
         self._y = torch.cat([sample.y for sample in samples])
         self._dataset_id = torch.cat(
-            [sample.dataset_id if sample.dataset_id is not None else torch.tensor([0], dtype=torch.int8) for sample in samples])
+            [torch.tensor([sample.dataset_id], dtype=torch.int8) if sample.dataset_id is not None
+             else torch.tensor([0], dtype=torch.int8) for sample in samples])
 
     @property
     def samples(self):
