@@ -17,13 +17,13 @@
 import numpy as np
 import random
 
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Callable, List, Optional, Tuple
 
 from torch.utils.data.dataset import Dataset
 
 from samitorch.utils.utils import glob_imgs
 from samitorch.inputs.sample import Sample
-from samitorch.inputs.transformers import ToNumpyArray, ToNDArrayPatches, ToNDTensor, PadToPatchShape
+from samitorch.inputs.transformers import ToNumpyArray, PadToPatchShape
 from torchvision.transforms.transforms import Compose
 
 from samitorch.utils.slice_builder import SliceBuilder
@@ -35,7 +35,7 @@ class NiftiPatchDataset(Dataset):
     """
 
     def __init__(self, source_dir: str, target_dir: str, patch_shape: Tuple[int, int, int, int],
-                 step: Tuple[int, int, int, int], dataset_id: int = 0,
+                 step: Tuple[int, int, int, int], dataset_id: int = None,
                  transform: Optional[Callable] = None) -> None:
         """
         Dataset initializer.
@@ -106,7 +106,7 @@ class NiftiPatchDataset(Dataset):
 
         if self._transform is not None:
             sample = self._transform(sample)
-        return sample.unpack()
+        return sample
 
 
 class NiftiDataset(Dataset):
@@ -141,7 +141,7 @@ class NiftiDataset(Dataset):
 
         if self._transform is not None:
             sample = self._transform(sample)
-        return sample.unpack()
+        return sample
 
 
 class MultimodalDataset(Dataset):
@@ -183,7 +183,7 @@ class MultimodalDataset(Dataset):
 
         if self._transform is not None:
             sample = self._transform(sample)
-        return sample.unpack()
+        return sample
 
 
 class MultimodalNiftiDataset(MultimodalDataset):
