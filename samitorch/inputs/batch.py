@@ -36,6 +36,18 @@ class Batch(object):
         self._dataset_id = torch.cat(
             [torch.tensor([sample.dataset_id], dtype=torch.int8) if sample.dataset_id is not None
              else torch.tensor([0], dtype=torch.int8) for sample in samples])
+        self._device = self._x.device
+
+    @property
+    def device(self):
+        return self._device
+
+    def to_device(self, device):
+        self._x = self._x.to(device)
+        self._y = self._y.to(device)
+        self._dataset_id = self._dataset_id.to(device)
+        self._device = device
+        return self
 
     @property
     def samples(self):
@@ -89,19 +101,20 @@ class Batch(object):
     def dataset_id(self, dataset_id):
         self._dataset_id = dataset_id
 
-    def update(self, batch):
+    def update(self, batch, device):
         """
-        Update an existing sample from another Sample.
+        Update an existing batch from another Batch.
 
         Args:
             batch (:obj:`samitorch.inputs.batch.Batch`): An updated batch.
+            device (:obj:`torch.device`): The target device.
 
         Returns:
             :obj:`samitorch.inputs.batch.Batch`: The updated Batch.
         """
-        self._x = batch.x
-        self._y = batch.y
-        self._dataset_id = batch.dataset_id
+        self._x = batch.x.to(device)
+        self._y = batch.y.to(device)
+        self._dataset_id = batch.dataset_id.to(device)
         return self
 
     def unpack(self) -> tuple:
