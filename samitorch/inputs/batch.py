@@ -115,6 +115,7 @@ class Batch(object):
         self._x = batch.x.to(device)
         self._y = batch.y.to(device)
         self._dataset_id = batch.dataset_id.to(device)
+        self._device = device
         return self
 
     def unpack(self) -> tuple:
