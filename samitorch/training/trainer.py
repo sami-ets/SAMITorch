@@ -25,6 +25,7 @@ import torch
 from typing import List, Optional
 from samitorch.callbacks.callbacks import Callback
 from samitorch.training.trainer_configuration import TrainerConfiguration
+from samitorch.inputs.batch import Batch
 
 
 class Trainer(object):
@@ -71,7 +72,7 @@ class Trainer(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _train_epoch(self, epoch_num: int, **kwargs):
+    def _train_epoch(self, epoch_num: int, *args, **kwargs):
         """Train a model for one epoch.
 
         Args:
@@ -84,7 +85,7 @@ class Trainer(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _train_batch(self, data_dict: dict, fold=0, **kwargs):
+    def train_batch(self, batch: Batch, fold=0, *args, **kwargs):
         """Function which handles prediction from batch, logging, loss calculation and optimizer step.
 
         This function is needed for the framework to provide a generic trainer function which works with all kind of
@@ -93,8 +94,9 @@ class Trainer(object):
         optimizer-dict to evaluate and should thus work with optional optimizers.
 
         Args:
-            data_dict (dict): dictionary containing the data.
+            batch (:obj:`samitorch.inputs.batch.Batch`): Batch object containing the data.
             fold (int): Current Fold in Cross Validation (default: 0).
+            *args (dict): additional arguments.
             **kwargs (dict): additional keyword arguments.
 
         Returns:
@@ -108,7 +110,7 @@ class Trainer(object):
         raise NotImplementedError()
 
     @staticmethod
-    def _prepare_batch(batch: dict, input_device: torch.device, output_device: torch.device):
+    def _prepare_batch(batch: Batch, input_device: torch.device, output_device: torch.device):
         """Converts a numpy batch of data and labels to suitable datatype and pushes them to correct devices
 
         Args
@@ -131,6 +133,19 @@ class Trainer(object):
          Args:
             epoch_num (int): Current epoch number.
             kwargs: keyword arguments
+
+        Raises:
+            NotImplementedError: if not overwritten by subclass.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def _validate_batch(self, batch: Batch, **kwargs):
+        """ Run validation over a batch.
+
+        Args:
+            batch (:obj:`samitorch.inputs.batch.Batch`): An input Batch object,
+            **kwargs: additional keywords arguments.
 
         Raises:
             NotImplementedError: if not overwritten by subclass.
