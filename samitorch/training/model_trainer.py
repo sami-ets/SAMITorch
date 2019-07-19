@@ -98,6 +98,9 @@ class ModelTrainer(object):
         else:
             self._validation_loss_plot.append(step, value)
 
+    def update_learning_rate_plot(self, epoch, value):
+        self._learning_rate_plot.append(epoch, value)
+
     def update_metric(self, pred, y):
         self._config.metric.update((pred, y))
 
