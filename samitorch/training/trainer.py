@@ -45,7 +45,14 @@ class Trainer(object):
             self._callbacks = list()
             for cbck in callbacks:
                 self._register_callback(cbck)
-        self._epoch = 0
+
+        self._global_step = torch.Tensor().new_zeros((1,), dtype=torch.int64, device='cpu')
+        self._epoch = torch.Tensor().new_zeros((1,), dtype=torch.int64, device='cpu')
+
+    @property
+    def global_step(self):
+        """int: The current epoch count."""
+        return self._global_step
 
     @property
     def epoch(self):
