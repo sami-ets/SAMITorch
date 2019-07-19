@@ -85,7 +85,7 @@ class Trainer(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def train_batch(self, batch: Batch, fold=0, *args, **kwargs):
+    def _train_batch(self, batch: Batch, *args, **kwargs):
         """Function which handles prediction from batch, logging, loss calculation and optimizer step.
 
         This function is needed for the framework to provide a generic trainer function which works with all kind of
@@ -95,7 +95,6 @@ class Trainer(object):
 
         Args:
             batch (:obj:`samitorch.inputs.batch.Batch`): Batch object containing the data.
-            fold (int): Current Fold in Cross Validation (default: 0).
             *args (dict): additional arguments.
             **kwargs (dict): additional keyword arguments.
 
@@ -127,7 +126,7 @@ class Trainer(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _validate_epoch(self, epoch_num: int, **kwargs):
+    def _validate_epoch(self, epoch_num: int, *args, **kwargs):
         """Run validation phase.
 
          Args:
@@ -140,7 +139,7 @@ class Trainer(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _validate_batch(self, batch: Batch, **kwargs):
+    def _validate_batch(self, batch: Batch, *args, **kwargs):
         """ Run validation over a batch.
 
         Args:
