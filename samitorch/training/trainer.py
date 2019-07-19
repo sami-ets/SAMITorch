@@ -54,10 +54,18 @@ class Trainer(object):
         """int: The current epoch count."""
         return self._global_step
 
+    @global_step.setter
+    def global_step(self, global_step):
+        self._global_step = global_step
+
     @property
     def epoch(self):
         """int: The current epoch count."""
         return self._epoch
+
+    @epoch.setter
+    def epoch(self, epoch):
+        self._epoch = epoch
 
     @property
     def config(self):

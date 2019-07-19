@@ -65,4 +65,4 @@ class LossPlot(LinePlot):
 
 class ParameterPlot(LinePlot):
     def __init__(self, visdom, title, parameter_name):
-        super().__init__(visdom, 'step', parameter_name, title, [parameter_name])
+        super().__init__(visdom, 'epoch', parameter_name, title, [parameter_name])
