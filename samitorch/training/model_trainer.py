@@ -113,16 +113,14 @@ class ModelTrainer(object):
     def at_training_end(self, epoch_num: int):
         save("model.pickle", self._config.model, epoch_num, self._config.optimizer)
 
-    @abc.abstractmethod
-    def at_epoch_begin(self, *args, **kwargs):
-        raise NotImplementedError()
+    def at_epoch_begin(self):
+        self._config.model.train()
 
     def at_epoch_end(self):
         self.training_metric_gauge.reset()
         self.training_loss_gauge.reset()
 
     def at_iteration_begin(self):
-        self._config.model.train()
         self._config.optimizer.zero_grad()
 
     def at_iteration_end(self):
