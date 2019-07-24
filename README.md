@@ -40,6 +40,7 @@ Our objective is to build a tested, standard framework for quickly producing res
 ## References
 
 #### Segmentation
+```
 @article{RN10,
    author = {Çiçek, Özgün and Abdulkadir, Ahmed and Lienkamp, Soeren S. and Brox, Thomas and Ronneberger, Olaf},
    title = {3D U-Net: Learning Dense Volumetric Segmentation from Sparse Annotation},
@@ -49,8 +50,10 @@ Our objective is to build a tested, standard framework for quickly producing res
    year = {2016},
    type = {Journal Article}
 }
+```
 
 #### Classification
+```
 @inproceedings{RN12,
    author = {He, K. and Zhang, X. and Ren, S. and Sun, J.},
    title = {Deep Residual Learning for Image Recognition},
@@ -60,6 +63,7 @@ Our objective is to build a tested, standard framework for quickly producing res
    DOI = {10.1109/CVPR.2016.90},
    type = {Conference Proceedings}
 }
+```
 
 #### Diffusion imaging
 
