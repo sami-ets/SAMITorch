@@ -55,6 +55,10 @@ class ModelTrainer(object):
 
         self._global_step = 0
 
+    @property
+    def config(self):
+        return self._config
+
     def predict(self, batch: Batch, detach: bool = False):
         transformed_batch = Batch.from_batch(batch).to_device(self._config.running_config.device)
         if detach:
