@@ -40,6 +40,26 @@ Our objective is to build a tested, standard framework for quickly producing res
 ## References
 
 #### Segmentation
+@article{RN10,
+   author = {Çiçek, Özgün and Abdulkadir, Ahmed and Lienkamp, Soeren S. and Brox, Thomas and Ronneberger, Olaf},
+   title = {3D U-Net: Learning Dense Volumetric Segmentation from Sparse Annotation},
+   journal = {eprint arXiv:1606.06650},
+   pages = {arXiv:1606.06650},
+   url = {https://ui.adsabs.harvard.edu/\#abs/2016arXiv160606650C},
+   year = {2016},
+   type = {Journal Article}
+}
+
+#### Classification
+@inproceedings{RN12,
+   author = {He, K. and Zhang, X. and Ren, S. and Sun, J.},
+   title = {Deep Residual Learning for Image Recognition},
+   booktitle = {2016 IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
+   pages = {770-778},
+   ISBN = {1063-6919},
+   DOI = {10.1109/CVPR.2016.90},
+   type = {Conference Proceedings}
+}
 
 #### Diffusion imaging
 
@@ -74,7 +94,7 @@ Our objective is to build a tested, standard framework for quickly producing res
 |   ├── gauges.py 
 |   └── metrics.py
 |   
-├── models                  - This folder contains any standard model.
+├── models                  - This folder contains any standard and tested deep learning models.
 │   └── base_model.py                      
 |
 ├── preprocessing           - This folder contains anything relative to input preprocessing, and scripts that must be executed prior training.
@@ -91,6 +111,7 @@ Our objective is to build a tested, standard framework for quickly producing res
 ```
 
 ### Main components
+(To be documented shortly...)
 #### Models
 
 #### Trainers
