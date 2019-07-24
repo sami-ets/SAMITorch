@@ -395,7 +395,11 @@ class CriterionFactory(AbstractCriterionFactory):
         from samitorch.losses.losses import DiceLoss
         self._criterion = {
             "DiceLoss": DiceLoss,
-            "Cross_Entropy": torch.nn.CrossEntropyLoss
+            "CrossEntropyLoss": torch.nn.CrossEntropyLoss,
+            "NLLLoss": torch.nn.NLLLoss,
+            "BCEWithLogitsLoss": torch.nn.BCEWithLogitsLoss,
+            "BCELoss": torch.nn.BCELoss,
+            "MSELoss": torch.nn.MSELoss,
         }
 
     def create_criterion(self, criterion: Union[str, Enum], *args, **kwargs):

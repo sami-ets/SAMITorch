@@ -37,12 +37,12 @@ class ModelTrainer(object):
         self.validation_loss_gauge = RunningAverageGauge()
 
         self._training_metric_plot = AccuracyPlot(self._visdom,
-                                                  "{} Training accuracy lr={} momentum={}".format(
+                                                  "{} Training metric lr={} momentum={}".format(
                                                       class_name,
                                                       config.optimizer.param_groups[0]["lr"],
                                                       config.optimizer.param_groups[0]["momentum"]))
         self._validation_metric_plot = AccuracyPlot(self._visdom,
-                                                    "{} Validation accuracy lr={} momentum={}".format(
+                                                    "{} Validation metric lr={} momentum={}".format(
                                                         class_name,
                                                         config.optimizer.param_groups[0]["lr"],
                                                         config.optimizer.param_groups[0]["momentum"]))
@@ -148,6 +148,9 @@ class ModelTrainer(object):
         torch.distributed.all_reduce(rt, op=torch.distributed.ReduceOp.SUM)
         rt /= int(self._config.running_config.world_size)
         return rt
+
+    def reset_optimizer(self):
+        self._config.optimizer.zero_grad()
 
     @staticmethod
     def _initialize_model(model):
