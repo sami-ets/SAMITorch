@@ -167,6 +167,13 @@ class PatchDatasetWithTransformsTest(unittest.TestCase):
     def setUp(self):
         pass
 
+    @classmethod
+    def setUpClass(cls):
+        if not os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH):
+            os.makedirs(cls.OUTPUT_DATA_FOLDER_PATH)
+
+        assert_that(os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH), is_(True))
+
     def test_should_instantiate_dataset_with_transforms(self):
         transforms_ = transforms.Compose([ToNDTensor()])
         dataset = PatchDataset(source_dir=self.PATH_TO_SOURCE, target_dir=self.PATH_TO_TARGET,
@@ -195,7 +202,7 @@ class PatchDatasetWithTransformsTest(unittest.TestCase):
         dataset = PatchDataset(source_dir=self.PATH_TO_SOURCE, target_dir=self.PATH_TO_TARGET,
                                patch_shape=(1, 24, 120, 120), step=(1, 24, 120, 120),
                                transform=transforms_)
-        sample = dataset.__getitem__(0)
+        sample = dataset[0]
 
         sample = Sample(x=sample.x.numpy(), y=sample.y.numpy(), is_labeled=True)
 

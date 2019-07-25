@@ -15,25 +15,25 @@
 # ==============================================================================
 
 import unittest
+
 import torch
-
 from hamcrest import *
-
-from samitorch.inputs.datasets import MultimodalNiftiDataset, PatchDataset
-from samitorch.inputs.dataloaders import DataLoader
-from samitorch.inputs.utils import sample_collate
 from torchvision.transforms import Compose
-from samitorch.inputs.transformers import ToNDTensor
+
 from samitorch.inputs.batch import Batch
+from samitorch.inputs.dataloaders import DataLoader
+from samitorch.inputs.datasets import PatchDataset, MultimodalSegmentationDataset
+from samitorch.inputs.transformers import ToNDTensor
+from samitorch.inputs.utils import sample_collate
 
 
 class DataLoaderTest(unittest.TestCase):
 
     def setUp(self):
         transforms_ = Compose([ToNDTensor()])
-        self._dataset = MultimodalNiftiDataset(source_dirs=["tests/data/test_dataset/T1",
-                                                            "tests/data/test_dataset/T2"],
-                                               target_dirs=["tests/data/test_dataset/label"])
+        self._dataset = MultimodalSegmentationDataset(source_dirs=["tests/data/test_dataset/T1",
+                                                                   "tests/data/test_dataset/T2"],
+                                                      target_dirs=["tests/data/test_dataset/label"])
 
         self._patch_dataset = PatchDataset(source_dir="tests/data/test_dataset/T1",
                                            target_dir="tests/data/test_dataset/label",

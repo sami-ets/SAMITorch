@@ -12,15 +12,13 @@
 # limitations under the License.
 # ==============================================================================
 
-import torch.nn
-
 from typing import Union
-from ignite.metrics.confusion_matrix import ConfusionMatrix
+
+import torch.nn
 from ignite.metrics import MetricsLambda
-from torch.autograd import Variable
 
 from samitorch.metrics.metrics import validate_ignore_index
-from samitorch.utils.utils import flatten, to_onehot
+from samitorch.utils.utils import flatten
 
 SUPPORTED_REDUCTIONS = [None, "mean"]
 
