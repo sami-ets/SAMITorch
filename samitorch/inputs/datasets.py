@@ -14,28 +14,25 @@
 # limitations under the License.
 # ==============================================================================
 
-import numpy as np
 import random
-
 from typing import Callable, List, Optional, Tuple
 
+import numpy as np
 from torch.utils.data.dataset import Dataset
-
-from samitorch.utils.utils import extract_file_paths
-from samitorch.inputs.sample import Sample
-from samitorch.inputs.transformers import ToNumpyArray, PadToPatchShape
 from torchvision.transforms.transforms import Compose
 
+from samitorch.inputs.sample import Sample
+from samitorch.inputs.transformers import ToNumpyArray, PadToPatchShape
 from samitorch.utils.slice_builder import SliceBuilder
+from samitorch.utils.utils import extract_file_paths
 
 
-class NiftiPatchDataset(Dataset):
+class SegmentationDataset(Dataset):
     """
-    Create a dataset of patches in PyTorch for reading NiFTI files and slicing them into fixed shape.
+    Create a dataset class in PyTorch for reading NIfTI files.
     """
 
-    def __init__(self, source_dir: str, target_dir: str, patch_shape: Tuple[int, int, int, int],
-                 step: Tuple[int, int, int, int], dataset_id: int = None,
+    def __init__(self, source_dir: str, target_dir: str, dataset_id: int = None,
                  transform: Optional[Callable] = None) -> None:
         """
         Dataset initializer.
@@ -45,6 +42,42 @@ class NiftiPatchDataset(Dataset):
             target_dir (str): Path to target (labels) images.
             transform (Callable): transform to apply to both source and target images.
         """
+        self._source_dir, self._target_dir = source_dir, target_dir
+        self._source_paths, self._target_paths = extract_file_paths(source_dir), extract_file_paths(target_dir)
+        self._dataset_id = dataset_id
+        self._transform = transform
+
+        if len(self._source_paths) != len(self._target_paths) or len(self._source_paths) == 0:
+            raise ValueError("Number of source and target images must be equal and non-zero.")
+
+    def __len__(self):
+        return len(self._source_paths)
+
+    def __getitem__(self, idx: int):
+        source_path, target_path = self._source_paths[idx], self._target_paths[idx]
+        sample = Sample(x=source_path, y=target_path, dataset_id=self._dataset_id, is_labeled=True)
+
+        if self._transform is not None:
+            sample = self._transform(sample)
+        return sample
+
+
+class PatchDataset(SegmentationDataset):
+    """
+    Create a dataset of patches in PyTorch for reading NiFTI files and slicing them into fixed shape.
+    """
+
+    def __init__(self, source_dir: str, target_dir: str, patch_shape: Tuple[int, int, int, int],
+                 step: Tuple[int, int, int, int], dataset_id: int = None, transform: Optional[Callable] = None) -> None:
+        """
+        Dataset initializer.
+
+        Args:
+            source_dir (str): Path to source images.
+            target_dir (str): Path to target (labels) images.
+            transform (Callable): transform to apply to both source and target images.
+        """
+        super().__init__(source_dir, target_dir, dataset_id, transform)
         self._source_dir, self._target_dir = source_dir, target_dir
         self._source_paths, self._target_paths = extract_file_paths(source_dir), extract_file_paths(target_dir)
         self._dataset_id = dataset_id
@@ -109,48 +142,14 @@ class NiftiPatchDataset(Dataset):
         return sample
 
 
-class NiftiDataset(Dataset):
+class MultimodalSegmentationDataset(Dataset):
     """
-    Create a dataset class in PyTorch for reading NIfTI files.
-    """
-
-    def __init__(self, source_dir: str, target_dir: str, dataset_id: int = None,
-                 transform: Optional[Callable] = None) -> None:
-        """
-        Dataset initializer.
-
-        Args:
-            source_dir (str): Path to source images.
-            target_dir (str): Path to target (labels) images.
-            transform (Callable): transform to apply to both source and target images.
-        """
-        self._source_dir, self._target_dir = source_dir, target_dir
-        self._source_paths, self._target_paths = extract_file_paths(source_dir), extract_file_paths(target_dir)
-        self._dataset_id = dataset_id
-        self._transform = transform
-
-        if len(self._source_paths) != len(self._target_paths) or len(self._source_paths) == 0:
-            raise ValueError("Number of source and target images must be equal and non-zero.")
-
-    def __len__(self):
-        return len(self._source_paths)
-
-    def __getitem__(self, idx: int):
-        source_path, target_path = self._source_paths[idx], self._target_paths[idx]
-        sample = Sample(x=source_path, y=target_path, dataset_id=self._dataset_id, is_labeled=True)
-
-        if self._transform is not None:
-            sample = self._transform(sample)
-        return sample
-
-
-class MultimodalDataset(Dataset):
-    """
-    Base class for Multimodal NifTI Dataset.
+    Base class for Multimodal Dataset.
     """
 
     def __init__(self, source_dirs: List[str], target_dirs: List[str], dataset_id: int = None,
                  transform: Optional[Callable] = None) -> None:
+
         """
         Multimodal Dataset initializer.
 
@@ -160,7 +159,8 @@ class MultimodalDataset(Dataset):
             transform (Callable): transform to apply to both source and target images.w
         """
         self._source_dirs, self._target_dirs = source_dirs, target_dirs
-        self._source_paths, self._target_paths = [extract_file_paths(sd) for sd in source_dirs], [extract_file_paths(td) for td
+        self._source_paths, self._target_paths = [extract_file_paths(sd) for sd in source_dirs], [extract_file_paths(td)
+                                                                                                  for td
                                                                                                   in
                                                                                                   target_dirs]
         self._dataset_id = dataset_id
@@ -184,14 +184,3 @@ class MultimodalDataset(Dataset):
         if self._transform is not None:
             sample = self._transform(sample)
         return sample
-
-
-class MultimodalNiftiDataset(MultimodalDataset):
-    """
-    Create a dataset class in PyTorch for reading N types of NIfTI files to M types of output NIfTI files
-    Note that all images must have the same dimensions.
-    """
-
-    def __init__(self, source_dirs: List[str], target_dirs: List[str], dataset_id: int = None,
-                 transform: Optional[Callable] = None) -> None:
-        super(MultimodalNiftiDataset, self).__init__(source_dirs, target_dirs, dataset_id, transform)

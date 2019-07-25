@@ -16,11 +16,12 @@
 
 
 import unittest
-import torch
-import numpy as np
 
+import numpy as np
+import torch
 from hamcrest import *
-from losses.losses import DiceLoss, GeneralizedDiceLoss, WeightedCrossEntropyLoss
+
+from samitorch.losses.losses import DiceLoss, GeneralizedDiceLoss, WeightedCrossEntropyLoss
 from samitorch.utils.utils import to_onehot
 
 
@@ -179,7 +180,8 @@ class TestGeneralizedDiceLoss(unittest.TestCase):
             generalized_dice_loss = GeneralizedDiceLoss()
             res = generalized_dice_loss.forward(self.y_logits, to_onehot(self.y_true_tensor, num_classes=3),
                                                 ignore_index=ignore_index)
-            true_res = np.subtract(1.0, self.generalized_dice_loss[:ignore_index] + self.generalized_dice_loss[ignore_index + 1:])
+            true_res = np.subtract(1.0, self.generalized_dice_loss[:ignore_index] + self.generalized_dice_loss[
+                                                                                    ignore_index + 1:])
             np.testing.assert_almost_equal(res.numpy(), true_res), "{}: {} vs {}".format(ignore_index, res, true_res)
 
     def test_should_compute_mean_generalized_dice(self):
