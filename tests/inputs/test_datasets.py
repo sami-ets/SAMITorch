@@ -24,7 +24,7 @@ from torchvision.transforms import transforms
 
 from hamcrest import *
 
-from samitorch.inputs.datasets import NiftiDataset, MultimodalNiftiDataset, NiftiPatchDataset
+from samitorch.inputs.datasets import SegmentationDataset, MultimodalNiftiDataset, PatchDataset
 from samitorch.inputs.transformers import ToNumpyArray, ToNDTensor, ToNifti1Image, NiftiToDisk
 from samitorch.inputs.sample import Sample
 
@@ -42,11 +42,11 @@ class NiftiDatasetTest(unittest.TestCase):
         pass
 
     def test_should_instantiate_non_cached_dataset(self):
-        dataset = NiftiDataset(source_dir=self.PATH_TO_SOURCE, target_dir=self.PATH_TO_TARGET)
+        dataset = SegmentationDataset(source_dir=self.PATH_TO_SOURCE, target_dir=self.PATH_TO_TARGET)
         assert_that(dataset, is_not(None))
 
     def test_should_give_a_tuple_of_training_elements(self):
-        dataset = NiftiDataset(source_dir=self.PATH_TO_SOURCE, target_dir=self.PATH_TO_TARGET)
+        dataset = SegmentationDataset(source_dir=self.PATH_TO_SOURCE, target_dir=self.PATH_TO_TARGET)
 
         sample = dataset.__getitem__(0)
 
@@ -170,18 +170,18 @@ class NiftiPatchDatasetWithTransformsTest(unittest.TestCase):
 
     def test_should_instantiate_dataset_with_transforms(self):
         transforms_ = transforms.Compose([ToNDTensor()])
-        dataset = NiftiPatchDataset(source_dir=self.PATH_TO_SOURCE, target_dir=self.PATH_TO_TARGET,
-                                    patch_shape=(1, 32, 32, 32), step=(1, 8, 8, 8),
-                                    transform=transforms_)
+        dataset = PatchDataset(source_dir=self.PATH_TO_SOURCE, target_dir=self.PATH_TO_TARGET,
+                               patch_shape=(1, 32, 32, 32), step=(1, 8, 8, 8),
+                               transform=transforms_)
 
         assert_that(dataset, is_not(None))
         assert_that(dataset._transform, is_not(None))
 
     def test_should_return_a_sample_of_Numpy_ndarrays_with_respective_transform(self):
         transforms_ = transforms.Compose([ToNDTensor()])
-        dataset = NiftiPatchDataset(source_dir=self.PATH_TO_SOURCE, target_dir=self.PATH_TO_TARGET,
-                                    patch_shape=(1, 32, 32, 32), step=(1, 32, 32, 32),
-                                    transform=transforms_)
+        dataset = PatchDataset(source_dir=self.PATH_TO_SOURCE, target_dir=self.PATH_TO_TARGET,
+                               patch_shape=(1, 32, 32, 32), step=(1, 32, 32, 32),
+                               transform=transforms_)
         sample = dataset.__getitem__(0)
 
         assert_that(sample.x, instance_of(torch.Tensor))
@@ -193,9 +193,9 @@ class NiftiPatchDatasetWithTransformsTest(unittest.TestCase):
 
     def test_should_return_a_sample_of_Numpy_ndarrays_for_inspection(self):
         transforms_ = transforms.Compose([ToNDTensor()])
-        dataset = NiftiPatchDataset(source_dir=self.PATH_TO_SOURCE, target_dir=self.PATH_TO_TARGET,
-                                    patch_shape=(1, 24, 120, 120), step=(1, 24, 120, 120),
-                                    transform=transforms_)
+        dataset = PatchDataset(source_dir=self.PATH_TO_SOURCE, target_dir=self.PATH_TO_TARGET,
+                               patch_shape=(1, 24, 120, 120), step=(1, 24, 120, 120),
+                               transform=transforms_)
         sample = dataset.__getitem__(0)
 
         sample = Sample(x=sample.x.numpy(), y=sample.y.numpy(), is_labeled=True)

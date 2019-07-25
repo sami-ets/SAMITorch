@@ -19,7 +19,7 @@ import torch
 
 from hamcrest import *
 
-from samitorch.inputs.datasets import MultimodalNiftiDataset, NiftiPatchDataset
+from samitorch.inputs.datasets import MultimodalNiftiDataset, PatchDataset
 from samitorch.inputs.dataloaders import DataLoader
 from samitorch.inputs.utils import sample_collate
 from torchvision.transforms import Compose
@@ -35,12 +35,12 @@ class DataLoaderTest(unittest.TestCase):
                                                             "tests/data/test_dataset/T2"],
                                                target_dirs=["tests/data/test_dataset/label"])
 
-        self._patch_dataset = NiftiPatchDataset(source_dir="tests/data/test_dataset/T1",
-                                                target_dir="tests/data/test_dataset/label",
-                                                patch_shape=(1, 32, 32, 32),
-                                                step=(1, 8, 8, 8),
-                                                dataset_id=0,
-                                                transform=transforms_)
+        self._patch_dataset = PatchDataset(source_dir="tests/data/test_dataset/T1",
+                                           target_dir="tests/data/test_dataset/label",
+                                           patch_shape=(1, 32, 32, 32),
+                                           step=(1, 8, 8, 8),
+                                           dataset_id=0,
+                                           transform=transforms_)
 
     def test_should_initialize_dataloader(self):
         dataloader = DataLoader(dataset=self._dataset,
