@@ -22,7 +22,7 @@ Declare methods an Initializer must have.
 import abc
 
 
-class Initializer(object):
+class Initializer(metaclass=abc.ABCMeta):
 
     def __init__(self):
         """Class constructor."""
