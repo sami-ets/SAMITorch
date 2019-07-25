@@ -127,8 +127,7 @@ class GeneralizedDiceLoss(torch.nn.Module):
 
         targets = targets.float()
 
-        class_weights = torch.tensor(1.0 / torch.pow(targets.sum(-1), 2).clamp(min=1e-15), requires_grad=False,
-                                     dtype=torch.float)
+        class_weights = 1.0 / torch.pow(targets.sum(-1), 2).clamp(min=1e-15)
 
         # Compute per channel Dice Coefficient
         intersect = (inputs * targets).sum(-1) * class_weights
@@ -210,6 +209,5 @@ class WeightedCrossEntropyLoss(torch.nn.Module):
             :obj:`torch.Variable`: A variable containing class weights.
         """
         flattened_inputs = flatten(inputs)
-        class_weights = torch.tensor((flattened_inputs.shape[1] - flattened_inputs.sum(-1)) / flattened_inputs.sum(-1),
-                                     requires_grad=False, dtype=torch.float)
+        class_weights = (flattened_inputs.shape[1] - flattened_inputs.sum(-1)) / flattened_inputs.sum(-1)
         return class_weights
