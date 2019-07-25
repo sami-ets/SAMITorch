@@ -14,22 +14,21 @@
 # limitations under the License.
 # ==============================================================================
 
-import unittest
-import torch
 import os
-import numpy as np
-import nibabel as nib
+import unittest
 
+import nibabel as nib
+import numpy as np
+import torch
+from hamcrest import *
 from torchvision.transforms import transforms
 
-from hamcrest import *
-
-from samitorch.inputs.datasets import SegmentationDataset, MultimodalNiftiDataset, PatchDataset
-from samitorch.inputs.transformers import ToNumpyArray, ToNDTensor, ToNifti1Image, NiftiToDisk
+from samitorch.inputs.datasets import SegmentationDataset, PatchDataset, MultimodalSegmentationDataset
 from samitorch.inputs.sample import Sample
+from samitorch.inputs.transformers import ToNumpyArray, ToNDTensor, ToNifti1Image, NiftiToDisk
 
 
-class NiftiDatasetTest(unittest.TestCase):
+class SegmentationDatasetTest(unittest.TestCase):
     TEST_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data/test_dataset")
     PATH_TO_SOURCE = os.path.join(TEST_DATA_FOLDER_PATH, "T1")
     PATH_TO_TARGET = os.path.join(TEST_DATA_FOLDER_PATH, "label")
@@ -54,7 +53,7 @@ class NiftiDatasetTest(unittest.TestCase):
         np.testing.assert_array_equal(nib.load(sample.y).get_fdata(), self.TEST_LABEL_IMAGE)
 
 
-class MultimodalNiftiDatasetTest(unittest.TestCase):
+class MultimodalSegmentationDatasetTest(unittest.TestCase):
     TEST_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data/test_dataset")
     PATH_TO_SOURCE_T1 = os.path.join(TEST_DATA_FOLDER_PATH, "T1")
     PATH_TO_SOURCE_T2 = os.path.join(TEST_DATA_FOLDER_PATH, "T2")
@@ -72,11 +71,11 @@ class MultimodalNiftiDatasetTest(unittest.TestCase):
         pass
 
     def test_should_instantiate_non_cached_dataset(self):
-        dataset = MultimodalNiftiDataset(source_dirs=self.PATHS_TO_SOURCES, target_dirs=self.PATHS_TO_TARGETS)
+        dataset = MultimodalSegmentationDataset(source_dirs=self.PATHS_TO_SOURCES, target_dirs=self.PATHS_TO_TARGETS)
         assert_that(dataset, is_not(None))
 
     def test_should_give_a_tuple_of_training_elements(self):
-        dataset = MultimodalNiftiDataset(source_dirs=self.PATHS_TO_SOURCES, target_dirs=self.PATHS_TO_TARGETS)
+        dataset = MultimodalSegmentationDataset(source_dirs=self.PATHS_TO_SOURCES, target_dirs=self.PATHS_TO_TARGETS)
 
         sample = dataset.__getitem__(0)
 
@@ -88,7 +87,7 @@ class MultimodalNiftiDatasetTest(unittest.TestCase):
         np.testing.assert_array_equal(nib.load(label).get_fdata(), self.TEST_LABEL_IMAGE)
 
 
-class NiftiDatasetWithTransformsTest(unittest.TestCase):
+class SegmentationDatasetWithTransformsTest(unittest.TestCase):
     TEST_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data/test_dataset")
     PATH_TO_SOURCE_T1 = os.path.join(TEST_DATA_FOLDER_PATH, "T1")
     PATHS_TO_SOURCES = [PATH_TO_SOURCE_T1]
@@ -100,16 +99,16 @@ class NiftiDatasetWithTransformsTest(unittest.TestCase):
 
     def test_should_instantiate_dataset_with_transforms(self):
         transforms_ = transforms.Compose([ToNumpyArray()])
-        dataset = MultimodalNiftiDataset(source_dirs=self.PATHS_TO_SOURCES, target_dirs=self.PATHS_TO_TARGETS,
-                                         transform=transforms_)
+        dataset = MultimodalSegmentationDataset(source_dirs=self.PATHS_TO_SOURCES, target_dirs=self.PATHS_TO_TARGETS,
+                                                transform=transforms_)
 
         assert_that(dataset, is_not(None))
         assert_that(dataset._transform, is_not(None))
 
     def test_should_return_a_sample_of_Numpy_ndarrays_with_respective_transform(self):
         transforms_ = transforms.Compose([ToNumpyArray()])
-        dataset = MultimodalNiftiDataset(source_dirs=self.PATHS_TO_SOURCES, target_dirs=self.PATHS_TO_TARGETS,
-                                         transform=transforms_)
+        dataset = MultimodalSegmentationDataset(source_dirs=self.PATHS_TO_SOURCES, target_dirs=self.PATHS_TO_TARGETS,
+                                                transform=transforms_)
         sample = dataset.__getitem__(0)
 
         assert_that(sample.x, instance_of(np.ndarray))
@@ -119,7 +118,7 @@ class NiftiDatasetWithTransformsTest(unittest.TestCase):
         assert_that(sample.y.shape[0], is_(1))
 
 
-class MultimodalNiftiDatasetWithTransformsTest(unittest.TestCase):
+class MultimodalSegmentationDatasetWithTransformsTest(unittest.TestCase):
     TEST_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data/test_dataset")
     PATH_TO_SOURCE_T1 = os.path.join(TEST_DATA_FOLDER_PATH, "T1")
     PATH_TO_SOURCE_T2 = os.path.join(TEST_DATA_FOLDER_PATH, "T2")
@@ -132,8 +131,8 @@ class MultimodalNiftiDatasetWithTransformsTest(unittest.TestCase):
 
     def test_should_instantiate_dataset_with_transforms(self):
         transforms_ = transforms.Compose([ToNumpyArray()])
-        dataset = MultimodalNiftiDataset(source_dirs=self.PATHS_TO_SOURCES, target_dirs=self.PATHS_TO_TARGETS,
-                                         transform=transforms_)
+        dataset = MultimodalSegmentationDataset(source_dirs=self.PATHS_TO_SOURCES, target_dirs=self.PATHS_TO_TARGETS,
+                                                transform=transforms_)
 
         assert_that(dataset, is_not(None))
         assert_that(dataset._transform, is_not(None))
@@ -141,8 +140,8 @@ class MultimodalNiftiDatasetWithTransformsTest(unittest.TestCase):
     def test_should_return_a_sample_of_Numpy_ndarrays_with_respective_transform(self):
         transforms_ = transforms.Compose([ToNumpyArray()])
 
-        dataset = MultimodalNiftiDataset(source_dirs=self.PATHS_TO_SOURCES, target_dirs=self.PATHS_TO_TARGETS,
-                                         transform=transforms_)
+        dataset = MultimodalSegmentationDataset(source_dirs=self.PATHS_TO_SOURCES, target_dirs=self.PATHS_TO_TARGETS,
+                                                transform=transforms_)
         sample = dataset.__getitem__(0)
 
         assert_that(sample.x, instance_of(np.ndarray))
@@ -152,7 +151,7 @@ class MultimodalNiftiDatasetWithTransformsTest(unittest.TestCase):
         assert_that(sample.y.shape[0], is_(1))
 
 
-class NiftiPatchDatasetWithTransformsTest(unittest.TestCase):
+class PatchDatasetWithTransformsTest(unittest.TestCase):
     TEST_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data/test_dataset")
     PATH_TO_SOURCE = os.path.join(TEST_DATA_FOLDER_PATH, "T1")
     PATH_TO_TARGET = os.path.join(TEST_DATA_FOLDER_PATH, "label")

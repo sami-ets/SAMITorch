@@ -142,13 +142,13 @@ class PatchDataset(SegmentationDataset):
         return sample
 
 
-class MultimodalSegmentationDataset(SegmentationDataset):
+class MultimodalSegmentationDataset(Dataset):
     """
     Base class for Multimodal Dataset.
     """
 
-    def __init__(self, source_dirs: List[str], target_dirs: List[str], source_dir: str, target_dir: str,
-                 dataset_id: int = None, transform: Optional[Callable] = None) -> None:
+    def __init__(self, source_dirs: List[str], target_dirs: List[str], dataset_id: int = None,
+                 transform: Optional[Callable] = None) -> None:
 
         """
         Multimodal Dataset initializer.
@@ -158,7 +158,6 @@ class MultimodalSegmentationDataset(SegmentationDataset):
             target_dirs (List[str]): paths to target (labels) images.
             transform (Callable): transform to apply to both source and target images.w
         """
-        super().__init__(source_dir, target_dir, dataset_id, transform)
         self._source_dirs, self._target_dirs = source_dirs, target_dirs
         self._source_paths, self._target_paths = [extract_file_paths(sd) for sd in source_dirs], [extract_file_paths(td)
                                                                                                   for td
