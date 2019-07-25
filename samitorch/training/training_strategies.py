@@ -47,7 +47,7 @@ class TrainingStrategy(object):
         assertion_str = "Given trainer is not valid; Must be instance of 'Trainer'."
 
         assert \
-            isinstance(trainer, Trainer), assertion_str
+            isinstance(trainer, Trainer) or isinstance(trainer, ModelTrainer), assertion_str
 
         return trainer
 
