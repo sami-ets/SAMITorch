@@ -159,7 +159,7 @@ class MetricCheckpointStrategy(CheckpointStrategy):
         else:
             self._best_score = metric
             time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-            save("{}-{}.pytorch".format(self._model_name, time), self._trainer.config.model, self._trainer.epoch,
+            save("{}-{}.tar".format(self._model_name, time), self._trainer.config.model, self._trainer.epoch,
                  self._trainer.config.optimizer)
 
 
@@ -185,7 +185,7 @@ class LossCheckpointStrategy(CheckpointStrategy):
         elif loss <= self._best_score:
             self._best_score = loss
             time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-            save("{}-{}.pytorch".format(self._model_name, time), self._trainer.config.model, self._trainer.epoch,
+            save("{}-{}.tar".format(self._model_name, time), self._trainer.config.model, self._trainer.epoch,
                  self._trainer.config.optimizer)
         else:
             pass
