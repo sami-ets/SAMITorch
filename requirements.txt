@@ -1,5 +1,5 @@
 numpy>=1.16.1
-torch>=1.0.1
+torch>=1.1.0
 torchvision>=0.2.2
 nibabel>=2.4.0
 nipype>=1.1.9
@@ -7,3 +7,8 @@ nilearn>=0.5.0
 pyhamcrest>=1.9.0
 scikit-learn>=0.20.3
 pytorch-ignite>=0.2.0
+pynrrd>=0.4.0
+Sphinx>=2.0.1
+sphinxcontrib-bibtex>=0.4.2
+opencv-python>=4.1.0
+PyYAML>=5.1
