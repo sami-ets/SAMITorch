@@ -51,7 +51,7 @@ class Callback(object):
         Returns:
             dict: modified trainer attributes, where the name must correspond to the trainer's attribute name
         """
-        return {}
+        raise NotImplementedError
 
     @abc.abstractmethod
     def at_epoch_end(self, trainer: Trainer, **kwargs):
@@ -64,4 +64,4 @@ class Callback(object):
         Returns:
             dict: modified trainer attributes, where the name must correspond to the trainer's attribute name
         """
-        return {}
+        raise NotImplementedError
