@@ -17,7 +17,10 @@
 import abc
 import datetime
 
+from typing import Union
+
 from samitorch.training.trainer import Trainer
+from samitorch.training.model_trainer import ModelTrainer
 from samitorch.utils.model_io import save
 
 
@@ -32,7 +35,7 @@ class TrainingStrategy(object):
         pass
 
     @staticmethod
-    def _register_trainer(trainer: Trainer) -> Trainer:
+    def _register_trainer(trainer: Union[ModelTrainer, Trainer]) -> Union[ModelTrainer, Trainer]:
         """Register a trainer to the current training strategy.
 
         Args:
@@ -55,7 +58,7 @@ class EarlyStoppingStrategy(TrainingStrategy):
     Early stops the training if validation loss doesn't improve after a given patience.
     """
 
-    def __init__(self, patience: int, trainer: Trainer):
+    def __init__(self, patience: int, trainer: Union[ModelTrainer, Trainer]):
         """Class constructor.
 
         Args:
@@ -67,21 +70,21 @@ class EarlyStoppingStrategy(TrainingStrategy):
         self._counter = 0
         self._best_score = None
 
-    def __call__(self, metric):
+    def __call__(self, loss: float):
         """Verify if given metric is better than older one. If so, increase a counter. When counter equals to
         desired patience, finalise the training process.
 
         Args:
-            metric (float): An evaluation score.
+            loss (float): An evaluation score.
         """
         if self._best_score is None:
-            self._best_score = metric
-        elif metric <= self._best_score:
+            self._best_score = loss
+        elif loss <= self._best_score:
             self._counter += 1
             if self._counter >= self._patience:
                 self._trainer.finalize()
         else:
-            self._best_score = metric
+            self._best_score = loss
             self._counter = 0
 
     @staticmethod
@@ -132,18 +135,18 @@ class CheckpointStrategy(TrainingStrategy):
         raise NotImplementedError()
 
 
-class CheckpointStrategyScore(CheckpointStrategy):
+class MetricCheckpointStrategy(CheckpointStrategy):
     """Define a checkpoint strategy based on an evaluation score.
 
     This strategy checks if the metric in parameter is best seen. If so, save the model. If not, simply pass.
     """
 
-    def __init__(self, trainer, model_name):
+    def __init__(self, trainer: Union[ModelTrainer, Trainer], model_name: str):
         super(CheckpointStrategy).__init__(trainer)
         self._best_score = None
         self._model_name = model_name
 
-    def __call__(self, metric):
+    def __call__(self, metric: float):
         """Verify if the given metric in parameter is better than an older one. If so, save the model.
 
         Args:
@@ -160,18 +163,18 @@ class CheckpointStrategyScore(CheckpointStrategy):
                  self._trainer.config.optimizer)
 
 
-class CheckpointStrategyLoss(CheckpointStrategy):
+class LossCheckpointStrategy(CheckpointStrategy):
     """Define a checkpoint strategy based on a loss value.
 
     This strategy checks if the loss in parameter is best seen. If so, save the model. If not, simply pass.
     """
 
-    def __init__(self, trainer, model_name):
+    def __init__(self, trainer: Union[ModelTrainer, Trainer], model_name: str):
         super(CheckpointStrategy).__init__(trainer)
         self._best_score = None
         self._model_name = model_name
 
-    def __call__(self, loss):
+    def __call__(self, loss: float):
         """Verify if the given loss in parameter is better than an older one. If so, save the model.
 
         Args:
