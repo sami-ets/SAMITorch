@@ -65,7 +65,7 @@ class EarlyStoppingStrategy(TrainingStrategy):
             patience (int): The number of events (epochs) to count before triggering an action.
             trainer (:obj:`Trainer`): A trainer on which to trigger an action.
         """
-        super(EarlyStoppingStrategy).__init__(trainer)
+        super().__init__(trainer)
         self._patience = self._register_patience(patience)
         self._counter = 0
         self._best_score = None
@@ -119,7 +119,7 @@ class CheckpointStrategy(TrainingStrategy):
         Args:
             trainer (:obj:`Trainer`): A trainer.
         """
-        super(CheckpointStrategy).__init__(trainer)
+        super().__init__(trainer)
 
     @abc.abstractmethod
     def __call__(self, *args, **kwargs):
@@ -142,7 +142,7 @@ class MetricCheckpointStrategy(CheckpointStrategy):
     """
 
     def __init__(self, trainer: Union[ModelTrainer, Trainer], model_name: str):
-        super(CheckpointStrategy).__init__(trainer)
+        super().__init__(trainer)
         self._best_score = None
         self._model_name = model_name
 
@@ -170,7 +170,7 @@ class LossCheckpointStrategy(CheckpointStrategy):
     """
 
     def __init__(self, trainer: Union[ModelTrainer, Trainer], model_name: str):
-        super(CheckpointStrategy).__init__(trainer)
+        super().__init__(trainer)
         self._best_score = None
         self._model_name = model_name
 
