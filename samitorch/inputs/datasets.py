@@ -21,7 +21,7 @@ from typing import Callable, List, Optional, Tuple
 
 from torch.utils.data.dataset import Dataset
 
-from samitorch.utils.utils import glob_imgs
+from samitorch.utils.utils import extract_file_paths
 from samitorch.inputs.sample import Sample
 from samitorch.inputs.transformers import ToNumpyArray, PadToPatchShape
 from torchvision.transforms.transforms import Compose
@@ -46,7 +46,7 @@ class NiftiPatchDataset(Dataset):
             transform (Callable): transform to apply to both source and target images.
         """
         self._source_dir, self._target_dir = source_dir, target_dir
-        self._source_paths, self._target_paths = glob_imgs(source_dir), glob_imgs(target_dir)
+        self._source_paths, self._target_paths = extract_file_paths(source_dir), extract_file_paths(target_dir)
         self._dataset_id = dataset_id
         self._transform = transform
 
@@ -125,7 +125,7 @@ class NiftiDataset(Dataset):
             transform (Callable): transform to apply to both source and target images.
         """
         self._source_dir, self._target_dir = source_dir, target_dir
-        self._source_paths, self._target_paths = glob_imgs(source_dir), glob_imgs(target_dir)
+        self._source_paths, self._target_paths = extract_file_paths(source_dir), extract_file_paths(target_dir)
         self._dataset_id = dataset_id
         self._transform = transform
 
@@ -160,9 +160,9 @@ class MultimodalDataset(Dataset):
             transform (Callable): transform to apply to both source and target images.w
         """
         self._source_dirs, self._target_dirs = source_dirs, target_dirs
-        self._source_paths, self._target_paths = [glob_imgs(sd) for sd in source_dirs], [glob_imgs(td) for td
-                                                                                         in
-                                                                                         target_dirs]
+        self._source_paths, self._target_paths = [extract_file_paths(sd) for sd in source_dirs], [extract_file_paths(td) for td
+                                                                                                  in
+                                                                                                  target_dirs]
         self._dataset_id = dataset_id
         self._transform = transform
 

@@ -53,7 +53,20 @@ class ModelTrainer(object):
 
         self._setup()
 
-        self._global_step = 0
+        self._global_step = torch.Tensor().new_zeros((1,), dtype=torch.int64, device='cpu')
+        self._epoch = torch.Tensor().new_zeros((1,), dtype=torch.int64, device='cpu')
+
+    @property
+    def global_step(self):
+        return self._global_step
+
+    @property
+    def epoch(self):
+        return self._epoch
+
+    @epoch.setter
+    def epoch(self, epoch):
+        self._epoch = epoch
 
     @property
     def config(self):
@@ -121,6 +134,7 @@ class ModelTrainer(object):
         self._config.model.train()
 
     def at_epoch_end(self):
+        self._epoch += 1
         self.training_metric_gauge.reset()
         self.training_loss_gauge.reset()
 
@@ -128,6 +142,7 @@ class ModelTrainer(object):
         self._config.optimizer.zero_grad()
 
     def at_iteration_end(self):
+        self._global_step += 1
         self.enable_gradients()
 
     def at_validation_begin(self):

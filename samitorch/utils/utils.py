@@ -78,7 +78,7 @@ def split_filename(filepath: str) -> Tuple[str, str, str]:
     return path, base, ext
 
 
-def glob_imgs(path: str, ext='*.nii*') -> List[str]:
+def extract_file_paths(path: str, ext='*.nii*') -> List[str]:
     """
     Grab all `ext` files in a directory and sort them for consistency.
 
@@ -89,5 +89,5 @@ def glob_imgs(path: str, ext='*.nii*') -> List[str]:
     Returns:
         list: A list of string containing every file paths.
     """
-    fns = sorted(glob(os.path.join(path, ext)))
-    return fns
+    file_paths = sorted(glob(os.path.join(path, ext)))
+    return file_paths

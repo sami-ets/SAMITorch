@@ -138,9 +138,10 @@ class CheckpointStrategyScore(CheckpointStrategy):
     This strategy checks if the metric in parameter is best seen. If so, save the model. If not, simply pass.
     """
 
-    def __init__(self, trainer):
+    def __init__(self, trainer, model_name):
         super(CheckpointStrategy).__init__(trainer)
         self._best_score = None
+        self._model_name = model_name
 
     def __call__(self, metric):
         """Verify if the given metric in parameter is better than an older one. If so, save the model.
@@ -155,5 +156,33 @@ class CheckpointStrategyScore(CheckpointStrategy):
         else:
             self._best_score = metric
             time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-            save("model-{}.pytorch".format(time), self._trainer.configs.model, self._trainer.epoch,
-                 self._trainer.configs.optimizer)
+            save("{}-{}.pytorch".format(self._model_name, time), self._trainer.config.model, self._trainer.epoch,
+                 self._trainer.config.optimizer)
+
+
+class CheckpointStrategyLoss(CheckpointStrategy):
+    """Define a checkpoint strategy based on a loss value.
+
+    This strategy checks if the loss in parameter is best seen. If so, save the model. If not, simply pass.
+    """
+
+    def __init__(self, trainer, model_name):
+        super(CheckpointStrategy).__init__(trainer)
+        self._best_score = None
+        self._model_name = model_name
+
+    def __call__(self, loss):
+        """Verify if the given loss in parameter is better than an older one. If so, save the model.
+
+        Args:
+            loss (float): A loss value.
+        """
+        if self._best_score is None:
+            self._best_score = loss
+        elif loss <= self._best_score:
+            self._best_score = loss
+            time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+            save("{}-{}.pytorch".format(self._model_name, time), self._trainer.config.model, self._trainer.epoch,
+                 self._trainer.config.optimizer)
+        else:
+            pass

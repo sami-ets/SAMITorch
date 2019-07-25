@@ -20,7 +20,7 @@ import os
 
 from hamcrest import *
 
-from samitorch.utils.utils import to_onehot, flatten, glob_imgs
+from samitorch.utils.utils import to_onehot, flatten, extract_file_paths
 
 
 class UtilsTest(unittest.TestCase):
@@ -64,6 +64,6 @@ class UtilsTest(unittest.TestCase):
                      os.path.join(self.TEST_DATA_FOLDER_PATH, "T1.nii"),
                      os.path.join(self.TEST_DATA_FOLDER_PATH, "T1_1mm.nii")]
 
-        paths = glob_imgs(self.TEST_DATA_FOLDER_PATH)
+        paths = extract_file_paths(self.TEST_DATA_FOLDER_PATH)
 
         assert_that(paths, equal_to(all_paths))
