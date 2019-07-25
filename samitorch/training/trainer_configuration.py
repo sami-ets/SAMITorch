@@ -17,19 +17,22 @@
 """Utility class to declare attributes a Trainer object must have for training a model.
 """
 
-import torch
-from torch.utils import data
 from typing import Union, List
+
+import torch
+from torch import nn
+from torch.utils import data
+
 from samitorch.configs.configurations import RunningConfiguration, Configuration
 
 
 class TrainerConfiguration(Configuration):
 
-    def __init__(self, checkpoint_every: int, max_epoch: int, criterion: Union[List[torch.nn.Module], torch.nn.Module],
+    def __init__(self, checkpoint_every: int, max_epoch: int, criterion: Union[List[nn.Module], nn.Module],
                  metric,
-                 model: Union[List[torch.nn.Module], torch.nn.Module],
-                 optimizer: Union[List[torch.nn.Module], torch.nn.Module],
-                 dataloader: Union[List[torch.utils.data.DataLoader], torch.utils.data.DataLoader],
+                 model: Union[List[nn.Module], nn.Module],
+                 optimizer: Union[List[nn.Module], nn.Module],
+                 data_loader: Union[List[torch.utils.data.DataLoader], torch.utils.data.DataLoader],
                  running_config: RunningConfiguration) -> None:
         super(TrainerConfiguration, self).__init__()
         self._checkpoint_every = checkpoint_every
@@ -38,7 +41,7 @@ class TrainerConfiguration(Configuration):
         self._metric = metric
         self._model = model
         self._optimizer = optimizer
-        self._dataloader = dataloader
+        self._data_loader = data_loader
         self._running_config = running_config
 
     @property
@@ -149,7 +152,7 @@ class TrainerConfiguration(Configuration):
         Returns:
             :obj:`torch.utils.data.DataLoader`: A PyTorch dataloader object.
         """
-        return self._dataloader
+        return self._data_loader
 
     @property
     def running_config(self):

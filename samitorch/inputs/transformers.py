@@ -14,19 +14,17 @@
 # limitations under the License.
 # ==============================================================================
 
-import numpy as np
-import random
-import nibabel as nib
-import nrrd
 import math
-import torch
 import os
-import cv2
-
+import random
 from typing import Optional, Tuple, Union, List
 
+import cv2
+import nibabel as nib
+import nrrd
+import numpy as np
+import torch
 from nilearn.image.resampling import resample_to_img
-
 from sklearn.feature_extraction.image import extract_patches
 
 from samitorch.inputs.images import ImageTypes, Image, Extensions
@@ -314,7 +312,7 @@ class PadToPatchShape(object):
                                                   constant_values=0)
 
             return sample.update(transformed_sample)
-        
+
 
 class ToNDArrayPatches(object):
     """
@@ -1238,11 +1236,9 @@ class CropToContent(object):
 
             d_min, d_max, h_min, h_max, w_min, w_max = self.extract_content_bounding_box_from(sample.x)
 
-            transformed_sample.x = sample.x[:, d_min:d_max, h_min:h_max,
-                                   w_min:w_max]
+            transformed_sample.x = sample.x[:, d_min:d_max, h_min:h_max, w_min:w_max]
 
-            transformed_sample.y = sample.y[:, d_min:d_max, h_min:h_max,
-                                   w_min:w_max]
+            transformed_sample.y = sample.y[:, d_min:d_max, h_min:h_max, w_min:w_max]
 
             return sample.update(transformed_sample)
 
