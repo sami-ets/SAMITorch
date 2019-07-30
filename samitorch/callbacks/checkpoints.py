@@ -13,53 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
-"""A base callback class.
-
-Declare methods a Callback must have.
-"""
-import abc
 from datetime import datetime
 
+from samitorch.callbacks.base_callback import Callback
 from samitorch.utils.model_io import save
 
 
-class Callback(object):
-    """Implements abstract callback interface.
-
-    All callbacks should be derived from this class
-
-    See Also:
-        class:`Trainer`
-    """
-
-    @abc.abstractmethod
-    def on_epoch_begin(self, *args, **kwargs):
-        """Function which will be executed at begin of each epoch
-
-        Args:
-            **kwargs: additional keyword arguments
-
-        Returns:
-            dict: modified trainer attributes, where the name must correspond to the trainer's attribute name
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def on_epoch_end(self, *args, **kwargs):
-        """Function which will be executed at end of each epoch
-
-        Args:
-            **kwargs: additional keyword arguments
-
-        Returns:
-            dict: modified trainer attributes, where the name must correspond to the trainer's attribute name
-        """
-        raise NotImplementedError
-
-
-class LossCheckpointCallback(Callback):
-    """Define a checkpoint strategy based on a loss value.
+class LossCheckpoint(Callback):
+    """Define a checkpoint callback based on a loss value.
 
     This strategy checks if the loss in parameter is best seen. If so, save the model. If not, simply pass.
     """
@@ -67,9 +28,6 @@ class LossCheckpointCallback(Callback):
     def __init__(self, model_name: str):
         self._best_score = None
         self._model_name = model_name
-
-    def on_epoch_begin(self):
-        raise NotImplementedError
 
     def on_epoch_end(self, epoch_num, loss, model, optimizer):
         """ Verify if the given loss in parameter is better than an older one. If so, save the model.
@@ -86,7 +44,7 @@ class LossCheckpointCallback(Callback):
             pass
 
 
-class MetricCheckpointStrategy(Callback):
+class MetricCheckpoint(Callback):
     """Define a checkpoint strategy based on an evaluation score.
 
     This strategy checks if the metric in parameter is best seen. If so, save the model. If not, simply pass.
@@ -95,9 +53,6 @@ class MetricCheckpointStrategy(Callback):
     def __init__(self, model_name: str):
         self._best_score = None
         self._model_name = model_name
-
-    def on_epoch_begin(self, *args, **kwargs):
-        pass
 
     def on_epoch_end(self, epoch_num, metric, model, optimizer):
         """Verify if the given metric in parameter is better than an older one. If so, save the model.
