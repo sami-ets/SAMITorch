@@ -36,8 +36,8 @@ class SegmentationDataset(Dataset):
         Dataset initializer.
 
         Args:
-            source_dir (str): Path to source images.
-            target_dir (str): Path to target (labels) images.
+            source_paths (List of str): Path to source images.
+            target_paths (List of str): Path to target (labels) images.
             samples (list of :obj:`samitorch.inputs.sample.Sample`): A list of Sample objects.
             modality (:obj:`samitorch.inputs.images.Modalities`): The modality of the data set.
             dataset_id (int): An integer representing the ID of the data set.
@@ -75,8 +75,8 @@ class MultimodalSegmentationDataset(Dataset):
         Dataset initializer.
 
         Args:
-            source_dir (str): Path to source images.
-            target_dir (str): Path to target (labels) images.
+            source_paths (List of str): Path to source images.
+            target_paths (List of str): Path to target (labels) images.
             samples (list of :obj:`samitorch.inputs.sample.Sample`): A list of Sample objects.
             modality_1 (:obj:`samitorch.inputs.images.Modalities`): The first modality of the data set.
             modality_2 (:obj:`samitorch.inputs.images.Modalities`): The second modality of the data set.
@@ -118,8 +118,8 @@ class PatchDataset(SegmentationDataset):
         Dataset initializer.
 
         Args:
-            source_dir (str): Path to source images.
-            target_dir (str): Path to target (labels) images.
+            source_paths (List of str): Path to source images.
+            target_paths (List of str): Path to target (labels) images.
             samples (list of :obj:`samitorch.inputs.sample.Sample`): A list of Sample objects.
             patch_size (Tuple of int): A tuple representing the desired patch size.
             step (Tuple of int): A tuple representing the desired step between two patches.
@@ -185,8 +185,8 @@ class MultimodalPatchDataset(MultimodalSegmentationDataset):
         Dataset initializer.
 
         Args:
-            source_dir (str): Path to source images.
-            target_dir (str): Path to target (labels) images.
+            source_paths (List of str): Path to source images.
+            target_paths (List of str): Path to target (labels) images.
             samples (list of :obj:`samitorch.inputs.sample.Sample`): A list of Sample objects.
             modality_1 (:obj:`samitorch.inputs.images.Modalities`): The first modality of the data set.
             modality_2 (:obj:`samitorch.inputs.images.Modalities`): The second modality of the data set.

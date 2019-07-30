@@ -26,6 +26,7 @@ from torchvision.transforms import Compose
 from sklearn.model_selection import ShuffleSplit, StratifiedShuffleSplit
 
 from samitorch.configs.configurations import ModelConfiguration
+from samitorch.inputs.images import Modalities
 from samitorch.inputs.datasets import PatchDataset, MultimodalPatchDataset, SegmentationDataset, \
     MultimodalSegmentationDataset
 from samitorch.utils.utils import extract_file_paths
@@ -453,7 +454,24 @@ class CriterionFactory(AbstractCriterionFactory):
 class PatchDatasetFactory(AbstractDatasetFactory):
 
     @staticmethod
-    def create_train_test(source_dir, target_dir, modality, patch_size, step, dataset_id, test_size):
+    def create_train_test(source_dir: str, target_dir: str, modality: Modalities, patch_size: Tuple[int, int, int, int],
+                          step: Tuple[int, int, int, int], dataset_id: int, test_size: float):
+        """
+        Create a PatchDataset object for both training and validation.
+
+        Args:
+            source_dir (str): Path to source directory.
+            target_dir (str): Path to target directory.
+            modality (:obj:`samitorch.inputs.images.Modalities`): The modality of the data set.
+            patch_size (Tuple of int): A tuple representing the desired patch size.
+            step (Tuple of int): A tuple representing the desired step between two patches.
+            dataset_id (int): An integer representing the ID of the data set.
+            test_size (float):
+
+        Returns:
+            Tuple of :obj:`torch.utils.data.dataset`: A tuple containing both training and validation dataset.
+        """
+
         source_dir = os.path.join(source_dir, str(modality.value))
         source_paths, target_paths = np.array(extract_file_paths(source_dir)), np.array(extract_file_paths(target_dir))
 
@@ -508,6 +526,22 @@ class MultimodalPatchDatasetFactory(AbstractDatasetFactory):
 
     @staticmethod
     def create_train_test(source_dir, target_dir, modality_1, modality_2, patch_size, step, dataset_id, test_size):
+        """
+        Create a MultimodalPatchDataset object for both training and validation.
+
+        Args:
+            source_dir (str): Path to source directory.
+            target_dir (str): Path to target directory.
+            modality_1 (:obj:`samitorch.inputs.images.Modalities`): The first modality of the data set.
+            modality_2 (:obj:`samitorch.inputs.images.Modalities`): The second modality of the data set.
+            patch_size (Tuple of int): A tuple representing the desired patch size.
+            step (Tuple of int): A tuple representing the desired step between two patches.
+            dataset_id (int): An integer representing the ID of the data set.
+            test_size (float):
+
+        Returns:
+            Tuple of :obj:`torch.utils.data.dataset`: A tuple containing both training and validation dataset.
+        """
         source_dir_modality_1 = os.path.join(source_dir, str(modality_1.value))
         source_dir_modality_2 = os.path.join(source_dir, str(modality_2.value))
 
@@ -569,6 +603,19 @@ class SegmentationDatasetFactory(AbstractDatasetFactory):
 
     @staticmethod
     def create_train_test(source_dir, target_dir, modality, dataset_id, test_size):
+        """
+        Create a SegmentationDataset object for both training and validation.
+
+        Args:
+           source_dir (str): Path to source directory.
+           target_dir (str): Path to target directory.
+           modality (:obj:`samitorch.inputs.images.Modalities`): The first modality of the data set.
+           dataset_id (int): An integer representing the ID of the data set.
+           test_size (float):
+
+        Returns:
+           Tuple of :obj:`torch.utils.data.dataset`: A tuple containing both training and validation dataset.
+        """
         source_dir = os.path.join(source_dir, str(modality.value))
 
         source_paths, target_paths = np.array(extract_file_paths(source_dir)), np.array(extract_file_paths(target_dir))
@@ -596,6 +643,20 @@ class MultimodalSegmentationDatasetFactory(AbstractDatasetFactory):
 
     @staticmethod
     def create_train_test(source_dir, target_dir, modality_1, modality_2, dataset_id, test_size):
+        """
+        Create a MultimodalDataset object for both training and validation.
+
+        Args:
+           source_dir (str): Path to source directory.
+           target_dir (str): Path to target directory.
+            modality_1 (:obj:`samitorch.inputs.images.Modalities`): The first modality of the data set.
+            modality_2 (:obj:`samitorch.inputs.images.Modalities`): The second modality of the data set.
+           dataset_id (int): An integer representing the ID of the data set.
+           test_size (float):
+
+        Returns:
+           Tuple of :obj:`torch.utils.data.dataset`: A tuple containing both training and validation dataset.
+        """
         source_dir_modality_1 = os.path.join(source_dir, str(modality_1.value))
         source_dir_modality_2 = os.path.join(source_dir, str(modality_2.value))
 
