@@ -13,10 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import numpy as np
-
 from typing import Callable, List, Optional, Tuple
 
+import numpy as np
 from torchvision.transforms import Compose
 from torch.utils.data.dataset import Dataset
 

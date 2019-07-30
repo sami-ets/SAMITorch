@@ -23,8 +23,7 @@ from hamcrest import *
 from samitorch.inputs.batch import ImageBatch, PatchBatch
 from samitorch.inputs.images import Modalities
 from samitorch.inputs.utils import sample_collate, patch_collate
-from samitorch.factories.factories import PatchDatasetFactory, MultimodalPatchDatasetFactory, \
-    SegmentationDatasetFactory, MultimodalSegmentationDatasetFactory
+from samitorch.factories.factories import PatchDatasetFactory, SegmentationDatasetFactory
 
 
 class SegmentationDataLoaderTest(unittest.TestCase):
@@ -74,8 +73,8 @@ class PatchDataLoaderTest(unittest.TestCase):
             self.TEST_DATA_FOLDER_PATH,
             self.PATH_TO_TARGET,
             Modalities.T1,
-            patch_size=[1, 32, 32, 32],
-            step=[1, 32, 32, 32],
+            patch_size=(1, 32, 32, 32),
+            step=(1, 32, 32, 32),
             dataset_id=0,
             test_size=0.2
         )
@@ -112,7 +111,7 @@ class MultimodalSegmentationDataLoaderTest(unittest.TestCase):
     PATH_TO_TARGET = os.path.join(TEST_DATA_FOLDER_PATH, "label")
 
     def setUp(self):
-        self._training_patch_dataset, self._validation_patch_dataset = MultimodalSegmentationDatasetFactory.create_train_test(
+        self._training_patch_dataset, self._validation_patch_dataset = SegmentationDatasetFactory.create_multimodal_train_test(
             self.TEST_DATA_FOLDER_PATH,
             self.PATH_TO_TARGET,
             Modalities.T1,
@@ -153,13 +152,13 @@ class MultimodalPatchDataLoaderTest(unittest.TestCase):
     PATH_TO_TARGET = os.path.join(TEST_DATA_FOLDER_PATH, "label")
 
     def setUp(self):
-        self._training_patch_dataset, self._validation_patch_dataset = MultimodalPatchDatasetFactory.create_train_test(
+        self._training_patch_dataset, self._validation_patch_dataset = PatchDatasetFactory.create_multimodal_train_test(
             self.TEST_DATA_FOLDER_PATH,
             self.PATH_TO_TARGET,
             Modalities.T1,
             Modalities.T2,
-            patch_size=[1, 32, 32, 32],
-            step=[1, 32, 32, 32],
+            patch_size=(1, 32, 32, 32),
+            step=(1, 32, 32, 32),
             dataset_id=0,
             test_size=0.2
         )

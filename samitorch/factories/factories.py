@@ -502,30 +502,8 @@ class PatchDatasetFactory(AbstractDatasetFactory):
         return training_dataset, test_dataset
 
     @staticmethod
-    def _get_patches(source_paths: np.ndarray, target_paths: np.ndarray, patch_size: Tuple[int, int, int, int],
-                     step: Tuple[int, int, int, int], transforms: Callable):
-
-        patches = list()
-
-        for idx in range(len(source_paths)):
-            source_path, target_path = source_paths[idx], target_paths[idx]
-            sample = Sample(x=source_path, y=target_path, dataset_id=None, is_labeled=True)
-            transformed_sample = transforms(sample)
-            slices = SliceBuilder(transformed_sample.x.shape, patch_size=patch_size, step=step).image_slices
-            for slice in slices:
-                if np.count_nonzero(transformed_sample.x[slice]) > 0:
-                    patches.append(
-                        Patch(slice, idx, transformed_sample.x[slice], transformed_sample.y[slice]))
-                else:
-                    pass
-
-        return np.array(patches)
-
-
-class MultimodalPatchDatasetFactory(AbstractDatasetFactory):
-
-    @staticmethod
-    def create_train_test(source_dir, target_dir, modality_1, modality_2, patch_size, step, dataset_id, test_size):
+    def create_multimodal_train_test(source_dir, target_dir, modality_1, modality_2, patch_size, step, dataset_id,
+                                     test_size):
         """
         Create a MultimodalPatchDataset object for both training and validation.
 
@@ -554,7 +532,7 @@ class MultimodalPatchDatasetFactory(AbstractDatasetFactory):
 
         transforms = Compose([ToNumpyArray(), PadToPatchShape(patch_size=patch_size, step=step)])
 
-        patches = MultimodalPatchDatasetFactory._get_patches(source_paths, target_paths, patch_size, step, transforms)
+        patches = PatchDatasetFactory._get_patches(source_paths, target_paths, patch_size, step, transforms)
         label_patches = copy.deepcopy(patches)
 
         train_ids, test_ids = next(
@@ -638,19 +616,16 @@ class SegmentationDatasetFactory(AbstractDatasetFactory):
 
         return training_dataset, test_dataset
 
-
-class MultimodalSegmentationDatasetFactory(AbstractDatasetFactory):
-
     @staticmethod
-    def create_train_test(source_dir, target_dir, modality_1, modality_2, dataset_id, test_size):
+    def create_multimodal_train_test(source_dir, target_dir, modality_1, modality_2, dataset_id, test_size):
         """
         Create a MultimodalDataset object for both training and validation.
 
         Args:
            source_dir (str): Path to source directory.
            target_dir (str): Path to target directory.
-            modality_1 (:obj:`samitorch.inputs.images.Modalities`): The first modality of the data set.
-            modality_2 (:obj:`samitorch.inputs.images.Modalities`): The second modality of the data set.
+           modality_1 (:obj:`samitorch.inputs.images.Modalities`): The first modality of the data set.
+           modality_2 (:obj:`samitorch.inputs.images.Modalities`): The second modality of the data set.
            dataset_id (int): An integer representing the ID of the data set.
            test_size (float):
 

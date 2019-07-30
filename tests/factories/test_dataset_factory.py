@@ -18,9 +18,9 @@ import os
 import unittest
 from hamcrest import *
 
-from samitorch.factories.factories import PatchDatasetFactory, MultimodalPatchDatasetFactory, \
-    SegmentationDatasetFactory, MultimodalSegmentationDatasetFactory
-from samitorch.inputs.datasets import PatchDataset, MultimodalPatchDataset, SegmentationDataset, MultimodalSegmentationDataset
+from samitorch.factories.factories import PatchDatasetFactory, SegmentationDatasetFactory
+from samitorch.inputs.datasets import PatchDataset, MultimodalPatchDataset, SegmentationDataset, \
+    MultimodalSegmentationDataset
 from samitorch.inputs.images import Modalities
 
 
@@ -35,8 +35,8 @@ class TestPatchDatasetFactory(unittest.TestCase):
         training_dataset, test_dataset = PatchDatasetFactory.create_train_test(source_dir=self.TEST_DATA_FOLDER_PATH,
                                                                                target_dir=self.PATH_TO_TARGET,
                                                                                modality=Modalities.T1,
-                                                                               patch_size=[1, 32, 32, 32],
-                                                                               step=[1, 32, 32, 32],
+                                                                               patch_size=(1, 32, 32, 32),
+                                                                               step=(1, 32, 32, 32),
                                                                                dataset_id=0,
                                                                                test_size=0.2)
         assert_that(training_dataset, instance_of(PatchDataset))
@@ -51,13 +51,13 @@ class TestMultimodalPatchDatasetFactory(unittest.TestCase):
         pass
 
     def test_should_instantiate_both_training_and_test_dataset(self):
-        training_dataset, test_dataset = MultimodalPatchDatasetFactory.create_train_test(
+        training_dataset, test_dataset = PatchDatasetFactory.create_multimodal_train_test(
             source_dir=self.TEST_DATA_FOLDER_PATH,
             target_dir=self.PATH_TO_TARGET,
             modality_1=Modalities.T1,
             modality_2=Modalities.T2,
-            patch_size=[1, 32, 32, 32],
-            step=[1, 32, 32, 32],
+            patch_size=(1, 32, 32, 32),
+            step=(1, 32, 32, 32),
             dataset_id=0,
             test_size=0.2)
         assert_that(training_dataset, instance_of(MultimodalPatchDataset))
@@ -90,7 +90,7 @@ class TestMultimodalSegmentationDatasetFactory(unittest.TestCase):
         pass
 
     def test_should_instantiate_both_training_and_test_dataset(self):
-        training_dataset, test_dataset = MultimodalSegmentationDatasetFactory.create_train_test(
+        training_dataset, test_dataset = SegmentationDatasetFactory.create_multimodal_train_test(
             source_dir=self.TEST_DATA_FOLDER_PATH,
             target_dir=self.PATH_TO_TARGET,
             modality_1=Modalities.T1,
