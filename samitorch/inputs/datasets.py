@@ -13,18 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import numpy as np
 
-import random
 from typing import Callable, List, Optional, Tuple
 
-import numpy as np
+from torchvision.transforms import Compose
 from torch.utils.data.dataset import Dataset
-from torchvision.transforms.transforms import Compose
 
-from samitorch.inputs.sample import Sample
 from samitorch.inputs.transformers import ToNumpyArray, PadToPatchShape
-from samitorch.utils.slice_builder import SliceBuilder
-from samitorch.utils.utils import extract_file_paths
+from samitorch.inputs.sample import Sample
+from samitorch.inputs.images import Modalities
 
 
 class SegmentationDataset(Dataset):
@@ -32,30 +30,75 @@ class SegmentationDataset(Dataset):
     Create a dataset class in PyTorch for reading NIfTI files.
     """
 
-    def __init__(self, source_dir: str, target_dir: str, dataset_id: int = None,
-                 transform: Optional[Callable] = None) -> None:
+    def __init__(self, source_paths: List[str], target_paths: List[str], samples: List[Sample], modality: Modalities,
+                 dataset_id: int = None, transforms: Optional[Callable] = None) -> None:
         """
         Dataset initializer.
 
         Args:
             source_dir (str): Path to source images.
             target_dir (str): Path to target (labels) images.
-            transform (Callable): transform to apply to both source and target images.
+            samples (list of :obj:`samitorch.inputs.sample.Sample`): A list of Sample objects.
+            modality (:obj:`samitorch.inputs.images.Modalities`): The modality of the data set.
+            dataset_id (int): An integer representing the ID of the data set.
+            transforms (Callable): transform to apply to both source and target images.
         """
-        self._source_dir, self._target_dir = source_dir, target_dir
-        self._source_paths, self._target_paths = extract_file_paths(source_dir), extract_file_paths(target_dir)
+        self._source_paths = source_paths
+        self._target_paths = target_paths
+        self._samples = samples
+        self._modality = modality
         self._dataset_id = dataset_id
-        self._transform = transform
+        self._transform = transforms
 
         if len(self._source_paths) != len(self._target_paths) or len(self._source_paths) == 0:
             raise ValueError("Number of source and target images must be equal and non-zero.")
 
     def __len__(self):
-        return len(self._source_paths)
+        return len(self._samples)
 
     def __getitem__(self, idx: int):
-        source_path, target_path = self._source_paths[idx], self._target_paths[idx]
-        sample = Sample(x=source_path, y=target_path, dataset_id=self._dataset_id, is_labeled=True)
+        sample = self._samples[idx]
+
+        if self._transform is not None:
+            sample = self._transform(sample)
+        return sample
+
+
+class MultimodalSegmentationDataset(Dataset):
+    """
+    Create a dataset class in PyTorch for reading NIfTI files.
+    """
+
+    def __init__(self, source_paths: List[str], target_paths: List[str], samples: List[Sample], modality_1: Modalities,
+                 modality_2: Modalities, dataset_id: int = None, transforms: Optional[Callable] = None) -> None:
+        """
+        Dataset initializer.
+
+        Args:
+            source_dir (str): Path to source images.
+            target_dir (str): Path to target (labels) images.
+            samples (list of :obj:`samitorch.inputs.sample.Sample`): A list of Sample objects.
+            modality_1 (:obj:`samitorch.inputs.images.Modalities`): The first modality of the data set.
+            modality_2 (:obj:`samitorch.inputs.images.Modalities`): The second modality of the data set.
+            dataset_id (int): An integer representing the ID of the data set.
+            transforms (Callable): transform to apply to both source and target images.
+        """
+        self._source_paths = source_paths
+        self._target_paths = target_paths
+        self._samples = samples
+        self._modality_1 = modality_1
+        self._modality_2 = modality_2
+        self._dataset_id = dataset_id
+        self._transform = transforms
+
+        if len(self._source_paths) != len(self._target_paths) or len(self._source_paths) == 0:
+            raise ValueError("Number of source and target images must be equal and non-zero.")
+
+    def __len__(self):
+        return len(self._samples)
+
+    def __getitem__(self, idx: int):
+        sample = self._samples[idx]
 
         if self._transform is not None:
             sample = self._transform(sample)
@@ -67,119 +110,122 @@ class PatchDataset(SegmentationDataset):
     Create a dataset of patches in PyTorch for reading NiFTI files and slicing them into fixed shape.
     """
 
-    def __init__(self, source_dir: str, target_dir: str, patch_shape: Tuple[int, int, int, int],
-                 step: Tuple[int, int, int, int], dataset_id: int = None, transform: Optional[Callable] = None) -> None:
+    def __init__(self, source_paths: List[str], target_paths: List[str], samples: List[Sample],
+                 patch_size: Tuple[int, int, int, int],
+                 step: Tuple[int, int, int, int], modality: Modalities,
+                 dataset_id: int = None, transforms: Optional[Callable] = None) -> None:
         """
         Dataset initializer.
 
         Args:
             source_dir (str): Path to source images.
             target_dir (str): Path to target (labels) images.
-            transform (Callable): transform to apply to both source and target images.
+            samples (list of :obj:`samitorch.inputs.sample.Sample`): A list of Sample objects.
+            patch_size (Tuple of int): A tuple representing the desired patch size.
+            step (Tuple of int): A tuple representing the desired step between two patches.
+            modality (:obj:`samitorch.inputs.images.Modalities`): The modality of the data set.
+            dataset_id (int): An integer representing the ID of the data set.
+            transforms (Callable): transform to apply to both source and target images.
         """
-        super().__init__(source_dir, target_dir, dataset_id, transform)
-        self._source_dir, self._target_dir = source_dir, target_dir
-        self._source_paths, self._target_paths = extract_file_paths(source_dir), extract_file_paths(target_dir)
-        self._dataset_id = dataset_id
-        self._transform = transform
-
-        if len(self._source_paths) != len(self._target_paths) or len(self._source_paths) == 0:
-            raise ValueError("Number of source and target images must be equal and non-zero.")
-
-        pre_transforms = Compose([ToNumpyArray(), PadToPatchShape(patch_shape, step)])
-
-        self._images = list()
-        self._labels = list()
-
-        for idx in range(len(self._source_paths)):
-            source_path, target_path = self._source_paths[idx], self._target_paths[idx]
-            sample = Sample(x=source_path, y=target_path, dataset_id=self._dataset_id, is_labeled=True)
-            transformed_sample = pre_transforms(sample)
-            self._images.append(transformed_sample.x)
-            self._labels.append(transformed_sample.y)
-
-        self._slice_builder = SliceBuilder(self._images[0].shape, patch_size=patch_shape, step=step)
-
-        slices = []
-        for i in range(len(self._images)):
-            slices.append(list(
-                filter(lambda slice: np.count_nonzero(self._images[i][slice]) > 0, self._slice_builder.image_slices)))
-
-        self._slices = [j for sub in slices for j in sub]
-        self._slices = np.array(self._slices)
-        self._num_patches = self._slices.shape[0]
+        super(PatchDataset, self).__init__(source_paths, target_paths, samples, modality, dataset_id, transforms)
+        self._pre_transform = Compose([ToNumpyArray(), PadToPatchShape(patch_size=patch_size, step=step)])
 
     @property
-    def slices(self):
-        return self._slices
+    def samples(self):
+        return self._samples
 
-    @slices.setter
-    def slices(self, slices):
-        self._slices = slices
+    @samples.setter
+    def samples(self, samples):
+        self._samples = samples
 
     @property
-    def num_patches(self):
-        return self._num_patches
-
-    @num_patches.setter
-    def num_patches(self, num_patches):
-        self._num_patches = num_patches
+    def modality(self):
+        return self._modality
 
     def __len__(self):
-        return self._num_patches
+        return len(self._samples)
 
     def __getitem__(self, idx: int):
-        id = random.randint(0, len(self._images) - 1)
-        slice = self._slices[idx]
-        img = self._images[id]
-        label = self._labels[id]
-        x, y = img[tuple(slice)], label[tuple(slice)]
+        # Get the sample according to the id.
+        sample = self._samples[idx]
+        image_id = sample.x.image_id
 
-        sample = Sample(x=x, y=y, dataset_id=self._dataset_id, is_labeled=True)
+        image = self._source_paths[image_id]
+        target = self._target_paths[image_id]
+
+        image = self._pre_transform(image)
+        target = self._pre_transform(target)
+
+        # Get the patch and its slice out of this sample.
+        patch_x, patch_y = sample.x, sample.y
+        slice_x, slice_y = patch_x.slice, patch_y.slice
+
+        x, y = image[tuple(slice_x)], target[tuple(slice_y)]
+
+        patch_x.slice = x
+        patch_y.slice = y
+
+        sample.x = patch_x
+        sample.y = patch_y
 
         if self._transform is not None:
             sample = self._transform(sample)
         return sample
 
 
-class MultimodalSegmentationDataset(Dataset):
+class MultimodalPatchDataset(MultimodalSegmentationDataset):
     """
-    Base class for Multimodal Dataset.
+    Create a dataset class in PyTorch for reading NIfTI files.
     """
 
-    def __init__(self, source_dirs: List[str], target_dirs: List[str], dataset_id: int = None,
-                 transform: Optional[Callable] = None) -> None:
-
+    def __init__(self, source_paths: List[str], target_paths: List[str], samples: List[Sample],
+                 patch_size: Tuple[int, int, int, int], step: Tuple[int, int, int, int], modality_1: Modalities,
+                 modality_2: Modalities, dataset_id: int = None, transforms: Optional[Callable] = None) -> None:
         """
-        Multimodal Dataset initializer.
+        Dataset initializer.
 
         Args:
-            source_dirs (List[str]): Paths to source images.
-            target_dirs (List[str]): paths to target (labels) images.
-            transform (Callable): transform to apply to both source and target images.w
+            source_dir (str): Path to source images.
+            target_dir (str): Path to target (labels) images.
+            samples (list of :obj:`samitorch.inputs.sample.Sample`): A list of Sample objects.
+            modality_1 (:obj:`samitorch.inputs.images.Modalities`): The first modality of the data set.
+            modality_2 (:obj:`samitorch.inputs.images.Modalities`): The second modality of the data set.
+            dataset_id (int): An integer representing the ID of the data set.
+            transforms (Callable): transform to apply to both source and target images.
         """
-        self._source_dirs, self._target_dirs = source_dirs, target_dirs
-        self._source_paths, self._target_paths = [extract_file_paths(sd) for sd in source_dirs], [extract_file_paths(td)
-                                                                                                  for td
-                                                                                                  in
-                                                                                                  target_dirs]
-        self._dataset_id = dataset_id
-        self._transform = transform
-
-        if any([len(self._source_paths[0]) != len(sfn) for sfn in self._source_paths]) or \
-                any([len(self._target_paths[0]) != len(tfn) for tfn in self._target_paths]) or \
-                len(self._source_paths[0]) != len(self._target_paths[0]) or \
-                len(self._source_paths[0]) == 0:
-            raise ValueError(f'Number of source and target images must be equal and non-zero')
+        super(MultimodalPatchDataset, self).__init__(source_paths, target_paths, samples, modality_1, modality_2,
+                                                     dataset_id, transforms)
+        self._pre_transform = Compose([ToNumpyArray(), PadToPatchShape(patch_size=patch_size, step=step)])
 
     def __len__(self):
-        return len(self._source_paths[0])
+        return len(self._samples)
 
     def __getitem__(self, idx: int):
-        source_image, target_image = [source_path[idx] for source_path in self._source_paths], [target_path[idx] for
-                                                                                                target_path in
-                                                                                                self._target_paths]
-        sample = Sample(x=source_image, y=target_image, dataset_id=self._dataset_id, is_labeled=True)
+        # Get the sample according to the id.
+        sample = self._samples[idx]
+        image_id = sample.x.image_id
+
+        image_modality_1 = self._source_paths[image_id][0]
+        image_modality_2 = self._source_paths[image_id][1]
+        target = self._target_paths[image_id]
+
+        image_modality_1 = self._pre_transform(image_modality_1)
+        image_modality_2 = self._pre_transform(image_modality_2)
+        target = self._pre_transform(target)
+
+        # Get the patch and its slice out of this sample.
+        patch_x, patch_y = sample.x, sample.y
+        slice_x, slice_y = patch_x.slice, patch_y.slice
+
+        x_modality_1 = image_modality_1[tuple(slice_x)]
+        x_modality_2 = image_modality_2[tuple(slice_x)]
+        y = target[tuple(slice_y)]
+
+        patch_x.slice = np.concatenate((x_modality_1, x_modality_2), axis=0)
+        patch_y.slice = y
+
+        sample.x = patch_x
+        sample.y = patch_y
 
         if self._transform is not None:
             sample = self._transform(sample)

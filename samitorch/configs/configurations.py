@@ -73,6 +73,123 @@ class TrainingConfiguration(Configuration, metaclass=abc.ABCMeta):
         pass
 
 
+class ModelTrainerConfiguration(TrainingConfiguration):
+    """
+    A base class for storing a ModelTrainer configuration as an object.
+    """
+
+    def __init__(self, model: torch.nn.Module = None, optimizer: torch.optim.Optimizer = None,
+                 criterion: torch.nn.Module = None, metric=None,
+                 running_config: Configuration = None, variables: Configuration = None, visdom=None) -> None:
+        super(TrainingConfiguration, self).__init__()
+        self._model = model
+        self._optimizer = optimizer
+        self._criterion = criterion
+        self._metric = metric
+        self._running_config = running_config
+        self._variables = variables
+        self._visdom = visdom
+
+    @property
+    def model(self) -> torch.nn.Module:
+        """
+        The ModelTrainer's model.
+
+        Returns:
+            :obj:`torch.nn.Module`: The model.
+        """
+        return self._model
+
+    @property
+    def optimizer(self) -> torch.optim.Optimizer:
+        """
+        The ModelTrainer's optimizer.
+
+        Returns:
+            :obj:`torch.optim.Optimizer`: The optimizer.
+        """
+        return self._optimizer
+
+    @property
+    def criterion(self) -> torch.nn.Module:
+        """
+        The ModelTrainer's criterion.
+
+        Returns:
+            :obj:`torch.nn.Module`: The criterion.
+
+        """
+        return self._criterion
+
+    @property
+    def metric(self):
+        """
+        The metric used during training.
+
+        Returns:
+            any: The metric.
+        """
+        return self._metric
+
+    @property
+    def running_config(self) -> Configuration:
+        """
+        The running configuration.
+
+        Returns:
+            :obj:`samitorch.configs.configurations.Configuration`: A Running Configuration.
+        """
+        return self._running_config
+
+    @property
+    def variables(self) -> Configuration:
+        """
+        The variable configuration.
+
+        Returns:
+            :obj:`samitorch.configs.configurations.Configuration`: A Variable Configuration.
+        """
+        return self._variables
+
+    @property
+    def visdom(self):
+        """
+        The Visdom logger object.
+
+        Returns:
+            :obj:`visdom.Visdom`: The Visdom logger.
+        """
+        return self._visdom
+
+    @model.setter
+    def model(self, model: torch.nn.Module):
+        self._model = model
+
+    @optimizer.setter
+    def optimizer(self, optimizer: torch.optim.Optimizer):
+        self._optimizer = optimizer
+
+    @criterion.setter
+    def criterion(self, criterion: torch.nn.Module):
+        self._criterion = criterion
+
+    @metric.setter
+    def metric(self, metric):
+        self._metric = metric
+
+    @running_config.setter
+    def running_config(self, running_config: Configuration):
+        self._running_config = running_config
+
+    @variables.setter
+    def variables(self, variables: Configuration):
+        self._variables = variables
+
+    @visdom.setter
+    def visdom(self, visdom):
+        self._visdom = visdom
+
+
 class MetricConfiguration(Configuration, metaclass=abc.ABCMeta):
     """
     A base class for storing metric configuration as an object.

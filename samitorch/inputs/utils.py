@@ -14,9 +14,14 @@
 #  limitations under the License.
 #  ==============================================================================
 
-from samitorch.inputs.batch import Batch
+from samitorch.inputs.batch import ImageBatch, PatchBatch
 
 
 def sample_collate(batch: list):
-    batch = Batch(samples=batch)
+    batch = ImageBatch(samples=batch)
+    return batch
+
+
+def patch_collate(batch: list):
+    batch = PatchBatch(samples=batch)
     return batch

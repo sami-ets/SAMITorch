@@ -110,5 +110,13 @@ class Image(object):
         return Modalities.MD in file
 
     @staticmethod
+    def is_(modality, file):
+        return modality in file and Image.is_nifti(file) and Image.is_unprocessed(file)
+
+    @staticmethod
     def is_processed(file):
         return "Processed" in file
+
+    @staticmethod
+    def is_unprocessed(file):
+        return not Image.is_processed(file) and (Image.is_nifti(file) or Image.is_nrrd(file))

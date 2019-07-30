@@ -63,6 +63,27 @@ class Optimizers(Enum):
     ASGD = "ASGD"
 
 
+class Criterions(Enum):
+    BCELoss = "BCELoss"
+    BCEWithLogitsLoss = "BCEWithLogtisLoss"
+    PoissonNLLLoss = "PoissonNLLLoss"
+    CosineEmbeddingLoss = "CosineEmbeddingLoss"
+    CrossEntropyLoss = "CrossEntropyLoss"
+    CTCLoss = "CTCLoss"
+    HingeEmbeddingLoss = "HingeEmbeddingLoss"
+    KLDivLoss = "KLDivLoss"
+    L1Loss = "L1Loss"
+    MSELoss = "MSELoss"
+    MarginRankingLoss = "MarginRankingLoss"
+    MultiLabelMarginLoss = "MultiLabelMarginLoss"
+    MultiLabelSoftMarginLoss = "MultiLabelSoftMarginLoss"
+    MultiMarginLoss = "MultiMarginLoss"
+    NLLLoss = "NLLLoss"
+    SmoothL1Loss = "SmoothL1Loss"
+    SoftMarginLoss = "SoftMarginLoss"
+    TripletMarginLoss = "TripletMarginLoss"
+
+
 class Metrics(Enum):
     Dice = "Dice"
     GeneralizedDice = "GeneralizeDice"
