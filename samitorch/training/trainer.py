@@ -20,12 +20,13 @@ Declare methods a Trainer object must have.
 """
 
 import abc
+from typing import List, Optional
+
 import torch
 
-from typing import List, Optional
 from samitorch.callbacks.callbacks import Callback
-from samitorch.training.trainer_configuration import TrainerConfiguration
 from samitorch.inputs.batch import Batch
+from samitorch.training.trainer_configuration import TrainerConfiguration
 
 
 class Trainer(object):
@@ -191,81 +192,6 @@ class Trainer(object):
             NotImplementedError: If not overwritten by subclass.
         """
         raise NotImplementedError()
-
-    @abc.abstractmethod
-    def _at_training_begin(self, *args, **kwargs):
-        """Defines the behaviour at beginnig of the training.
-
-        Args:
-            *args: positional arguments
-            **kwargs (dict): additional keyword arguments.
-
-        Raises:
-            NotImplementedError: If not overwritten by subclass.
-        """
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def _at_training_end(self, *args, **kwargs):
-        """Defines the behaviour at the end of the training.
-
-        Args:
-            *args: positional arguments
-            **kwargs (dict): additional keyword arguments.
-
-        Raises:
-            NotImplementedError: If not overwritten by subclass.
-        """
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def _at_epoch_begin(self, *args, **kwargs):
-        """Defines the behaviour at beginnig of each epoch.
-
-        Args:
-            *args: positional arguments
-            **kwargs (dict): additional keyword arguments.
-
-        Raises:
-            NotImplementedError: If not overwritten by subclass.
-        """
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def _at_epoch_end(self, *args, **kwargs):
-        """
-        Defines the behaviour at the end of each epoch.
-
-        Args:
-            *args: positional arguments
-            **kwargs(dict): additional keyword arguments.
-
-        Raises:
-            NotImplementedError: If not overwritten by subclass.
-        """
-
-        raise NotImplementedError()
-
-    @staticmethod
-    def _is_better_val_scores(old_val_score: float, new_val_score: float, mode='highest'):
-        """Check whether the new val score is better than the old one with respect to the optimization goal.
-
-        Args:
-            old_val_score (float): old validation score
-            new_val_score (float): new validation score
-            mode (str): String to specify whether a higher or lower validation score is optimal;
-                must be in ['highest', 'lowest']
-
-        Returns:
-            bool: True if new score is better, False otherwise.
-        """
-
-        assert mode in ['highest', 'lowest'], "Invalid Comparison Mode"
-
-        if mode == 'highest':
-            return new_val_score > old_val_score
-        elif mode == 'lowest':
-            return new_val_score < old_val_score
 
     def _register_callback(self, callback: Callback):
         """Register Callback to Trainer.

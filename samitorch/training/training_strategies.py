@@ -15,13 +15,10 @@
 # ==============================================================================
 
 import abc
-import datetime
-
 from typing import Union
 
-from samitorch.training.trainer import Trainer
 from samitorch.training.model_trainer import ModelTrainer
-from samitorch.utils.model_io import save
+from samitorch.training.trainer import Trainer
 
 
 class TrainingStrategy(object):
@@ -104,88 +101,3 @@ class EarlyStoppingStrategy(TrainingStrategy):
         assert patience >= 1, assertion_str_greater_or_equal
 
         return patience
-
-
-class CheckpointStrategy(TrainingStrategy):
-    """Define a checkpoint strategy.
-
-    Checkpoint strategy is declared to periodically save a Trainer's model(s).
-
-    """
-
-    def __init__(self, trainer):
-        """Class constructor.
-
-        Args:
-            trainer (:obj:`Trainer`): A trainer.
-        """
-        super().__init__(trainer)
-
-    @abc.abstractmethod
-    def __call__(self, *args, **kwargs):
-        """Call method.
-
-        Args:
-            *args:
-            **kwargs:
-
-        Raises:
-            NotImplementedError: if not overwritten by subclass.
-        """
-        raise NotImplementedError()
-
-
-class MetricCheckpointStrategy(CheckpointStrategy):
-    """Define a checkpoint strategy based on an evaluation score.
-
-    This strategy checks if the metric in parameter is best seen. If so, save the model. If not, simply pass.
-    """
-
-    def __init__(self, trainer: Union[ModelTrainer, Trainer], model_name: str):
-        super().__init__(trainer)
-        self._best_score = None
-        self._model_name = model_name
-
-    def __call__(self, metric: float):
-        """Verify if the given metric in parameter is better than an older one. If so, save the model.
-
-        Args:
-            metric (float): An evalution score.
-        """
-        if self._best_score is None:
-            self._best_score = metric
-        elif metric <= self._best_score:
-            pass
-        else:
-            self._best_score = metric
-            time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-            save("{}-{}.tar".format(self._model_name, time), self._trainer.config.model, self._trainer.epoch,
-                 self._trainer.config.optimizer)
-
-
-class LossCheckpointStrategy(CheckpointStrategy):
-    """Define a checkpoint strategy based on a loss value.
-
-    This strategy checks if the loss in parameter is best seen. If so, save the model. If not, simply pass.
-    """
-
-    def __init__(self, trainer: Union[ModelTrainer, Trainer], model_name: str):
-        super().__init__(trainer)
-        self._best_score = None
-        self._model_name = model_name
-
-    def __call__(self, loss: float):
-        """Verify if the given loss in parameter is better than an older one. If so, save the model.
-
-        Args:
-            loss (float): A loss value.
-        """
-        if self._best_score is None:
-            self._best_score = loss
-        elif loss <= self._best_score:
-            self._best_score = loss
-            time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-            save("{}-{}.tar".format(self._model_name, time), self._trainer.config.model, self._trainer.epoch,
-                 self._trainer.config.optimizer)
-        else:
-            pass
