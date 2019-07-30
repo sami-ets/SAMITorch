@@ -34,7 +34,7 @@ def save(file_name: str, model: torch.nn.Module = None, epoch_num: int = None,
         file_name (str): The file name to save a PyTorch model checkpoint.
         model (:obj:`torch.nn.Module`): A PyTorch model.
         epoch_num (int): Current epoch number.
-        optimizer (:obj:`torch.optim.Optimizer`):
+        optimizer (List of :obj:`torch.optim.Optimizer`):
     """
 
     if isinstance(model, torch.nn.DataParallel):
