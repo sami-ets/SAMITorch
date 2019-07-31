@@ -78,15 +78,15 @@ class ModelTrainerConfiguration(TrainingConfiguration):
     A base class for storing a ModelTrainer configuration as an object.
     """
 
-    def __init__(self, model: torch.nn.Module = None, optimizer: torch.optim.Optimizer = None,
-                 criterion: torch.nn.Module = None, metric=None,
-                 running_config: Configuration = None, variables: Configuration = None, visdom=None) -> None:
+    def __init__(self, model: torch.nn.Module, optimizer: torch.optim.Optimizer,
+                 criterion: torch.nn.Module, metric,
+                 device: torch.device, variables: Configuration, visdom) -> None:
         super(TrainingConfiguration, self).__init__()
         self._model = model
         self._optimizer = optimizer
         self._criterion = criterion
         self._metric = metric
-        self._running_config = running_config
+        self._device = device
         self._variables = variables
         self._visdom = visdom
 
@@ -132,14 +132,14 @@ class ModelTrainerConfiguration(TrainingConfiguration):
         return self._metric
 
     @property
-    def running_config(self) -> Configuration:
+    def device(self) -> torch.device:
         """
         The running configuration.
 
         Returns:
-            :obj:`samitorch.configs.configurations.Configuration`: A Running Configuration.
+            :obj:`torch.device`: A Running Configuration.
         """
-        return self._running_config
+        return self._device
 
     @property
     def variables(self) -> Configuration:
@@ -177,9 +177,9 @@ class ModelTrainerConfiguration(TrainingConfiguration):
     def metric(self, metric):
         self._metric = metric
 
-    @running_config.setter
-    def running_config(self, running_config: Configuration):
-        self._running_config = running_config
+    @device.setter
+    def device(self, device: torch.device):
+        self._device = device
 
     @variables.setter
     def variables(self, variables: Configuration):

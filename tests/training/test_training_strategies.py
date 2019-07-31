@@ -17,6 +17,7 @@
 import unittest
 import os
 import re
+import torch
 
 from hamcrest import *
 
@@ -59,12 +60,13 @@ class LossCheckpointStrategyTest(unittest.TestCase, Trainer):
         self.criterion_factory = CriterionFactory()
         self.optimizer_factory = OptimizerFactory()
         self._config = self.configurationParserFactory.parse(self.CONFIGURATION_PATH)
-        model_trainer_config = ModelTrainerConfiguration()
-        model_trainer_config.model = self.model_factory.create_model(ResNetModels.ResNet101, self._config)
-        model_trainer_config.criterion = self.criterion_factory.create_criterion(Criterions.MSELoss)
-        model_trainer_config.optimizer = self.optimizer_factory.create_optimizer(Optimizers.SGD,
-                                                                                 model_trainer_config.model.parameters(),
-                                                                                 lr=0.1)
+        model = self.model_factory.create_model(ResNetModels.ResNet101, self._config)
+        criterion = self.criterion_factory.create_criterion(Criterions.MSELoss)
+        optimizer = self.optimizer_factory.create_optimizer(Optimizers.SGD,
+                                                            model.parameters(),
+                                                            lr=0.1)
+        model_trainer_config = ModelTrainerConfiguration(model, optimizer, criterion, None, torch.device('cpu'), None,
+                                                         None)
 
         self.model_trainer = TestModelTrainer(model_trainer_config, None, "TestTrainer", with_logging=False)
         self.strategy = LossCheckpointStrategy(self.model_trainer, "ResNet3D", self.OUTPUT_DATA_FOLDER_PATH)
@@ -107,13 +109,13 @@ class MetricCheckpointStrategyTest(unittest.TestCase, Trainer):
         self.criterion_factory = CriterionFactory()
         self.optimizer_factory = OptimizerFactory()
         self._config = self.configurationParserFactory.parse(self.CONFIGURATION_PATH)
-        model_trainer_config = ModelTrainerConfiguration()
-        model_trainer_config.model = self.model_factory.create_model(ResNetModels.ResNet101, self._config)
-        model_trainer_config.criterion = self.criterion_factory.create_criterion(Criterions.MSELoss)
-        model_trainer_config.optimizer = self.optimizer_factory.create_optimizer(Optimizers.SGD,
-                                                                                 model_trainer_config.model.parameters(),
-                                                                                 lr=0.1)
-
+        model = self.model_factory.create_model(ResNetModels.ResNet101, self._config)
+        criterion = self.criterion_factory.create_criterion(Criterions.MSELoss)
+        optimizer = self.optimizer_factory.create_optimizer(Optimizers.SGD,
+                                                            model.parameters(),
+                                                            lr=0.1)
+        model_trainer_config = ModelTrainerConfiguration(model, optimizer, criterion, None, torch.device('cpu'), None,
+                                                         None)
         self.model_trainer = TestModelTrainer(model_trainer_config, None, "TestTrainer", with_logging=False)
         self.strategy = MetricCheckpointStrategy(self.model_trainer, "ResNet3D", self.OUTPUT_DATA_FOLDER_PATH)
 

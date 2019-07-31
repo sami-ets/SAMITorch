@@ -21,7 +21,7 @@ from hamcrest import *
 from samitorch.factories.factories import PatchDatasetFactory, SegmentationDatasetFactory
 from samitorch.inputs.datasets import PatchDataset, MultimodalPatchDataset, SegmentationDataset, \
     MultimodalSegmentationDataset
-from samitorch.inputs.images import Modalities
+from samitorch.inputs.images import Modality
 
 
 class TestPatchDatasetFactory(unittest.TestCase):
@@ -34,7 +34,7 @@ class TestPatchDatasetFactory(unittest.TestCase):
     def test_should_instantiate_both_training_and_test_dataset(self):
         training_dataset, test_dataset = PatchDatasetFactory.create_train_test(source_dir=self.TEST_DATA_FOLDER_PATH,
                                                                                target_dir=self.PATH_TO_TARGET,
-                                                                               modality=Modalities.T1,
+                                                                               modality=Modality.T1,
                                                                                patch_size=(1, 32, 32, 32),
                                                                                step=(1, 32, 32, 32),
                                                                                dataset_id=0,
@@ -54,8 +54,8 @@ class TestMultimodalPatchDatasetFactory(unittest.TestCase):
         training_dataset, test_dataset = PatchDatasetFactory.create_multimodal_train_test(
             source_dir=self.TEST_DATA_FOLDER_PATH,
             target_dir=self.PATH_TO_TARGET,
-            modality_1=Modalities.T1,
-            modality_2=Modalities.T2,
+            modality_1=Modality.T1,
+            modality_2=Modality.T2,
             patch_size=(1, 32, 32, 32),
             step=(1, 32, 32, 32),
             dataset_id=0,
@@ -75,7 +75,7 @@ class TestSegmentationDatasetFactory(unittest.TestCase):
         training_dataset, test_dataset = SegmentationDatasetFactory.create_train_test(
             source_dir=self.TEST_DATA_FOLDER_PATH,
             target_dir=self.PATH_TO_TARGET,
-            modality=Modalities.T1,
+            modality=Modality.T1,
             dataset_id=0,
             test_size=0.2)
         assert_that(training_dataset, instance_of(SegmentationDataset))
@@ -93,8 +93,8 @@ class TestMultimodalSegmentationDatasetFactory(unittest.TestCase):
         training_dataset, test_dataset = SegmentationDatasetFactory.create_multimodal_train_test(
             source_dir=self.TEST_DATA_FOLDER_PATH,
             target_dir=self.PATH_TO_TARGET,
-            modality_1=Modalities.T1,
-            modality_2=Modalities.T2,
+            modality_1=Modality.T1,
+            modality_2=Modality.T2,
             dataset_id=0,
             test_size=0.2)
         assert_that(training_dataset, instance_of(MultimodalSegmentationDataset))

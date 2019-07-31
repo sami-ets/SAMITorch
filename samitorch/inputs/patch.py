@@ -36,7 +36,7 @@ class CenterCoordinate(object):
             target_array (:obj:`numpy.ndarray`): 4 4D Numpy array representing the target image.
         """
         channels = source_array.shape[0]
-        self._center_x, self._center_y, self._center_z = self._get_center_coordinate(source_array)
+        self._center_x, self._center_y, self._center_z = self.get_center_coordinate(source_array)
         self._value = np.array([self._get_center_value(source_array, channel) for channel in range(channels)])
         self._class_id = int(self._get_center_value(target_array, 0))
         self._is_foreground = True if self._class_id > 0 else False
@@ -79,7 +79,7 @@ class CenterCoordinate(object):
         return array[channel][self._center_x][self._center_y][self._center_z]
 
     @staticmethod
-    def _get_center_coordinate(array: np.ndarray):
+    def get_center_coordinate(array: np.ndarray):
         """
         Get the center coordinate of a Patch.
 

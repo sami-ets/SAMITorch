@@ -22,7 +22,7 @@ from torch.utils.data.dataset import Dataset
 from samitorch.inputs.transformers import ToNumpyArray, PadToPatchShape
 from samitorch.inputs.sample import Sample
 from samitorch.inputs.patch import Patch, CenterCoordinate
-from samitorch.inputs.images import Modalities
+from samitorch.inputs.images import Modality
 
 
 class SegmentationDataset(Dataset):
@@ -30,7 +30,7 @@ class SegmentationDataset(Dataset):
     Create a dataset class in PyTorch for reading NIfTI files.
     """
 
-    def __init__(self, source_paths: List[str], target_paths: List[str], samples: List[Sample], modality: Modalities,
+    def __init__(self, source_paths: List[str], target_paths: List[str], samples: List[Sample], modality: Modality,
                  dataset_id: int = None, transforms: Optional[Callable] = None) -> None:
         """
         Dataset initializer.
@@ -69,8 +69,8 @@ class MultimodalSegmentationDataset(Dataset):
     Create a dataset class in PyTorch for reading NIfTI files.
     """
 
-    def __init__(self, source_paths: List[str], target_paths: List[str], samples: List[Sample], modality_1: Modalities,
-                 modality_2: Modalities, dataset_id: int = None, transforms: Optional[Callable] = None) -> None:
+    def __init__(self, source_paths: List[str], target_paths: List[str], samples: List[Sample], modality_1: Modality,
+                 modality_2: Modality, dataset_id: int = None, transforms: Optional[Callable] = None) -> None:
         """
         Dataset initializer.
 
@@ -112,7 +112,7 @@ class PatchDataset(SegmentationDataset):
 
     def __init__(self, source_paths: List[str], target_paths: List[str], samples: List[Sample],
                  patch_size: Tuple[int, int, int, int],
-                 step: Tuple[int, int, int, int], modality: Modalities,
+                 step: Tuple[int, int, int, int], modality: Modality,
                  dataset_id: int = None, transforms: Optional[Callable] = None) -> None:
         """
         Dataset initializer.
@@ -180,8 +180,8 @@ class MultimodalPatchDataset(MultimodalSegmentationDataset):
     """
 
     def __init__(self, source_paths: List[str], target_paths: List[str], samples: List[Sample],
-                 patch_size: Tuple[int, int, int, int], step: Tuple[int, int, int, int], modality_1: Modalities,
-                 modality_2: Modalities, dataset_id: int = None, transforms: Optional[Callable] = None) -> None:
+                 patch_size: Tuple[int, int, int, int], step: Tuple[int, int, int, int], modality_1: Modality,
+                 modality_2: Modality, dataset_id: int = None, transforms: Optional[Callable] = None) -> None:
         """
         Dataset initializer.
 

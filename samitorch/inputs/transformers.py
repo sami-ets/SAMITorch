@@ -27,7 +27,7 @@ import cv2
 from nilearn.image.resampling import resample_to_img
 from sklearn.feature_extraction.image import extract_patches
 
-from samitorch.inputs.images import ImageTypes, Image, Extensions
+from samitorch.inputs.images import ImageType, Image, Extension
 from samitorch.inputs.sample import Sample
 from samitorch.inputs.patch import Patch
 
@@ -127,7 +127,7 @@ class ToNumpyArray(object):
             elif Image.is_nrrd(input):
                 nd_array, header = nrrd.read(input)
             else:
-                raise NotImplementedError("Only {} files are supported".format(ImageTypes.ALL.value))
+                raise NotImplementedError("Only {} files are supported".format(ImageType.ALL.value))
 
             nd_array = self._expand_dims(nd_array)
             nd_array = self._transpose(nd_array)
@@ -149,7 +149,7 @@ class ToNumpyArray(object):
                         nd_array, header = nrrd.read(path)
                     else:
                         raise NotImplementedError(
-                            "Only {} files are supported, but got {}".format(ImageTypes.ALL,
+                            "Only {} files are supported, but got {}".format(ImageType.ALL,
                                                                              os.path.splitext(sample.x)[1]))
                     if nd_array.ndim == 3:
                         nd_array = self._expand_dims(nd_array)
@@ -165,7 +165,7 @@ class ToNumpyArray(object):
                     x, header = nrrd.read(sample.x)
                 else:
                     raise NotImplementedError(
-                        "Only {} files are supported, but got {}".format(ImageTypes.ALL, os.path.splitext(sample.x)[1]))
+                        "Only {} files are supported, but got {}".format(ImageType.ALL, os.path.splitext(sample.x)[1]))
 
                 if x.ndim == 3:
                     x = self._expand_dims(x)
@@ -191,7 +191,7 @@ class ToNumpyArray(object):
 
                         else:
                             raise NotImplementedError(
-                                "Only {} files are supported, but got {}".format(ImageTypes.ALL.value,
+                                "Only {} files are supported, but got {}".format(ImageType.ALL.value,
                                                                                  os.path.splitext(sample.x)[1]))
                         if nd_array.ndim == 3:
                             nd_array = self._expand_dims(nd_array)
@@ -628,7 +628,7 @@ class LoadNifti(object):
             if Image.is_nifti(input):
                 return nib.load(input)
             else:
-                raise NotImplementedError("Only {} files are supported.".format(ImageTypes.NIFTI.name))
+                raise NotImplementedError("Only {} files are supported.".format(ImageType.NIFTI.name))
 
         elif isinstance(input, Sample):
             sample = input
@@ -640,7 +640,7 @@ class LoadNifti(object):
                 x = nib.load(sample.x)
             else:
                 raise NotImplementedError(
-                    "Only {} files are supported but got {}".format(ImageTypes.NIFTI.name,
+                    "Only {} files are supported but got {}".format(ImageType.NIFTI.name,
                                                                     os.path.splitext(sample.x)[1]))
             transformed_sample.x = x
 
@@ -854,7 +854,7 @@ class NiftiToDisk(object):
         elif isinstance(input, Sample):
             sample = input
             if isinstance(self._file_path, str) and not sample.is_labeled:
-                assert Extensions.NIFTI.value in self._file_path, "Bad file extension."
+                assert Extension.NIFTI.value in self._file_path, "Bad file extension."
                 nib.save(sample.x, self._file_path)
 
             elif isinstance(self._file_path, list) and sample.is_labeled:
@@ -904,7 +904,7 @@ class ApplyMask(object):
                     mask, header = nrrd.read(input_mask)
                 else:
                     raise NotImplementedError(
-                        "Only {} files are supported but got {}".format(ImageTypes.ALL,
+                        "Only {} files are supported but got {}".format(ImageType.ALL,
                                                                         os.path.splitext(input_mask)[1]))
 
             elif isinstance(input_mask, nib.Nifti1Image) or isinstance(input_mask, nib.Nifti2Image):

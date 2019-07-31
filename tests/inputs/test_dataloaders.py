@@ -21,7 +21,7 @@ import torch
 from hamcrest import *
 
 from samitorch.inputs.batch import ImageBatch, PatchBatch
-from samitorch.inputs.images import Modalities
+from samitorch.inputs.images import Modality
 from samitorch.inputs.utils import sample_collate, patch_collate
 from samitorch.factories.factories import PatchDatasetFactory, SegmentationDatasetFactory
 
@@ -34,7 +34,7 @@ class SegmentationDataLoaderTest(unittest.TestCase):
         self._training_patch_dataset, self._validation_patch_dataset = SegmentationDatasetFactory.create_train_test(
             self.TEST_DATA_FOLDER_PATH,
             self.PATH_TO_TARGET,
-            Modalities.T1,
+            Modality.T1,
             dataset_id=0,
             test_size=0.2
         )
@@ -72,7 +72,7 @@ class PatchDataLoaderTest(unittest.TestCase):
         self._training_patch_dataset, self._validation_patch_dataset = PatchDatasetFactory.create_train_test(
             self.TEST_DATA_FOLDER_PATH,
             self.PATH_TO_TARGET,
-            Modalities.T1,
+            Modality.T1,
             patch_size=(1, 32, 32, 32),
             step=(1, 32, 32, 32),
             dataset_id=0,
@@ -114,8 +114,8 @@ class MultimodalSegmentationDataLoaderTest(unittest.TestCase):
         self._training_patch_dataset, self._validation_patch_dataset = SegmentationDatasetFactory.create_multimodal_train_test(
             self.TEST_DATA_FOLDER_PATH,
             self.PATH_TO_TARGET,
-            Modalities.T1,
-            Modalities.T2,
+            Modality.T1,
+            Modality.T2,
             dataset_id=0,
             test_size=0.2
         )
@@ -155,8 +155,8 @@ class MultimodalPatchDataLoaderTest(unittest.TestCase):
         self._training_patch_dataset, self._validation_patch_dataset = PatchDatasetFactory.create_multimodal_train_test(
             self.TEST_DATA_FOLDER_PATH,
             self.PATH_TO_TARGET,
-            Modalities.T1,
-            Modalities.T2,
+            Modality.T1,
+            Modality.T2,
             patch_size=(1, 32, 32, 32),
             step=(1, 32, 32, 32),
             dataset_id=0,

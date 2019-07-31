@@ -26,7 +26,7 @@ from torchvision.transforms import Compose
 from sklearn.model_selection import ShuffleSplit, StratifiedShuffleSplit
 
 from samitorch.configs.configurations import ModelConfiguration
-from samitorch.inputs.images import Modalities
+from samitorch.inputs.images import Modality
 from samitorch.inputs.datasets import PatchDataset, MultimodalPatchDataset, SegmentationDataset, \
     MultimodalSegmentationDataset
 from samitorch.utils.utils import extract_file_paths
@@ -454,7 +454,7 @@ class CriterionFactory(AbstractCriterionFactory):
 class PatchDatasetFactory(AbstractDatasetFactory):
 
     @staticmethod
-    def create_train_test(source_dir: str, target_dir: str, modality: Modalities, patch_size: Tuple[int, int, int, int],
+    def create_train_test(source_dir: str, target_dir: str, modality: Modality, patch_size: Tuple[int, int, int, int],
                           step: Tuple[int, int, int, int], dataset_id: int, test_size: float):
         """
         Create a PatchDataset object for both training and validation.
@@ -472,12 +472,12 @@ class PatchDatasetFactory(AbstractDatasetFactory):
             Tuple of :obj:`torch.utils.data.dataset`: A tuple containing both training and validation dataset.
         """
 
-        source_dir = os.path.join(source_dir, str(modality.value))
+        source_dir = os.path.join(source_dir, str(modality))
         source_paths, target_paths = np.array(extract_file_paths(source_dir)), np.array(extract_file_paths(target_dir))
 
         transforms = Compose([ToNumpyArray(), PadToPatchShape(patch_size=patch_size, step=step)])
 
-        patches = PatchDatasetFactory._get_patches(source_paths, target_paths, patch_size, step, transforms)
+        patches = PatchDatasetFactory.get_patches(source_paths, target_paths, patch_size, step, transforms)
         label_patches = copy.deepcopy(patches)
 
         train_ids, test_ids = next(
@@ -500,8 +500,9 @@ class PatchDatasetFactory(AbstractDatasetFactory):
         return training_dataset, test_dataset
 
     @staticmethod
-    def create_multimodal_train_test(source_dir, target_dir, modality_1, modality_2, patch_size, step, dataset_id,
-                                     test_size):
+    def create_multimodal_train_test(source_dir: str, target_dir: str, modality_1: Modality, modality_2: Modality,
+                                     patch_size: Tuple[int, int, int, int], step: Tuple[int, int, int, int],
+                                     dataset_id: int, test_size: float):
         """
         Create a MultimodalPatchDataset object for both training and validation.
 
@@ -518,8 +519,8 @@ class PatchDatasetFactory(AbstractDatasetFactory):
         Returns:
             Tuple of :obj:`torch.utils.data.dataset`: A tuple containing both training and validation dataset.
         """
-        source_dir_modality_1 = os.path.join(source_dir, str(modality_1.value))
-        source_dir_modality_2 = os.path.join(source_dir, str(modality_2.value))
+        source_dir_modality_1 = os.path.join(source_dir, str(modality_1))
+        source_dir_modality_2 = os.path.join(source_dir, str(modality_2))
 
         source_paths_modality_1, target_paths = np.array(extract_file_paths(source_dir_modality_1)), np.array(
             extract_file_paths(target_dir))
@@ -530,7 +531,7 @@ class PatchDatasetFactory(AbstractDatasetFactory):
 
         transforms = Compose([ToNumpyArray(), PadToPatchShape(patch_size=patch_size, step=step)])
 
-        patches = PatchDatasetFactory._get_patches(source_paths, target_paths, patch_size, step, transforms)
+        patches = PatchDatasetFactory.get_patches(source_paths, target_paths, patch_size, step, transforms)
         label_patches = copy.deepcopy(patches)
 
         train_ids, test_ids = next(
@@ -555,8 +556,8 @@ class PatchDatasetFactory(AbstractDatasetFactory):
         return training_dataset, test_dataset
 
     @staticmethod
-    def _get_patches(source_paths: np.ndarray, target_paths: np.ndarray, patch_size: Tuple[int, int, int, int],
-                     step: Tuple[int, int, int, int], transforms: Callable):
+    def get_patches(source_paths: np.ndarray, target_paths: np.ndarray, patch_size: Tuple[int, int, int, int],
+                    step: Tuple[int, int, int, int], transforms: Callable):
 
         patches = list()
 
@@ -564,7 +565,7 @@ class PatchDatasetFactory(AbstractDatasetFactory):
             source_path, target_path = source_paths[idx], target_paths[idx]
             sample = Sample(x=source_path, y=target_path, dataset_id=None, is_labeled=True)
             transformed_sample = transforms(sample)
-            slices = SliceBuilder(transformed_sample.x.shape, patch_size=patch_size, step=step).image_slices
+            slices = SliceBuilder(transformed_sample.x.shape, patch_size=patch_size, step=step).build_slices()
             for slice in slices:
                 if np.count_nonzero(transformed_sample.x[slice]) > 0:
                     center_coordinate = CenterCoordinate(transformed_sample.x[slice], transformed_sample.y[slice])
@@ -579,7 +580,7 @@ class PatchDatasetFactory(AbstractDatasetFactory):
 class SegmentationDatasetFactory(AbstractDatasetFactory):
 
     @staticmethod
-    def create_train_test(source_dir, target_dir, modality, dataset_id, test_size):
+    def create_train_test(source_dir: str, target_dir: str, modality: Modality, dataset_id: int, test_size: float):
         """
         Create a SegmentationDataset object for both training and validation.
 
@@ -593,7 +594,7 @@ class SegmentationDatasetFactory(AbstractDatasetFactory):
         Returns:
            Tuple of :obj:`torch.utils.data.dataset`: A tuple containing both training and validation dataset.
         """
-        source_dir = os.path.join(source_dir, str(modality.value))
+        source_dir = os.path.join(source_dir, str(modality))
 
         source_paths, target_paths = np.array(extract_file_paths(source_dir)), np.array(extract_file_paths(target_dir))
 
@@ -615,7 +616,8 @@ class SegmentationDatasetFactory(AbstractDatasetFactory):
         return training_dataset, test_dataset
 
     @staticmethod
-    def create_multimodal_train_test(source_dir, target_dir, modality_1, modality_2, dataset_id, test_size):
+    def create_multimodal_train_test(source_dir: str, target_dir: str, modality_1: Modality, modality_2: Modality,
+                                     dataset_id: int, test_size: float):
         """
         Create a MultimodalDataset object for both training and validation.
 
@@ -630,8 +632,8 @@ class SegmentationDatasetFactory(AbstractDatasetFactory):
         Returns:
            Tuple of :obj:`torch.utils.data.dataset`: A tuple containing both training and validation dataset.
         """
-        source_dir_modality_1 = os.path.join(source_dir, str(modality_1.value))
-        source_dir_modality_2 = os.path.join(source_dir, str(modality_2.value))
+        source_dir_modality_1 = os.path.join(source_dir, str(modality_1))
+        source_dir_modality_2 = os.path.join(source_dir, str(modality_2))
 
         source_paths_modality_1, target_paths = np.array(extract_file_paths(source_dir_modality_1)), np.array(
             extract_file_paths(target_dir))
