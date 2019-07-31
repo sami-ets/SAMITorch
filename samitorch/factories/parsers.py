@@ -83,7 +83,7 @@ class ModelConfigurationParserFactory(AbstractConfigurationParserFactory):
         self._supported_model_configuration[model_type] = model_configuration_class
 
 
-class CommonSegmentationSubjectsLabelsParser(object):
+class DefaultSegmentationSubjectsLabelsParser(object):
     """
     Common parser where subject images are in a source directory while segmentation images are in another one.
     """

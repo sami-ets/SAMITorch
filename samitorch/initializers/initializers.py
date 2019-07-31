@@ -26,11 +26,10 @@ class Initializer(metaclass=abc.ABCMeta):
 
     def __init__(self):
         """Class constructor."""
-
-    pass
+        pass
 
     @abc.abstractmethod
-    def initialize(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs):
         """Initialize a PyTorch torch.nn layer/operation.
 
         Raises:

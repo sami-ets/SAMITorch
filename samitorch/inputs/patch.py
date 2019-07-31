@@ -19,14 +19,39 @@ Class to describe a Patch object for patch segmentation purpose.
 """
 import numpy as np
 
+from typing import Union
+
 
 class CenterCoordinate(object):
+    """
+    Represent the center coordinate of a Path.
+    """
 
     def __init__(self, source_array: np.ndarray, target_array: np.ndarray):
+        """
+        Class constructor.
+
+        Args:
+            source_array (:obj:`numpy.ndarray`): A 4D Numpy array representing the source image.
+            target_array (:obj:`numpy.ndarray`): 4 4D Numpy array representing the target image.
+        """
+        channels = source_array.shape[0]
         self._center_x, self._center_y, self._center_z = self._get_center_coordinate(source_array)
-        self._value = self._get_center_value(source_array)
-        self._class_id = int(self._get_center_value(target_array))
+        self._value = np.array([self._get_center_value(source_array, channel) for channel in range(channels)])
+        self._class_id = int(self._get_center_value(target_array, 0))
         self._is_foreground = True if self._class_id > 0 else False
+
+    @property
+    def center_x(self):
+        return self._center_x
+
+    @property
+    def center_y(self):
+        return self._center_y
+
+    @property
+    def center_z(self):
+        return self._center_z
 
     @property
     def value(self):
@@ -40,20 +65,47 @@ class CenterCoordinate(object):
     def is_foreground(self):
         return self._is_foreground
 
-    def _get_center_value(self, array: np.ndarray):
-        return array[0][self._center_x][self._center_y][self._center_z]
+    def _get_center_value(self, array: np.ndarray, channel: int):
+        """
+        Get the center value for the specified channel.
+
+        Args:
+            array (:obj:`numpy.ndarray`): A 4D Numpy array.
+            channel (int): The channel of the image.
+
+        Returns:
+            int: The value.
+        """
+        return array[channel][self._center_x][self._center_y][self._center_z]
 
     @staticmethod
     def _get_center_coordinate(array: np.ndarray):
+        """
+        Get the center coordinate of a Patch.
+
+        Args:
+            array (:obj:`numpy.ndarray`): A 4D Numpy array.
+
+        Returns:
+            tuple: A tuple representing the X, Y, Z coordinates of the center.
+        """
         return array.shape[1] // 2, array.shape[2] // 2, array.shape[3] // 2
 
 
 class Patch(object):
 
-    def __init__(self, slice, source_image_id, source_slice, target_slice, ):
+    def __init__(self, slice: Union[slice, np.ndarray], image_id: int, center_coordinate: CenterCoordinate):
+        """
+        Class constructor.
+
+        Args:
+            slice (slice or :obj:`numpy.ndarray`): A slice or a 4D Numpy array containing patch's values.
+            image_id (int): The parent image ID to which the patch belongs to.
+            center_coordinate (:obj:`samitorch.inputs.patch.CenterCoordinate`): A CenterCoordinate object.
+        """
         self._slice = slice
-        self._image_id = source_image_id
-        self._center_coordinate = CenterCoordinate(source_slice, target_slice)
+        self._image_id = image_id
+        self._center_coordinate = center_coordinate
 
     @property
     def class_id(self):
@@ -89,3 +141,17 @@ class Patch(object):
         self._slice = patch.slice
         self._center_coordinate = patch.center_coordinate
         return self
+
+    @classmethod
+    def from_patch(cls, patch):
+        """
+        Create a new Patch from an existing Patch passed in parameter.
+
+        Args:
+            patch (:obj:`samitorch.inputs.patch.Patch`): A template Patch.
+
+        Returns:
+            :obj:`samitorch.inputs.patch.Patch`: A new patch object with same properties as the one passed in
+                parameter.
+        """
+        return cls(patch.slice, patch.image_id, patch.center_coordinate)

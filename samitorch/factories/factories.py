@@ -31,7 +31,7 @@ from samitorch.inputs.datasets import PatchDataset, MultimodalPatchDataset, Segm
     MultimodalSegmentationDataset
 from samitorch.utils.utils import extract_file_paths
 from samitorch.inputs.sample import Sample
-from samitorch.inputs.patch import Patch
+from samitorch.inputs.patch import Patch, CenterCoordinate
 from samitorch.factories.enums import *
 from samitorch.inputs.transformers import ToNumpyArray, PadToPatchShape, ToNDTensor
 from samitorch.utils.slice_builder import SliceBuilder
@@ -492,12 +492,10 @@ class PatchDatasetFactory(AbstractDatasetFactory):
                 patches[test_ids], label_patches[test_ids]))
 
         training_dataset = PatchDataset(list(source_paths), list(target_paths), train_samples, patch_size, step,
-                                        modality, dataset_id,
-                                        Compose([ToNDTensor()]))
+                                        modality, dataset_id, Compose([ToNDTensor()]))
 
         test_dataset = PatchDataset(list(source_paths), list(target_paths), test_samples, patch_size, step, modality,
-                                    dataset_id,
-                                    Compose([ToNDTensor()]))
+                                    dataset_id, Compose([ToNDTensor()]))
 
         return training_dataset, test_dataset
 
@@ -569,8 +567,9 @@ class PatchDatasetFactory(AbstractDatasetFactory):
             slices = SliceBuilder(transformed_sample.x.shape, patch_size=patch_size, step=step).image_slices
             for slice in slices:
                 if np.count_nonzero(transformed_sample.x[slice]) > 0:
+                    center_coordinate = CenterCoordinate(transformed_sample.x[slice], transformed_sample.y[slice])
                     patches.append(
-                        Patch(slice, idx, transformed_sample.x[slice], transformed_sample.y[slice]))
+                        Patch(slice, idx, center_coordinate))
                 else:
                     pass
 
@@ -608,8 +607,7 @@ class SegmentationDatasetFactory(AbstractDatasetFactory):
                 target_paths[test_ids]))
 
         training_dataset = SegmentationDataset(list(source_paths), list(target_paths), train_samples, modality,
-                                               dataset_id,
-                                               Compose([ToNumpyArray(), ToNDTensor()]))
+                                               dataset_id, Compose([ToNumpyArray(), ToNDTensor()]))
 
         test_dataset = SegmentationDataset(list(source_paths), list(target_paths), test_samples, modality, dataset_id,
                                            Compose([ToNumpyArray(), ToNDTensor()]))
@@ -652,13 +650,11 @@ class SegmentationDatasetFactory(AbstractDatasetFactory):
                 target_paths[test_ids]))
 
         training_dataset = MultimodalSegmentationDataset(list(source_paths), list(target_paths), train_samples,
-                                                         modality_1.value,
-                                                         modality_2.value, dataset_id,
+                                                         modality_1.value, modality_2.value, dataset_id,
                                                          Compose([ToNumpyArray(), ToNDTensor()]))
 
         test_dataset = MultimodalSegmentationDataset(list(source_paths), list(target_paths), test_samples,
-                                                     modality_1.value,
-                                                     modality_2.value, dataset_id,
+                                                     modality_1.value, modality_2.value, dataset_id,
                                                      Compose([ToNumpyArray(), ToNDTensor()]))
 
         return training_dataset, test_dataset

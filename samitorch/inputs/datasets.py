@@ -21,6 +21,7 @@ from torch.utils.data.dataset import Dataset
 
 from samitorch.inputs.transformers import ToNumpyArray, PadToPatchShape
 from samitorch.inputs.sample import Sample
+from samitorch.inputs.patch import Patch, CenterCoordinate
 from samitorch.inputs.images import Modalities
 
 
@@ -216,15 +217,21 @@ class MultimodalPatchDataset(MultimodalSegmentationDataset):
         patch_x, patch_y = sample.x, sample.y
         slice_x, slice_y = patch_x.slice, patch_y.slice
 
+        # Get the real image data for each modality and target.
         x_modality_1 = image_modality_1[tuple(slice_x)]
         x_modality_2 = image_modality_2[tuple(slice_x)]
         y = target[tuple(slice_y)]
 
-        patch_x.slice = np.concatenate((x_modality_1, x_modality_2), axis=0)
-        patch_y.slice = y
+        # Concatenate on channel axis both modalities.
+        slice_x = np.concatenate((x_modality_1, x_modality_2), axis=0)
+        slice_y = y
 
-        sample.x = patch_x
-        sample.y = patch_y
+        center_coordinate = CenterCoordinate(slice_x, slice_y)
+        transformed_patch_x = Patch(slice_x, image_id, center_coordinate)
+        transformed_patch_y = Patch(slice_y, image_id, center_coordinate)
+
+        sample.x = transformed_patch_x
+        sample.y = transformed_patch_y
 
         if self._transform is not None:
             sample = self._transform(sample)
