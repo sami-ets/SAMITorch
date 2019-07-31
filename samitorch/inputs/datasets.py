@@ -160,13 +160,14 @@ class PatchDataset(SegmentationDataset):
         patch_x, patch_y = sample.x, sample.y
         slice_x, slice_y = patch_x.slice, patch_y.slice
 
-        x, y = image[tuple(slice_x)], target[tuple(slice_y)]
+        slice_x, slice_y = image[tuple(slice_x)], target[tuple(slice_y)]
 
-        patch_x.slice = x
-        patch_y.slice = y
+        center_coordinate = CenterCoordinate(slice_x, slice_y)
+        transformed_patch_x = Patch(slice_x, image_id, center_coordinate)
+        transformed_patch_y = Patch(slice_y, image_id, center_coordinate)
 
-        sample.x = patch_x
-        sample.y = patch_y
+        sample.x = transformed_patch_x
+        sample.y = transformed_patch_y
 
         if self._transform is not None:
             sample = self._transform(sample)
