@@ -13,25 +13,39 @@
 # limitations under the License.
 # ==============================================================================
 
-"""Define a metric computed during the training phase."""
+import abc
+from enum import Enum
+from typing import Tuple, Union
 
+import ignite
+from ignite.metrics import ConfusionMatrix
 import torch
-
-from typing import Tuple
-
-from ignite.metrics.confusion_matrix import ConfusionMatrix
-from ignite.metrics import MetricsLambda, Metric
 
 EPSILON = 1e-15
 
 
-class Dice(Metric):
+class Metric(Enum):
+    Dice = "Dice"
+    GeneralizedDice = "GeneralizeDice"
+    Accuracy = "Accuracy"
+    Precision = "Precision"
+    MeanAbsoluteError = "MeanAbsoluteError"
+    MeanPairwiseDistance = "MeanPairwiseDistance"
+    MeanSquaredError = "MeanSquaredError"
+    Recall = "Recall"
+    RootMeanSquaredError = "RootMeanSquaredError"
+    TopKCategoricalAccuracy = "TopKCategoricalAccuracy"
+    IoU = "IoU"
+    mIoU = "mIoU"
+
+
+class Dice(ignite.metrics.Metric):
     """
     The Dice Metric.
     """
 
-    def __init__(self, num_classes: int, reduction: str = None, average: str = None,
-                 ignore_index: int = None, output_transform: callable = lambda x: x) -> None:
+    def __init__(self, num_classes: int, reduction: str = None, average: str = None, ignore_index: int = None,
+                 output_transform: callable = lambda x: x) -> None:
         """
         Metric initializer.
 
@@ -87,7 +101,7 @@ class Dice(Metric):
         self._cm.update(output)
 
 
-class GeneralizedDice(Metric):
+class GeneralizedDice(ignite.metrics.Metric):
     """
     The Generalized Dice Metric.
     """
@@ -178,12 +192,13 @@ def compute_dice_coefficient(cm: ConfusionMatrix, ignore_index: int = None):
             indices = [x for x in range(len(dice_vector)) if x != ignore_index]
             return dice_vector[indices]
 
-        return MetricsLambda(remove_index, dice)
+        return ignite.metrics.MetricsLambda(remove_index, dice)
     else:
         return dice
 
 
-def compute_generalized_dice_coefficient(cm: ConfusionMatrix, weights: torch.Tensor, ignore_index: int = None):
+def compute_generalized_dice_coefficient(cm: ConfusionMatrix, weights: torch.Tensor,
+                                         ignore_index: int = None):
     """
     Computes the Sørensen–Dice Coefficient (https://en.wikipedia.org/wiki/Sørensen–Dice_coefficient)
 
@@ -211,7 +226,7 @@ def compute_generalized_dice_coefficient(cm: ConfusionMatrix, weights: torch.Ten
             indices = [x for x in range(len(dice_vector)) if x != ignore_index]
             return dice_vector[indices]
 
-        return MetricsLambda(remove_index, dice)
+        return ignite.metrics.MetricsLambda(remove_index, dice)
     else:
         return dice
 
@@ -230,7 +245,8 @@ def compute_mean_dice_coefficient(cm: ConfusionMatrix, ignore_index: int = None)
     return compute_dice_coefficient(cm=cm, ignore_index=ignore_index).mean()
 
 
-def compute_mean_generalized_dice_coefficient(cm: ConfusionMatrix, weights: torch.Tensor, ignore_index: int = None):
+def compute_mean_generalized_dice_coefficient(cm: ConfusionMatrix, weights: torch.Tensor,
+                                              ignore_index: int = None):
     """
     Computes the mean Generalized Dice Coefficient.
 
@@ -277,3 +293,59 @@ def validate_weights_size(weights_size: int, num_classes: int) -> None:
     """
     assert weights_size == num_classes, "Weights vector must be the same length than the number of " \
                                         "classes, but a size of {} was given".format(weights_size)
+
+
+class AbstractMetricFactory(metaclass=abc.ABCMeta):
+
+    @abc.abstractmethod
+    def create_metric(self, function: Union[str, Metric], *args, **kwargs):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def register(self, function: str, creator):
+        raise NotImplementedError
+
+
+class MetricsFactory(AbstractMetricFactory):
+    def __init__(self):
+        super(MetricsFactory, self).__init__()
+        self._metrics = {
+            "Accuracy": ignite.metrics.Accuracy,
+            "Precision": ignite.metrics.Precision,
+            "MeanAbsoluteError": ignite.metrics.MeanAbsoluteError,
+            "MeanPairwiseDistance": ignite.metrics.MeanPairwiseDistance,
+            "MeanSquaredError": ignite.metrics.MeanSquaredError,
+            "Recall": ignite.metrics.Recall,
+            "RootMeanSquaredError": ignite.metrics.RootMeanSquaredError,
+            "TopKCategoricalAccuracy": ignite.metrics.TopKCategoricalAccuracy,
+            "IoU": ignite.metrics.IoU,
+            "mIoU": ignite.metrics.mIoU,
+            "Dice": Dice
+        }
+
+    def create_metric(self, metric: Union[str, Metric], *args, **kwargs):
+        """
+        Instanciate an optimizer based on its name.
+
+        Args:
+            metric (str_or_Enum): The optimizer's name.
+            *args: Other arguments.
+
+        Returns:
+            The metric, a torch or ignite module.
+
+        Raises:
+            KeyError: Raises KeyError Exception if Activation Function is not found.
+        """
+        metric = self._metrics[metric.name if isinstance(metric, Metric) else metric]
+        return metric(*args, **kwargs)
+
+    def register(self, metric: str, creator):
+        """
+        Add a new activation layer.
+
+        Args:
+           metric (str): Metric's name.
+           creator: A torch or ignite module object wrapping the new custom metric function.
+        """
+        self._metrics[metric] = creator

@@ -25,7 +25,7 @@ from samitorch.logger.plots import AccuracyPlot, LossPlot, ParameterPlot
 
 class ModelTrainer(object):
 
-    def __init__(self, config, callbacks, class_name):
+    def __init__(self, config, callbacks, class_name, with_logging=True):
         self._config = config
         self._callbacks = callbacks
 
@@ -36,20 +36,21 @@ class ModelTrainer(object):
         self.validation_metric_gauge = RunningAverageGauge()
         self.validation_loss_gauge = RunningAverageGauge()
 
-        self._training_metric_plot = AccuracyPlot(self._visdom,
-                                                  "{} Training metric lr={} momentum={}".format(
-                                                      class_name,
-                                                      config.optimizer.param_groups[0]["lr"],
-                                                      config.optimizer.param_groups[0]["momentum"]))
-        self._validation_metric_plot = AccuracyPlot(self._visdom,
-                                                    "{} Validation metric lr={} momentum={}".format(
-                                                        class_name,
-                                                        config.optimizer.param_groups[0]["lr"],
-                                                        config.optimizer.param_groups[0]["momentum"]))
-        self._training_loss_plot = LossPlot(self._visdom, "{} Training loss".format(class_name))
-        self._validation_loss_plot = LossPlot(self._visdom, "{} Validation loss".format(class_name))
-        self._learning_rate_plot = ParameterPlot(self._visdom, "{} Learning rate".format(class_name),
-                                                 "learning rate")
+        if with_logging:
+            self._training_metric_plot = AccuracyPlot(self._visdom,
+                                                      "{} Training metric lr={} momentum={}".format(
+                                                          class_name,
+                                                          config.optimizer.param_groups[0]["lr"],
+                                                          config.optimizer.param_groups[0]["momentum"]))
+            self._validation_metric_plot = AccuracyPlot(self._visdom,
+                                                        "{} Validation metric lr={} momentum={}".format(
+                                                            class_name,
+                                                            config.optimizer.param_groups[0]["lr"],
+                                                            config.optimizer.param_groups[0]["momentum"]))
+            self._training_loss_plot = LossPlot(self._visdom, "{} Training loss".format(class_name))
+            self._validation_loss_plot = LossPlot(self._visdom, "{} Validation loss".format(class_name))
+            self._learning_rate_plot = ParameterPlot(self._visdom, "{} Learning rate".format(class_name),
+                                                     "learning rate")
 
         self._setup()
 

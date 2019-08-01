@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+# Copyright 2019 SAMITorch Authors. All Rights Reserved.
+#
 # Licensed under the MIT License;
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -12,17 +14,40 @@
 # limitations under the License.
 # ==============================================================================
 
+import abc
+from enum import Enum
 from typing import Union
 
-import torch.nn
 from ignite.metrics import MetricsLambda
+import torch
+import torch.nn
 
-from samitorch.metrics.metrics import validate_ignore_index
-from samitorch.utils.utils import flatten
+from metrics.metric import validate_ignore_index
+from utils.utils import flatten
 
 SUPPORTED_REDUCTIONS = [None, "mean"]
-
 EPSILON = 1e-15
+
+
+class Criterion(Enum):
+    BCELoss = "BCELoss"
+    BCEWithLogitsLoss = "BCEWithLogtisLoss"
+    PoissonNLLLoss = "PoissonNLLLoss"
+    CosineEmbeddingLoss = "CosineEmbeddingLoss"
+    CrossEntropyLoss = "CrossEntropyLoss"
+    CTCLoss = "CTCLoss"
+    HingeEmbeddingLoss = "HingeEmbeddingLoss"
+    KLDivLoss = "KLDivLoss"
+    L1Loss = "L1Loss"
+    MSELoss = "MSELoss"
+    MarginRankingLoss = "MarginRankingLoss"
+    MultiLabelMarginLoss = "MultiLabelMarginLoss"
+    MultiLabelSoftMarginLoss = "MultiLabelSoftMarginLoss"
+    MultiMarginLoss = "MultiMarginLoss"
+    NLLLoss = "NLLLoss"
+    SmoothL1Loss = "SmoothL1Loss"
+    SoftMarginLoss = "SoftMarginLoss"
+    TripletMarginLoss = "TripletMarginLoss"
 
 
 class DiceLoss(torch.nn.Module):
@@ -47,6 +72,7 @@ class DiceLoss(torch.nn.Module):
             inputs (:obj:`torch.Tensor`) : A tensor of shape (B, C, ..). The model prediction on which the loss has to be computed.
             targets (:obj:`torch.Tensor`) : A tensor of shape (B, C, ..). The ground truth.
             ignore_index (int): An index to ignore for computation.
+            weights (:obj:`torch.Tensor`): A class weight vector of shape (C, ), one per class.
 
         Returns:
             :obj:`torch.Tensor`: The Sørensen–Dice loss for each class or reduced according to reduction method.
@@ -211,3 +237,67 @@ class WeightedCrossEntropyLoss(torch.nn.Module):
         flattened_inputs = flatten(inputs)
         class_weights = (flattened_inputs.shape[1] - flattened_inputs.sum(-1)) / flattened_inputs.sum(-1)
         return class_weights
+
+
+class AbstractCriterionFactory(metaclass=abc.ABCMeta):
+
+    @abc.abstractmethod
+    def create(self, criterion: Union[str, Enum], *args):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def register(self, criterion: str, creator):
+        raise NotImplementedError
+
+
+class CriterionFactory(AbstractCriterionFactory):
+    def __init__(self):
+        super(CriterionFactory, self).__init__()
+        self._criterion = {
+            "BCELoss": torch.nn.BCELoss,
+            "BCEWithLogtisLoss": torch.nn.BCEWithLogitsLoss,
+            "PoissonNLLLoss": torch.nn.PoissonNLLLoss,
+            "CosineEmbeddingLoss": torch.nn.CosineEmbeddingLoss,
+            "CrossEntropyLoss": torch.nn.CrossEntropyLoss,
+            "CTCLoss": torch.nn.CTCLoss,
+            "HingeEmbeddingLoss": torch.nn.HingeEmbeddingLoss,
+            "KLDivLoss": torch.nn.KLDivLoss,
+            "L1Loss": torch.nn.L1Loss,
+            "MSELoss": torch.nn.MSELoss,
+            "MarginRankingLoss": torch.nn.MarginRankingLoss,
+            "MultiLabelMarginLoss": torch.nn.MultiLabelMarginLoss,
+            "MultiLabelSoftMarginLoss": torch.nn.MultiLabelSoftMarginLoss,
+            "MultiMarginLoss": torch.nn.MultiMarginLoss,
+            "NLLLoss": torch.nn.NLLLoss,
+            "SmoothL1Loss": torch.nn.SmoothL1Loss,
+            "SoftMarginLoss": torch.nn.SoftMarginLoss,
+            "TripletMarginLoss": torch.nn.TripletMarginLoss,
+            "DiceLoss": DiceLoss
+        }
+
+    def create(self, criterion: Union[str, Criterion], *args, **kwargs):
+        """
+        Instanciate a loss function based on its name.
+
+        Args:
+           criterion (str_or_Enum): The criterion's name.
+           *args: Other arguments.
+
+        Returns:
+           :obj:`torch.nn.Module`: The criterion.
+
+        Raises:
+           KeyError: Raises KeyError Exception if Activation Function is not found.
+        """
+        criterion = self._criterion[criterion.name if isinstance(criterion, Enum) else criterion]
+        return criterion(*args, **kwargs)
+
+    def register(self, function: str, creator):
+        """
+        Add a new criterion.
+
+        Args:
+           function (str): Criterion's name.
+           creator (:obj:`torch.nn.Module`): A torch module object wrapping the new custom criterion function.
+        """
+        self._criterion[function] = creator

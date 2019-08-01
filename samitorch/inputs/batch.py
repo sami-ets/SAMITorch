@@ -13,36 +13,32 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #  ==============================================================================
+
 import torch
+
 from samitorch.inputs.sample import Sample
 from typing import List
 
 
 class Batch(object):
-    """
-    Represent a Batch during a training process.
-    """
 
     def __init__(self, samples: List[Sample]):
-        """
-        Batch initializer.
-
-        Args:
-            samples: A list of SAMITorch samples.
-        """
         self._samples = samples
-        self._x = torch.stack([sample.x for sample in samples])
-        self._y = torch.stack([sample.y for sample in samples])
-        self._dataset_id = torch.cat(
-            [torch.tensor([sample.dataset_id], dtype=torch.int8) if sample.dataset_id is not None
-             else torch.tensor([0], dtype=torch.int8) for sample in samples])
-        self._device = self._x.device
 
     @property
     def device(self):
         return self._device
 
     def to_device(self, device):
+        """
+        Transfer batch to a specified device.
+
+        Args:
+            device (:obj:`torch.device`): A Torch device to put the batch on.
+
+        Returns:
+            :obj:`samitorch.inputs.batch.Batch`: The updated Batch.
+        """
         self._x = self._x.to(device)
         self._y = self._y.to(device)
         self._dataset_id = self._dataset_id.to(device)
@@ -101,7 +97,7 @@ class Batch(object):
     def dataset_id(self, dataset_id):
         self._dataset_id = dataset_id
 
-    def update(self, batch, device):
+    def update(self, batch):
         """
         Update an existing batch from another Batch.
 
@@ -112,10 +108,10 @@ class Batch(object):
         Returns:
             :obj:`samitorch.inputs.batch.Batch`: The updated Batch.
         """
-        self._x = batch.x.to(device)
-        self._y = batch.y.to(device)
-        self._dataset_id = batch.dataset_id.to(device)
-        self._device = device
+        self._x = batch.x
+        self._y = batch.y
+        self._dataset_id = batch.dataset_id
+        self._device = batch.device
         return self
 
     def unpack(self) -> tuple:
@@ -140,3 +136,45 @@ class Batch(object):
                 parameter.
         """
         return cls(batch.samples)
+
+
+class ImageBatch(Batch):
+    """
+    Represent a Batch during a training process.
+    """
+
+    def __init__(self, samples: List[Sample]):
+        """
+        Batch initializer.
+
+        Args:
+            samples: A list of SAMITorch samples.
+        """
+        super(ImageBatch, self).__init__(samples)
+        self._x = torch.stack([sample.x for sample in samples])
+        self._y = torch.stack([sample.y for sample in samples])
+        self._dataset_id = torch.cat(
+            [torch.tensor([sample.dataset_id], dtype=torch.int8) if sample.dataset_id is not None
+             else torch.tensor([0], dtype=torch.long) for sample in samples])
+        self._device = self._x.device
+
+
+class PatchBatch(Batch):
+    """
+    Represent a Batch of Patches during a training process.
+    """
+
+    def __init__(self, samples: List[Sample]):
+        """
+        Batch initializer.
+
+        Args:
+            samples: A list of SAMITorch samples.
+        """
+        super(PatchBatch, self).__init__(samples)
+        self._x = torch.stack([sample.x.slice for sample in samples])
+        self._y = torch.stack([sample.y.slice for sample in samples])
+        self._dataset_id = torch.cat(
+            [torch.tensor([sample.dataset_id], dtype=torch.int8) if sample.dataset_id is not None
+             else torch.tensor([0], dtype=torch.long) for sample in samples])
+        self._device = self._x.device

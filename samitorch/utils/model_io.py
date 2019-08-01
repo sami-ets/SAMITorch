@@ -18,19 +18,23 @@ import torch.nn
 import torch.optim
 import logging
 
+from typing import Union, List
+
 from collections import OrderedDict
 
 logger = logging.getLogger(__name__)
 
 
-def save(file_name: str, model: torch.nn.Module = None, epoch_num: int = None, optimizers: dict = {}, **kwargs):
+def save(file_name: str, model: torch.nn.Module = None, epoch_num: int = None,
+         optimizer: Union[torch.optim.Optimizer, List[torch.optim.Optimizer]] = None,
+         **kwargs) -> None:
     """Save a checkpoint.
 
     Args:
         file_name (str): The file name to save a PyTorch model checkpoint.
         model (:obj:`torch.nn.Module`): A PyTorch model.
         epoch_num (int): Current epoch number.
-        optimizers (dict): dictionary containing all optimizers
+        optimizer (List of :obj:`torch.optim.Optimizer`):
     """
 
     if isinstance(model, torch.nn.DataParallel):
@@ -44,25 +48,30 @@ def save(file_name: str, model: torch.nn.Module = None, epoch_num: int = None, o
         model_state = {}
         logger.debug("Saving checkpoint without Model")
 
-    optim_state = OrderedDict()
-    for key, val in optimizers.items():
-        if isinstance(val, torch.optim.Optimizer):
-            optim_state[key] = val.state_dict()
-
-    if not optim_state:
+    optimizer_state = {}
+    if isinstance(optimizer, torch.optim.Optimizer):
+        optimizer_state = optimizer.state_dict()
+    elif isinstance(optimizer, List):
+        for i, optim in enumerate(optimizer):
+            optimizer_state = {}
+            if isinstance(optim, torch.optim.Optimizer):
+                optimizer_state["optimizer_{}".format(i)] = optim.state_dict()
+            else:
+                raise TypeError("Optimizer must be instance of torch.optim.Optimizer")
+    else:
         logger.debug("Saving checkpoint without Optimizer")
 
     if epoch_num is None:
         epoch_num = 0
 
-    state = {"optimizer": optim_state,
+    state = {"optimizer": optimizer_state,
              "model": model_state,
              "epoch": epoch_num}
 
     torch.save(state, file_name, **kwargs)
 
 
-def load(file_name: str, **kwargs):
+def load(file_name: str, **kwargs) -> OrderedDict:
     """Load a checkpoint.
 
     Args:

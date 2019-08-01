@@ -18,6 +18,7 @@ import abc
 import yaml
 import logging
 
+from samitorch.utils.utils import extract_file_paths
 from samitorch.configs.configurations import UNetModelConfiguration, ResNetModelConfiguration, ModelConfiguration
 
 
@@ -29,6 +30,13 @@ class AbstractConfigurationParserFactory(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def register(self, model_type: str, configuration_class):
+        raise NotImplementedError
+
+
+class AbstractSubjectLabelsParser(metaclass=abc.ABCMeta):
+
+    @abc.abstractmethod
+    def parse(self, source_path: str, target_path: str):
         raise NotImplementedError
 
 
@@ -73,3 +81,13 @@ class ModelConfigurationParserFactory(AbstractConfigurationParserFactory):
                 properties.
         """
         self._supported_model_configuration[model_type] = model_configuration_class
+
+
+class DefaultSegmentationSubjectsLabelsParser(object):
+    """
+    Common parser where subject images are in a source directory while segmentation images are in another one.
+    """
+
+    @staticmethod
+    def parse(source_dir: str, target_dir: str):
+        return extract_file_paths(source_dir), extract_file_paths(target_dir)

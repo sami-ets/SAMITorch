@@ -17,7 +17,7 @@
 from enum import Enum
 
 
-class ImageTypes(Enum):
+class ImageType(Enum):
     NIFTI = 'nifti'
     NRRD = 'nrrd'
     ALL = [NIFTI, NRRD]
@@ -28,8 +28,11 @@ class ImageTypes(Enum):
             if member.name == name:
                 return member
 
+    def __str__(self):
+        return self.value
 
-class Extensions(Enum):
+
+class Extension(Enum):
     NIFTI = ".nii"
     NRRD = ".nrrd"
 
@@ -39,8 +42,11 @@ class Extensions(Enum):
             if member.name == name:
                 return member
 
+    def __str__(self):
+        return self.value
 
-class Modalities(Enum):
+
+class Modality(Enum):
     DTI = 'DTI'
     T1 = 'T1'
     T2 = 'T2'
@@ -53,6 +59,9 @@ class Modalities(Enum):
         for member in cls:
             if member.name == name:
                 return member
+
+    def __str__(self):
+        return self.value
 
 
 class Image(object):
@@ -87,28 +96,36 @@ class Image(object):
 
     @staticmethod
     def is_nifti(file):
-        return Extensions.NIFTI.value in file
+        return Extension.NIFTI.value in file
 
     @staticmethod
     def is_nrrd(file):
-        return Extensions.NRRD.value in file
+        return Extension.NRRD.value in file
 
     @staticmethod
     def is_t1(file):
-        return Modalities.T1 in file
+        return Modality.T1 in file
 
     @staticmethod
     def is_dti(file):
-        return Modalities.DTI in file
+        return Modality.DTI in file
 
     @staticmethod
     def is_fa(file):
-        return Modalities.FA in file
+        return Modality.FA in file
 
     @staticmethod
     def is_md(file):
-        return Modalities.MD in file
+        return Modality.MD in file
+
+    @staticmethod
+    def is_(modality, file):
+        return modality in file and Image.is_nifti(file) and Image.is_unprocessed(file)
 
     @staticmethod
     def is_processed(file):
         return "Processed" in file
+
+    @staticmethod
+    def is_unprocessed(file):
+        return not Image.is_processed(file) and (Image.is_nifti(file) or Image.is_nrrd(file))

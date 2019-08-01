@@ -14,23 +14,24 @@
 # limitations under the License.
 # ==============================================================================
 
-import numpy as np
 import random
-import nibabel as nib
-import nrrd
 import math
-import torch
 import os
-import cv2
-
 from typing import Optional, Tuple, Union, List
 
+import numpy as np
+import nibabel as nib
+import nrrd
+import torch
+import cv2
 from nilearn.image.resampling import resample_to_img
-
 from sklearn.feature_extraction.image import extract_patches
 
-from samitorch.inputs.images import ImageTypes, Image, Extensions
+from samitorch.inputs.images import ImageType, Image, Extension
 from samitorch.inputs.sample import Sample
+from samitorch.inputs.patch import Patch
+
+CHANNEL, DEPTH, HEIGHT, WIDTH = 0, 1, 2, 3
 
 
 class ToNDTensor(object):
@@ -54,20 +55,35 @@ class ToNDTensor(object):
         """
         transformed_sample = Sample.from_sample(sample)
 
-        if not isinstance(sample.x, np.ndarray):
-            raise TypeError("Only {} are supported.".format(np.ndarray))
+        if isinstance(sample.x, Patch):
+            if isinstance(sample.x.slice, np.ndarray):
+                if sample.x.slice.ndim == 3:
+                    transformed_sample.x.slice = torch.Tensor(sample.x.slice.reshape(sample.x.slice.shape + (1,)))
+                elif sample.x.slice.ndim == 4:
+                    transformed_sample.x.slice = torch.Tensor(sample.x.slice)
+                else:
+                    raise NotImplementedError("Only 3D or 4D arrays are supported.")
+            else:
+                raise TypeError("Only {} are supported for Patch.".format(np.ndarray))
 
-        if sample.x.ndim == 3:
-            transformed_sample.x = torch.Tensor(sample.x.reshape(sample.x.shape + (1,)))
-        elif sample.x.ndim == 4:
-            transformed_sample.x = torch.Tensor(sample.x)
-        else:
-            raise NotImplementedError("Only 3D or 4D arrays are supported.")
+        elif isinstance(sample.x, np.ndarray):
+            if sample.x.ndim == 3:
+                transformed_sample.x = torch.Tensor(sample.x.reshape(sample.x.shape + (1,)))
+            elif sample.x.ndim == 4:
+                transformed_sample.x = torch.Tensor(sample.x)
+            else:
+                raise NotImplementedError("Only 3D or 4D arrays are supported.")
 
         if sample.is_labeled:
-            if not isinstance(sample.y, np.ndarray):
-                raise TypeError("Only {} are supported.".format(np.ndarray))
-            if sample.y.ndim == 1:
+            if isinstance(sample.x, Patch):
+                if isinstance(sample.y.slice, np.ndarray):
+                    if sample.y.slice.ndim == 3:
+                        transformed_sample.y.slice = torch.Tensor(sample.y.slice.reshape(sample.y.slice.shape + (1,)))
+                    elif sample.y.slice.ndim == 4:
+                        transformed_sample.y.slice = torch.Tensor(sample.y.slice)
+                    else:
+                        raise TypeError("Only {} are supported for Patch.".format(np.ndarray))
+            elif sample.y.ndim == 1:
                 transformed_sample.y = torch.Tensor(sample.y)
             elif sample.y.ndim == 3:
                 transformed_sample.y = torch.Tensor(sample.y.reshape(sample.x.shape + (1,)))
@@ -111,7 +127,7 @@ class ToNumpyArray(object):
             elif Image.is_nrrd(input):
                 nd_array, header = nrrd.read(input)
             else:
-                raise NotImplementedError("Only {} files are supported".format(ImageTypes.ALL.value))
+                raise NotImplementedError("Only {} files are supported".format(ImageType.ALL.value))
 
             nd_array = self._expand_dims(nd_array)
             nd_array = self._transpose(nd_array)
@@ -121,7 +137,7 @@ class ToNumpyArray(object):
             sample = input
             transformed_sample = Sample.from_sample(sample)
 
-            if isinstance(sample.x, list):
+            if isinstance(sample.x, list) or isinstance(sample.x, np.ndarray):
                 x = list()
                 for path in sample.x:
                     if not os.path.exists(path):
@@ -133,7 +149,7 @@ class ToNumpyArray(object):
                         nd_array, header = nrrd.read(path)
                     else:
                         raise NotImplementedError(
-                            "Only {} files are supported, but got {}".format(ImageTypes.ALL,
+                            "Only {} files are supported, but got {}".format(ImageType.ALL,
                                                                              os.path.splitext(sample.x)[1]))
                     if nd_array.ndim == 3:
                         nd_array = self._expand_dims(nd_array)
@@ -149,7 +165,7 @@ class ToNumpyArray(object):
                     x, header = nrrd.read(sample.x)
                 else:
                     raise NotImplementedError(
-                        "Only {} files are supported, but got {}".format(ImageTypes.ALL, os.path.splitext(sample.x)[1]))
+                        "Only {} files are supported, but got {}".format(ImageType.ALL, os.path.splitext(sample.x)[1]))
 
                 if x.ndim == 3:
                     x = self._expand_dims(x)
@@ -175,7 +191,7 @@ class ToNumpyArray(object):
 
                         else:
                             raise NotImplementedError(
-                                "Only {} files are supported, but got {}".format(ImageTypes.ALL.value,
+                                "Only {} files are supported, but got {}".format(ImageType.ALL.value,
                                                                                  os.path.splitext(sample.x)[1]))
                         if nd_array.ndim == 3:
                             nd_array = self._expand_dims(nd_array)
@@ -314,7 +330,7 @@ class PadToPatchShape(object):
                                                   constant_values=0)
 
             return sample.update(transformed_sample)
-        
+
 
 class ToNDArrayPatches(object):
     """
@@ -612,7 +628,7 @@ class LoadNifti(object):
             if Image.is_nifti(input):
                 return nib.load(input)
             else:
-                raise NotImplementedError("Only {} files are supported.".format(ImageTypes.NIFTI.name))
+                raise NotImplementedError("Only {} files are supported.".format(ImageType.NIFTI.name))
 
         elif isinstance(input, Sample):
             sample = input
@@ -624,7 +640,7 @@ class LoadNifti(object):
                 x = nib.load(sample.x)
             else:
                 raise NotImplementedError(
-                    "Only {} files are supported but got {}".format(ImageTypes.NIFTI.name,
+                    "Only {} files are supported but got {}".format(ImageType.NIFTI.name,
                                                                     os.path.splitext(sample.x)[1]))
             transformed_sample.x = x
 
@@ -838,7 +854,7 @@ class NiftiToDisk(object):
         elif isinstance(input, Sample):
             sample = input
             if isinstance(self._file_path, str) and not sample.is_labeled:
-                assert Extensions.NIFTI.value in self._file_path, "Bad file extension."
+                assert Extension.NIFTI.value in self._file_path, "Bad file extension."
                 nib.save(sample.x, self._file_path)
 
             elif isinstance(self._file_path, list) and sample.is_labeled:
@@ -888,7 +904,7 @@ class ApplyMask(object):
                     mask, header = nrrd.read(input_mask)
                 else:
                     raise NotImplementedError(
-                        "Only {} files are supported but got {}".format(ImageTypes.ALL,
+                        "Only {} files are supported but got {}".format(ImageType.ALL,
                                                                         os.path.splitext(input_mask)[1]))
 
             elif isinstance(input_mask, nib.Nifti1Image) or isinstance(input_mask, nib.Nifti2Image):
@@ -1224,25 +1240,22 @@ class CropToContent(object):
 
     def __call__(self, input: Union[np.ndarray, Sample]) -> Union[np.ndarray, Sample]:
         if isinstance(input, np.ndarray):
-
-            if not input.ndim is 4:
+            if input.ndim is not 4:
                 raise TypeError("Only 4D (CxDxHxW) ndarrays are supported")
 
-            d_min, d_max, h_min, h_max, w_min, w_max = self.extract_content_bounding_box_from(input)
+            c, d_min, d_max, h_min, h_max, w_min, w_max = self.extract_content_bounding_box_from(input)
 
-            return input[:, d_min:d_max, h_min:h_max, w_min:w_max]
+            return input[:, d_min:d_max, h_min:h_max, w_min:w_max] if input.ndim is 4 else \
+                input[d_min:d_max, h_min:h_max, w_min:w_max]
 
         elif isinstance(input, Sample):
             sample = input
             transformed_sample = Sample.from_sample(sample)
 
-            d_min, d_max, h_min, h_max, w_min, w_max = self.extract_content_bounding_box_from(sample.x)
+            c, d_min, d_max, h_min, h_max, w_min, w_max = self.extract_content_bounding_box_from(sample.x)
 
-            transformed_sample.x = sample.x[:, d_min:d_max, h_min:h_max,
-                                   w_min:w_max]
-
-            transformed_sample.y = sample.y[:, d_min:d_max, h_min:h_max,
-                                   w_min:w_max]
+            transformed_sample.x = sample.x[:, d_min:d_max, h_min:h_max, w_min:w_max]
+            transformed_sample.y = sample.y[:, d_min:d_max, h_min:h_max, w_min:w_max]
 
             return sample.update(transformed_sample)
 
@@ -1253,7 +1266,7 @@ class CropToContent(object):
         return self.__class__.__name__ + '()'
 
     @staticmethod
-    def extract_content_bounding_box_from(nd_array: np.ndarray) -> Tuple[int, int, int, int, int, int]:
+    def extract_content_bounding_box_from(nd_array: np.ndarray) -> Tuple[int, int, int, int, int, int, int]:
         """
         Computes the D, H, W min and max values defining the content bounding box.
 
@@ -1272,7 +1285,7 @@ class CropToContent(object):
         h_min, h_max = np.where(height_slices)[1][[0, -1]]
         w_min, w_max = np.where(width_slices)[1][[0, -1]]
 
-        return d_min, d_max, h_min, h_max, w_min, w_max
+        return nd_array.shape[CHANNEL], d_min, d_max, h_min, h_max, w_min, w_max
 
 
 class PadToShape(object):
