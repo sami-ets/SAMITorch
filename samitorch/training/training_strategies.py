@@ -88,7 +88,7 @@ class EarlyStoppingStrategy(TrainingStrategy):
     Early stops the training if validation loss doesn't improve after a given patience.
     """
 
-    def __init__(self, patience: int, trainer: Union[ModelTrainer, Trainer]):
+    def __init__(self, patience: int, trainer: Union[ModelTrainer, Trainer]) -> None:
         """Class constructor.
 
         Args:
@@ -100,7 +100,7 @@ class EarlyStoppingStrategy(TrainingStrategy):
         self._counter = 0
         self._best_score = None
 
-    def __call__(self, loss: float):
+    def __call__(self, loss: float) -> None:
         """Verify if given metric is better than older one. If so, increase a counter. When counter equals to
         desired patience, finalise the training process.
 
@@ -142,13 +142,13 @@ class MetricCheckpointStrategy(CheckpointStrategy):
     This strategy checks if the metric in parameter is best seen. If so, save the model. If not, simply pass.
     """
 
-    def __init__(self, trainer: Union[ModelTrainer, Trainer], model_name: str, path: str):
+    def __init__(self, trainer: Union[ModelTrainer, Trainer], model_name: str, path: str) -> None:
         super().__init__(trainer)
         self._best_score = None
         self._model_name = model_name
         self._path = path
 
-    def __call__(self, metric: float):
+    def __call__(self, metric: float) -> None:
         """Verify if the given metric in parameter is better than an older one. If so, save the model.
 
         Args:
@@ -173,13 +173,13 @@ class LossCheckpointStrategy(CheckpointStrategy):
     This strategy checks if the loss in parameter is best seen. If so, save the model. If not, simply pass.
     """
 
-    def __init__(self, trainer: Union[ModelTrainer, Trainer], model_name: str, path: str):
+    def __init__(self, trainer: Union[ModelTrainer, Trainer], model_name: str, path: str) -> None:
         super().__init__(trainer)
         self._best_score = None
         self._model_name = model_name
         self._path = path
 
-    def __call__(self, loss: float):
+    def __call__(self, loss: float) -> None:
         """Verify if the given loss in parameter is better than an older one. If so, save the model.
 
         Args:

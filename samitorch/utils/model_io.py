@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 def save(file_name: str, model: torch.nn.Module = None, epoch_num: int = None,
          optimizer: Union[torch.optim.Optimizer, List[torch.optim.Optimizer]] = None,
-         **kwargs):
+         **kwargs) -> None:
     """Save a checkpoint.
 
     Args:
@@ -71,7 +71,7 @@ def save(file_name: str, model: torch.nn.Module = None, epoch_num: int = None,
     torch.save(state, file_name, **kwargs)
 
 
-def load(file_name: str, **kwargs):
+def load(file_name: str, **kwargs) -> OrderedDict:
     """Load a checkpoint.
 
     Args:

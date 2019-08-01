@@ -38,7 +38,7 @@ class SliceBuilder(object):
         self._slices = None
 
     @property
-    def image_shape(self):
+    def image_shape(self) -> Tuple:
         """
         Input image's shape
 
@@ -48,7 +48,7 @@ class SliceBuilder(object):
         return self._image_shape
 
     @property
-    def patch_size(self):
+    def patch_size(self) -> Tuple:
         """
         Patch size.
 
@@ -58,7 +58,7 @@ class SliceBuilder(object):
         return self._patch_size
 
     @property
-    def step(self):
+    def step(self) -> Tuple:
         """
         Step between two patches.
 
@@ -80,11 +80,6 @@ class SliceBuilder(object):
     def build_slices(self) -> list:
         """
         Iterates over a given n-dim dataset patch-by-patch with a given step and builds an array of slice positions.
-
-        Args:
-            image_shape (tuple of int): The shape of a dataset image.
-            patch_size(tuple of int): The size of the patch to produce.
-            step (tuple of int): The size of the stride between patches.
 
         Returns:
             list: list of slices.
