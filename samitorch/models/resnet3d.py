@@ -24,7 +24,7 @@ from samitorch.configs.configurations import ModelConfiguration, ResNetModelConf
 from samitorch.models.layers import NormalizationLayers, ActivationLayers
 
 
-class ResNetModels(Enum):
+class ResNetModel(Enum):
     ResNet18 = "ResNet18"
     ResNet34 = "ResNet34"
     ResNet50 = "ResNet50"
@@ -35,7 +35,7 @@ class ResNetModels(Enum):
 class AbstractModelFactory(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def create_model(self, name: Union[str, ResNetModels], config: ModelConfiguration):
+    def create_model(self, name: Union[str, ResNetModel], config: ModelConfiguration):
         pass
 
     @abc.abstractmethod
@@ -144,15 +144,15 @@ class BasicBlock(torch.nn.Module):
         self._normalization_layer_factory = NormalizationLayerFactory()
 
         if norm_num_groups is not None:
-            self._norm1 = self._normalization_layer_factory.create_layer(NormalizationLayers.GroupNorm,
-                                                                         norm_num_groups, out_planes)
-            self._norm2 = self._normalization_layer_factory.create_layer(NormalizationLayers.GroupNorm,
-                                                                         norm_num_groups, out_planes)
+            self._norm1 = self._normalization_layer_factory.create(NormalizationLayers.GroupNorm,
+                                                                   norm_num_groups, out_planes)
+            self._norm2 = self._normalization_layer_factory.create(NormalizationLayers.GroupNorm,
+                                                                   norm_num_groups, out_planes)
         else:
-            self._norm1 = self._normalization_layer_factory.create_layer(NormalizationLayers.BatchNormd3d,
-                                                                         out_planes)
-            self._norm2 = self._normalization_layer_factory.create_layer(NormalizationLayers.BatchNormd3d,
-                                                                         out_planes)
+            self._norm1 = self._normalization_layer_factory.create(NormalizationLayers.BatchNormd3d,
+                                                                   out_planes)
+            self._norm2 = self._normalization_layer_factory.create(NormalizationLayers.BatchNormd3d,
+                                                                   out_planes)
 
         if groups != 1 or base_width != 64:
             raise ValueError('BasicBlock only supports groups=1 and base_width=64')
@@ -162,9 +162,9 @@ class BasicBlock(torch.nn.Module):
         self._conv1 = conv3x3(in_planes, out_planes, stride)
 
         if activation == ActivationLayers.PReLU.name:
-            self._activation = self._activation_layer_factory.create_layer(ActivationLayers.PReLU)
+            self._activation = self._activation_layer_factory.create(ActivationLayers.PReLU)
         else:
-            self._activation = self._activation_layer_factory.create_layer(ActivationLayers.ReLU, inplace=True)
+            self._activation = self._activation_layer_factory.create(ActivationLayers.ReLU, inplace=True)
 
         self._conv2 = conv3x3(out_planes, out_planes)
 
@@ -221,17 +221,17 @@ class Bottleneck(torch.nn.Module):
         # Both self.conv2 and self.downsample layers downsample the input when stride != 1
 
         if norm_num_groups is not None:
-            self._norm1 = self._normalization_layer_factory.create_layer(NormalizationLayers.GroupNorm, norm_num_groups,
-                                                                         width)
-            self._norm2 = self._normalization_layer_factory.create_layer(NormalizationLayers.GroupNorm, norm_num_groups,
-                                                                         width)
-            self._norm3 = self._normalization_layer_factory.create_layer(NormalizationLayers.GroupNorm, norm_num_groups,
-                                                                         out_planes * self.expansion)
+            self._norm1 = self._normalization_layer_factory.create(NormalizationLayers.GroupNorm, norm_num_groups,
+                                                                   width)
+            self._norm2 = self._normalization_layer_factory.create(NormalizationLayers.GroupNorm, norm_num_groups,
+                                                                   width)
+            self._norm3 = self._normalization_layer_factory.create(NormalizationLayers.GroupNorm, norm_num_groups,
+                                                                   out_planes * self.expansion)
         else:
-            self._norm1 = self._normalization_layer_factory.create_layer(NormalizationLayers.BatchNormd3d, width)
-            self._norm2 = self._normalization_layer_factory.create_layer(NormalizationLayers.BatchNormd3d, width)
-            self._norm3 = self._normalization_layer_factory.create_layer(NormalizationLayers.BatchNormd3d,
-                                                                         out_planes * self.expansion)
+            self._norm1 = self._normalization_layer_factory.create(NormalizationLayers.BatchNormd3d, width)
+            self._norm2 = self._normalization_layer_factory.create(NormalizationLayers.BatchNormd3d, width)
+            self._norm3 = self._normalization_layer_factory.create(NormalizationLayers.BatchNormd3d,
+                                                                   out_planes * self.expansion)
 
         self._conv1 = conv1x1(in_planes, width)
 
@@ -240,9 +240,9 @@ class Bottleneck(torch.nn.Module):
         self._conv3 = conv1x1(width, out_planes * self.expansion)
 
         if activation == ActivationLayers.PReLU.name:
-            self._activation = self._activation_layer_factory.create_layer(ActivationLayers.PReLU)
+            self._activation = self._activation_layer_factory.create(ActivationLayers.PReLU)
         else:
-            self._activation = self._activation_layer_factory.create_layer(ActivationLayers.ReLU, inplace=True)
+            self._activation = self._activation_layer_factory.create(ActivationLayers.ReLU, inplace=True)
 
         self._downsample = downsample
         self._stride = stride
@@ -325,9 +325,9 @@ class ResNet3D(torch.nn.Module):
             self._norm1 = norm_layer(self._inplanes)
 
         if self._activation_fn == ActivationLayers.PReLU.name:
-            self._activation = self._activation_layer_factory.create_layer(self._activation_fn)
+            self._activation = self._activation_layer_factory.create(self._activation_fn)
         else:
-            self._activation = self._activation_layer_factory.create_layer(self._activation_fn, inplace=True)
+            self._activation = self._activation_layer_factory.create(self._activation_fn, inplace=True)
 
         self._maxpool = torch.nn.MaxPool3d(kernel_size=3, stride=2, padding=1)
         self._layer1 = self._make_layer(block, 64, n_blocks_per_layer[0])

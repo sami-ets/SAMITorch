@@ -21,7 +21,7 @@ from enum import Enum
 from hamcrest import *
 
 from samitorch.optimizers.optimizers import OptimizerFactory, Optimizer
-from samitorch.models.unet3d import UNetModels, UNet3DModelFactory
+from samitorch.models.unet3d import UNetModel, UNet3DModelFactory
 from samitorch.parsers.parsers import ModelConfigurationParserFactory
 
 
@@ -38,6 +38,6 @@ class ModelFactoryTest(unittest.TestCase):
         self.unet_config = self.configurationParserFactory.parse(self.UNET_CONFIGURATION_PATH)
 
     def test_should_instantiate_optimizer(self):
-        model = UNet3DModelFactory().create_model(UNetModels.UNet3D, self.unet_config)
-        optim = self.optimizer_factory.create_optimizer(Optimizer.SGD, model.parameters(), lr=0.01)
+        model = UNet3DModelFactory().create_model(UNetModel.UNet3D, self.unet_config)
+        optim = self.optimizer_factory.create(Optimizer.SGD, model.parameters(), lr=0.01)
         assert_that(optim, is_not(None))

@@ -18,13 +18,13 @@ from enum import Enum
 from typing import Tuple, Union
 
 import ignite
-from ignite.metrics import Metric, ConfusionMatrix
+from ignite.metrics import ConfusionMatrix
 import torch
 
 EPSILON = 1e-15
 
 
-class Metrics(Enum):
+class Metric(Enum):
     Dice = "Dice"
     GeneralizedDice = "GeneralizeDice"
     Accuracy = "Accuracy"
@@ -39,7 +39,7 @@ class Metrics(Enum):
     mIoU = "mIoU"
 
 
-class Dice(Metric):
+class Dice(ignite.metrics.Metric):
     """
     The Dice Metric.
     """
@@ -101,7 +101,7 @@ class Dice(Metric):
         self._cm.update(output)
 
 
-class GeneralizedDice(Metric):
+class GeneralizedDice(ignite.metrics.Metric):
     """
     The Generalized Dice Metric.
     """
@@ -298,7 +298,7 @@ def validate_weights_size(weights_size: int, num_classes: int) -> None:
 class AbstractMetricFactory(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def create_metric(self, function: Union[str, Metrics], *args, **kwargs):
+    def create_metric(self, function: Union[str, Metric], *args, **kwargs):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -323,7 +323,7 @@ class MetricsFactory(AbstractMetricFactory):
             "Dice": Dice
         }
 
-    def create_metric(self, metric: Union[str, Metrics], *args, **kwargs):
+    def create_metric(self, metric: Union[str, Metric], *args, **kwargs):
         """
         Instanciate an optimizer based on its name.
 
@@ -337,7 +337,7 @@ class MetricsFactory(AbstractMetricFactory):
         Raises:
             KeyError: Raises KeyError Exception if Activation Function is not found.
         """
-        metric = self._metrics[metric.name if isinstance(metric, Metrics) else metric]
+        metric = self._metrics[metric.name if isinstance(metric, Metric) else metric]
         return metric(*args, **kwargs)
 
     def register(self, metric: str, creator):

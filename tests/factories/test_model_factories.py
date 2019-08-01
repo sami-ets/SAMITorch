@@ -22,8 +22,8 @@ from hamcrest import *
 from samitorch.models.unet3d import UNet3DModelFactory
 from samitorch.models.resnet3d import ResNet3DModelFactory
 from samitorch.parsers.parsers import ModelConfigurationParserFactory
-from samitorch.models.resnet3d import ResNetModels
-from samitorch.models.unet3d import UNetModels
+from samitorch.models.resnet3d import ResNetModel
+from samitorch.models.unet3d import UNetModel
 
 
 class IncorrectModels(Enum):
@@ -31,9 +31,9 @@ class IncorrectModels(Enum):
 
 
 class ModelFactoryTest(unittest.TestCase):
-    RESNET_MODEL = ResNetModels.ResNet18
+    RESNET_MODEL = ResNetModel.ResNet18
     RESNET_CONFIGURATION_PATH = "samitorch/configs/resnet3d.yaml"
-    UNET_MODEL = UNetModels.UNet3D
+    UNET_MODEL = UNetModel.UNet3D
     UNET_CONFIGURATION_PATH = "samitorch/configs/unet3d.yaml"
     UNKNOWN_MODEL = IncorrectModels.Incorrect
     INVALID_CONFIG_PATH = "samitorch/configs/invalid.yaml"

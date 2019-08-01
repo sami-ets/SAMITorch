@@ -40,7 +40,7 @@ class Optimizer(Enum):
 class AbstractOptimizerFactory(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def create_optimizer(self, function: Union[str, Optimizer], *args, **kwargs):
+    def create(self, function: Union[str, Optimizer], *args, **kwargs):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -65,7 +65,7 @@ class OptimizerFactory(AbstractOptimizerFactory):
             "ASGD": torch.optim.ASGD
         }
 
-    def create_optimizer(self, function: Union[str, Optimizer], *args, **kwargs):
+    def create(self, function: Union[str, Optimizer], *args, **kwargs):
         """
         Instanciate an optimizer based on its name.
 

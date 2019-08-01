@@ -38,16 +38,16 @@ class PaddingFactoryTest(unittest.TestCase):
         self.factory = PaddingLayerFactory()
 
     def test_should_instantiate_padding_layer(self):
-        padding_layer = self.factory.create_layer(self.CORRECT_PADDING_STRATEGY, dims=(1, 1, 1, 1, 1, 1))
+        padding_layer = self.factory.create(self.CORRECT_PADDING_STRATEGY, dims=(1, 1, 1, 1, 1, 1))
         assert padding_layer is not None
 
     def test_should_instantiate_correct_padding_layer(self):
-        padding_layer = self.factory.create_layer(self.CORRECT_PADDING_STRATEGY, dims=(1, 1, 1, 1, 1, 1))
+        padding_layer = self.factory.create(self.CORRECT_PADDING_STRATEGY, dims=(1, 1, 1, 1, 1, 1))
         assert_that(padding_layer, instance_of(torch.nn.ReplicationPad3d))
 
     def test_should_raise_key_error_exception_with_unknown_padding_strategy(self):
         assert_that(
-            calling(self.factory.create_layer).with_args(self.INCORRECT_PADDING_STRATEGY, dims=(1, 1, 1, 1, 1, 1)),
+            calling(self.factory.create).with_args(self.INCORRECT_PADDING_STRATEGY, dims=(1, 1, 1, 1, 1, 1)),
             raises(KeyError))
 
     def test_registering_new_padding_strategy_should_append_to_supported_strategies(self):
@@ -64,16 +64,16 @@ class ActivationFunctionFactory(unittest.TestCase):
         self.factory = ActivationLayerFactory()
 
     def test_should_instantiate_activation_layer(self):
-        activation_function = self.factory.create_layer(self.CORRECT_ACTIVATION_FUNCTION, inplace=True)
+        activation_function = self.factory.create(self.CORRECT_ACTIVATION_FUNCTION, inplace=True)
         assert activation_function is not None
 
     def test_should_instantiate_correct_activation_layer(self):
-        activation_function = self.factory.create_layer(self.CORRECT_ACTIVATION_FUNCTION, inplace=True)
+        activation_function = self.factory.create(self.CORRECT_ACTIVATION_FUNCTION, inplace=True)
         assert_that(activation_function, instance_of(torch.nn.ReLU))
 
     def test_should_raise_key_error_exception_with_unknown_activation_function(self):
         assert_that(
-            calling(self.factory.create_layer).with_args(IncorrectLayers.Incorrect),
+            calling(self.factory.create).with_args(IncorrectLayers.Incorrect),
             raises(KeyError))
 
     def test_registering_new_activation_function_should_append_to_supported_function(self):
@@ -92,20 +92,20 @@ class PoolingFactoryTest(unittest.TestCase):
         self.factory = PoolingLayerFactory()
 
     def test_should_instantiate_pooling_layer(self):
-        pooling_layer = self.factory.create_layer(self.CORRECT_POOLING_STRATEGY, kernel_size=self.KERNEL_SIZE)
+        pooling_layer = self.factory.create(self.CORRECT_POOLING_STRATEGY, kernel_size=self.KERNEL_SIZE)
         assert pooling_layer is not None
 
     def test_should_instantiate_correct_pooling_layer(self):
-        pooling_layer = self.factory.create_layer(self.CORRECT_POOLING_STRATEGY, kernel_size=self.KERNEL_SIZE)
+        pooling_layer = self.factory.create(self.CORRECT_POOLING_STRATEGY, kernel_size=self.KERNEL_SIZE)
         assert_that(pooling_layer, instance_of(torch.nn.MaxPool3d))
 
     def test_should_raise_key_error_exception_with_unknown_pooling_strategy(self):
         assert_that(
-            calling(self.factory.create_layer).with_args(self.INCORRECT_POOLING_STRATEGY, kernel_size=self.KERNEL_SIZE),
+            calling(self.factory.create).with_args(self.INCORRECT_POOLING_STRATEGY, kernel_size=self.KERNEL_SIZE),
             raises(KeyError))
 
     def test_should_instantiate_Conv3d_pooling_layer(self):
-        pooling_layer = self.factory.create_layer(PoolingLayers.Conv3d, 2, 2, 16, 32)
+        pooling_layer = self.factory.create(PoolingLayers.Conv3d, 2, 2, 16, 32)
         assert_that(pooling_layer, instance_of(torch.nn.Conv3d))
         assert_that(pooling_layer, has_property("stride", (2, 2, 2)))
         assert_that(pooling_layer, has_property("in_channels", 16))
@@ -129,23 +129,23 @@ class NormalizationFactoryTest(unittest.TestCase):
         self.factory = NormalizationLayerFactory()
 
     def test_should_instantiate_normalization_layer(self):
-        normalization_layer = self.factory.create_layer(self.GROUP_NORM, self.NUM_GROUPS,
-                                                        self.NUM_FEATURES)
+        normalization_layer = self.factory.create(self.GROUP_NORM, self.NUM_GROUPS,
+                                                  self.NUM_FEATURES)
         assert normalization_layer is not None
 
     def test_should_instantiate_group_normalization(self):
-        normalization_layer = self.factory.create_layer(self.GROUP_NORM, self.NUM_GROUPS,
-                                                        self.NUM_FEATURES)
+        normalization_layer = self.factory.create(self.GROUP_NORM, self.NUM_GROUPS,
+                                                  self.NUM_FEATURES)
         assert_that(normalization_layer, instance_of(torch.nn.GroupNorm))
 
     def test_should_instantiate_batch_normalization(self):
-        normalization_layer = self.factory.create_layer(self.BATCH_NORM, self.NUM_FEATURES)
+        normalization_layer = self.factory.create(self.BATCH_NORM, self.NUM_FEATURES)
         assert_that(normalization_layer, instance_of(torch.nn.BatchNorm3d))
         assert_that(normalization_layer, has_property("num_features", 256))
 
     def test_should_raise_key_error_exception_with_unknown_normalization_strategy(self):
         assert_that(
-            calling(self.factory.create_layer).with_args(self.INCORRECT_NORM_LAYER, self.NUM_FEATURES),
+            calling(self.factory.create).with_args(self.INCORRECT_NORM_LAYER, self.NUM_FEATURES),
             raises(KeyError))
 
     def test_registering_new_padding_strategy_should_append_to_supported_strategies(self):

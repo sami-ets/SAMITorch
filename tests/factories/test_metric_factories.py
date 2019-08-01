@@ -20,8 +20,8 @@ from enum import Enum
 
 from hamcrest import *
 
-from samitorch.metrics.metrics import MetricsFactory
-from samitorch.metrics.metrics import Metrics
+from samitorch.metrics.metric import MetricsFactory
+from samitorch.metrics.metric import Metric
 
 
 class IncorrectMetrics(Enum):
@@ -34,5 +34,5 @@ class ModelFactoryTest(unittest.TestCase):
         self.metric_factory = MetricsFactory()
 
     def test_should_instantiate_dice_metric(self):
-        metric = self.metric_factory.create_metric(Metrics.Dice, num_classes=3)
+        metric = self.metric_factory.create_metric(Metric.Dice, num_classes=3)
         assert_that(metric, is_not(None))

@@ -45,7 +45,7 @@ class NormalizationLayers(Enum):
 class AbstractLayerFactory(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def create_layer(self, *args):
+    def create(self, *args):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -67,7 +67,7 @@ class ActivationLayerFactory(AbstractLayerFactory):
             'PReLU': torch.nn.PReLU
         }
 
-    def create_layer(self, function: Union[str, ActivationLayers], *args, **kwargs):
+    def create(self, function: Union[str, ActivationLayers], *args, **kwargs):
         """
         Instantiate an activation layer based on its name.
 
@@ -107,7 +107,7 @@ class PaddingLayerFactory(AbstractLayerFactory):
             "ReplicationPad3d": torch.nn.ReplicationPad3d
         }
 
-    def create_layer(self, strategy: Union[str, PaddingLayers], dims: tuple, *args, **kwargs):
+    def create(self, strategy: Union[str, PaddingLayers], dims: tuple, *args, **kwargs):
         """
         Instantiate a new padding layer.
 
@@ -149,8 +149,8 @@ class PoolingLayerFactory(AbstractLayerFactory):
             "Conv3d": torch.nn.Conv3d
         }
 
-    def create_layer(self, strategy: Union[str, PoolingLayers], kernel_size: int, stride: int = None, *args,
-                     **kwargs):
+    def create(self, strategy: Union[str, PoolingLayers], kernel_size: int, stride: int = None, *args,
+               **kwargs):
         """
         Instantiate a new pooling layer with mandatory parameters.
 
@@ -197,7 +197,7 @@ class NormalizationLayerFactory(AbstractLayerFactory):
             "BatchNorm3d": torch.nn.BatchNorm3d
         }
 
-    def create_layer(self, strategy: Union[str, NormalizationLayers], *args, **kwargs):
+    def create(self, strategy: Union[str, NormalizationLayers], *args, **kwargs):
         """
         Instantiate a new normalization layer.
 

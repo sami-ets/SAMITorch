@@ -21,7 +21,7 @@ import numpy as np
 from samitorch.parsers.parsers import ModelConfigurationParserFactory
 from samitorch.models.unet3d import UNet3D, SingleConv, DoubleConv, Encoder, Decoder
 from tests.models.model_helper_test import TestModelHelper
-from samitorch.models.unet3d import UNetModels, UNet3DModelFactory
+from samitorch.models.unet3d import UNetModel, UNet3DModelFactory
 from samitorch.models.layers import ActivationLayers
 
 
@@ -40,7 +40,7 @@ class Unet3DTest(unittest.TestCase):
         assert isinstance(model, UNet3D)
 
     def test_model_should_update_vars(self):
-        model = self.factory.create_model(UNetModels.UNet3D, self.config)
+        model = self.factory.create_model(UNetModel.UNet3D, self.config)
         helper = TestModelHelper(model, torch.nn.BCEWithLogitsLoss(),
                                  torch.optim.SGD(model.parameters(), lr=0.01))
         helper.assert_vars_change((self.input, self.y))
@@ -49,7 +49,7 @@ class Unet3DTest(unittest.TestCase):
 
     def test_model_output_should_have_same_dimensions_than_input(self):
         input_dim = np.array(list(self.input.size()))
-        model = self.factory.create_model(UNetModels.UNet3D, self.config)
+        model = self.factory.create_model(UNetModel.UNet3D, self.config)
         output = model.forward(self.input)
         output_dim = np.array(list(output.size()))
         np.testing.assert_array_equal(input_dim, output_dim)

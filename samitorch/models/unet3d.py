@@ -26,14 +26,14 @@ from samitorch.models.layers import ActivationLayerFactory, PaddingLayerFactory,
 from samitorch.models.layers import ActivationLayers, PaddingLayers, NormalizationLayers
 
 
-class UNetModels(Enum):
+class UNetModel(Enum):
     UNet3D = "UNet3D"
 
 
 class AbstractModelFactory(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def create_model(self, name: Union[str, UNetModels], config: ModelConfiguration):
+    def create_model(self, name: Union[str, UNetModel], config: ModelConfiguration):
         pass
 
     @abc.abstractmethod
@@ -171,7 +171,7 @@ class SingleConv(torch.nn.Module):
         self._normalization_factory = NormalizationLayerFactory()
 
         if padding is not None:
-            self._padding = self._padding_factory.create_layer(PaddingLayers.ReplicationPad3d, padding)
+            self._padding = self._padding_factory.create(PaddingLayers.ReplicationPad3d, padding)
             self._conv = torch.nn.Conv3d(in_channels, out_channels, kernel_size)
         else:
             self._padding = None
@@ -179,16 +179,16 @@ class SingleConv(torch.nn.Module):
 
         if num_groups is not None:
             assert isinstance(num_groups, int)
-            self._norm = self._normalization_factory.create_layer(NormalizationLayers.GroupNorm, num_groups,
-                                                                  out_channels)
+            self._norm = self._normalization_factory.create(NormalizationLayers.GroupNorm, num_groups,
+                                                            out_channels)
         else:
-            self._norm = self._normalization_factory.create_layer(NormalizationLayers.BatchNorm3d, out_channels)
+            self._norm = self._normalization_factory.create(NormalizationLayers.BatchNorm3d, out_channels)
 
         if activation is not None:
             if activation == "PReLU":
-                self._activation = self._activation_function_factory.create_layer(activation)
+                self._activation = self._activation_function_factory.create(activation)
             else:
-                self._activation = self._activation_function_factory.create_layer(activation, inplace=True)
+                self._activation = self._activation_function_factory.create(activation, inplace=True)
         else:
             self._activation = None
 
@@ -282,7 +282,7 @@ class Encoder(torch.nn.Module):
         self._pooling_factory = PoolingLayerFactory()
 
         if apply_pooling:
-            self._pooling = self._pooling_factory.create_layer(config.pooling_type, config.pool_kernel_size)
+            self._pooling = self._pooling_factory.create(config.pooling_type, config.pool_kernel_size)
         else:
             self._pooling = None
 

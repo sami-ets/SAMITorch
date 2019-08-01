@@ -22,7 +22,7 @@ from ignite.metrics import MetricsLambda
 import torch
 import torch.nn
 
-from metrics.metrics import validate_ignore_index
+from metrics.metric import validate_ignore_index
 from utils.utils import flatten
 
 SUPPORTED_REDUCTIONS = [None, "mean"]
