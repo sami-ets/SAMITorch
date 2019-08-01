@@ -161,7 +161,7 @@ class ImageBatch(Batch):
 
 class PatchBatch(Batch):
     """
-    Represent a Batch during a training process.
+    Represent a Batch of Patches during a training process.
     """
 
     def __init__(self, samples: List[Sample]):
