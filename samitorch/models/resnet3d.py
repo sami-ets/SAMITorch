@@ -13,15 +13,78 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import abc
+from typing import Union
+from enum import Enum
 
 import torch
 
-from samitorch.factories.enums import *
-from samitorch.factories.factories import ActivationLayerFactory, NormalizationLayerFactory
-from samitorch.configs.configurations import ModelConfiguration
+from samitorch.models.layers import ActivationLayerFactory, NormalizationLayerFactory
+from samitorch.configs.configurations import ModelConfiguration, ResNetModelConfiguration
+from samitorch.models.layers import NormalizationLayers, ActivationLayers
 
 
-def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1):
+class ResNetModels(Enum):
+    ResNet18 = "ResNet18"
+    ResNet34 = "ResNet34"
+    ResNet50 = "ResNet50"
+    ResNet101 = "ResNet101"
+    ResNet152 = "ResNet152"
+
+
+class AbstractModelFactory(metaclass=abc.ABCMeta):
+
+    @abc.abstractmethod
+    def create_model(self, name: Union[str, ResNetModels], config: ModelConfiguration):
+        pass
+
+    @abc.abstractmethod
+    def register(self, model: str, creator):
+        raise NotImplementedError
+
+
+class ResNet3DModelFactory(AbstractModelFactory):
+    """
+    Object to instantiate a model.
+    """
+
+    def __init__(self):
+        self._models = {
+            'ResNet18': ResNet18,
+            'ResNet34': ResNet34,
+            'ResNet50': ResNet50,
+            'ResNet101': ResNet101,
+            'ResNet152': ResNet152,
+        }
+
+    def create_model(self, model_name: Union[str, Enum], config: ModelConfiguration) -> torch.nn.Module:
+        """
+        Instantiate a new support model.
+
+        Args:
+            model_name (str): The model's name (e.g. 'UNet3D').
+            config (:obj:`samitorch.configs.model_configuration.ModelConfiguration`): An object containing model's parameters.
+
+        Returns:
+            :obj:`torch.nn.Module`: A PyTorch model.
+        """
+        model = self._models.get(model_name.name if isinstance(model_name, Enum) else model_name)
+        if not model:
+            raise ValueError("Model {} is not supported.".format(model_name))
+        return model(config)
+
+    def register(self, model: str, creator):
+        """
+        Add a new model.
+
+        Args:
+          model (str): Model's name.
+          creator: A torch module object wrapping the new custom model.
+        """
+        self._models[model] = creator
+
+
+def conv3x3(in_planes: int, out_planes: int, stride: int = 1, groups: int = 1, dilation: int = 1):
     """
     3x3 convolution with zero padding
 
@@ -39,7 +102,7 @@ def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1):
                            padding=dilation, groups=groups, bias=False, dilation=dilation)
 
 
-def conv1x1(in_planes, out_planes, stride=1):
+def conv1x1(in_planes: int, out_planes: int, stride: int = 1):
     """
     1x1 convolution without padding.
 
@@ -61,8 +124,8 @@ class BasicBlock(torch.nn.Module):
     """
     expansion = 1
 
-    def __init__(self, in_planes, out_planes, stride=1, downsample=None, groups=1,
-                 base_width=64, dilation=1, activation="ReLU", norm_num_groups=8):
+    def __init__(self, in_planes, out_planes, stride=1, downsample=None, groups=1, base_width=64, dilation=1,
+                 activation="ReLU", norm_num_groups=8):
         """
         Basic block initializer.
         Args:
@@ -133,8 +196,8 @@ class Bottleneck(torch.nn.Module):
     """
     expansion = 4
 
-    def __init__(self, in_planes, out_planes, stride=1, downsample=None, groups=1,
-                 base_width=64, dilation=1, activation="ReLU", norm_num_groups=8):
+    def __init__(self, in_planes, out_planes, stride=1, downsample=None, groups=1, base_width=64, dilation=1,
+                 activation="ReLU", norm_num_groups=8):
         """
         Bottleneck Block initializer.
 
@@ -217,13 +280,13 @@ class ResNet3D(torch.nn.Module):
     :cited:
     """
 
-    def __init__(self, block: torch.nn.Module, n_blocks_per_layer: list, config: ModelConfiguration):
+    def __init__(self, block: torch.nn.Module, n_blocks_per_layer: list, config: ResNetModelConfiguration):
         """
         ResNet 3D model initializer.
         Args:
             block (:obj:`torch.nn.Module`): The desired block type (Basic or Bottleneck).
             n_blocks_per_layer (list):
-            config:
+            config (:obj:`samitorch.configs.model_configuration.ModelConfiguration`): An object containing model's parameters.
         """
         super(ResNet3D, self).__init__()
         self._activation_layer_factory = ActivationLayerFactory()

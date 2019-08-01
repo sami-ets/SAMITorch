@@ -14,11 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-"""A base initializer class.
-
-Declare methods an Initializer must have.
-"""
-
 import abc
 
 

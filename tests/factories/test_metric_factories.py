@@ -20,8 +20,8 @@ from enum import Enum
 
 from hamcrest import *
 
-from samitorch.factories.factories import MetricsFactory
-from samitorch.factories.enums import Metrics
+from samitorch.metrics.metrics import MetricsFactory
+from samitorch.metrics.metrics import Metrics
 
 
 class IncorrectMetrics(Enum):

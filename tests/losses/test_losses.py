@@ -21,7 +21,7 @@ import numpy as np
 import torch
 from hamcrest import *
 
-from samitorch.losses.losses import DiceLoss, GeneralizedDiceLoss, WeightedCrossEntropyLoss
+from criterions.criterions import DiceLoss, GeneralizedDiceLoss, WeightedCrossEntropyLoss
 from samitorch.utils.utils import to_onehot
 
 

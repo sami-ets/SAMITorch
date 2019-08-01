@@ -18,12 +18,11 @@ import torch
 import unittest
 import numpy as np
 
-from samitorch.factories.parsers import ModelConfigurationParserFactory
+from samitorch.parsers.parsers import ModelConfigurationParserFactory
 from samitorch.models.unet3d import UNet3D, SingleConv, DoubleConv, Encoder, Decoder
 from tests.models.model_helper_test import TestModelHelper
-from samitorch.factories.enums import UNetModels, ActivationLayers
-
-from samitorch.factories.factories import ModelFactory
+from samitorch.models.unet3d import UNetModels, UNet3DModelFactory
+from samitorch.models.layers import ActivationLayers
 
 
 class Unet3DTest(unittest.TestCase):
@@ -32,7 +31,7 @@ class Unet3DTest(unittest.TestCase):
     def setUp(self):
         self.configurationParserFactory = ModelConfigurationParserFactory()
         self.config = self.configurationParserFactory.parse(self.CONFIGURATION_PATH)
-        self.factory = ModelFactory()
+        self.factory = UNet3DModelFactory()
         self.input = torch.rand((2, 1, 32, 32, 32))
         self.y = torch.randint(low=0, high=2, size=(2, 1, 32, 32, 32)).float()
 

@@ -17,13 +17,14 @@
 import unittest
 import os
 import re
-import torch
 
+import torch
 from hamcrest import *
 
-from samitorch.factories.parsers import ModelConfigurationParserFactory
-from samitorch.factories.factories import ModelFactory, CriterionFactory, OptimizerFactory
-from samitorch.factories.enums import ResNetModels, Criterions, Optimizers
+from samitorch.parsers.parsers import ModelConfigurationParserFactory
+from samitorch.optimizers.optimizers import OptimizerFactory, Optimizer
+from samitorch.models.resnet3d import ResNet3DModelFactory, ResNetModels
+from samitorch.criterions.criterions import Criterion, CriterionFactory
 from samitorch.configs.configurations import ModelTrainerConfiguration
 from samitorch.training.model_trainer import ModelTrainer
 from samitorch.training.trainer import Trainer
@@ -56,13 +57,13 @@ class LossCheckpointStrategyTest(unittest.TestCase, Trainer):
 
     def setUp(self):
         self.configurationParserFactory = ModelConfigurationParserFactory()
-        self.model_factory = ModelFactory()
+        self.model_factory = ResNet3DModelFactory()
         self.criterion_factory = CriterionFactory()
         self.optimizer_factory = OptimizerFactory()
         self._config = self.configurationParserFactory.parse(self.CONFIGURATION_PATH)
         model = self.model_factory.create_model(ResNetModels.ResNet101, self._config)
-        criterion = self.criterion_factory.create_criterion(Criterions.MSELoss)
-        optimizer = self.optimizer_factory.create_optimizer(Optimizers.SGD,
+        criterion = self.criterion_factory.create(Criterion.MSELoss)
+        optimizer = self.optimizer_factory.create_optimizer(Optimizer.SGD,
                                                             model.parameters(),
                                                             lr=0.1)
         model_trainer_config = ModelTrainerConfiguration(model, optimizer, criterion, None, torch.device('cpu'), None,
@@ -105,13 +106,13 @@ class MetricCheckpointStrategyTest(unittest.TestCase, Trainer):
 
     def setUp(self):
         self.configurationParserFactory = ModelConfigurationParserFactory()
-        self.model_factory = ModelFactory()
+        self.model_factory = ResNet3DModelFactory()
         self.criterion_factory = CriterionFactory()
         self.optimizer_factory = OptimizerFactory()
         self._config = self.configurationParserFactory.parse(self.CONFIGURATION_PATH)
         model = self.model_factory.create_model(ResNetModels.ResNet101, self._config)
-        criterion = self.criterion_factory.create_criterion(Criterions.MSELoss)
-        optimizer = self.optimizer_factory.create_optimizer(Optimizers.SGD,
+        criterion = self.criterion_factory.create(Criterion.MSELoss)
+        optimizer = self.optimizer_factory.create_optimizer(Optimizer.SGD,
                                                             model.parameters(),
                                                             lr=0.1)
         model_trainer_config = ModelTrainerConfiguration(model, optimizer, criterion, None, torch.device('cpu'), None,

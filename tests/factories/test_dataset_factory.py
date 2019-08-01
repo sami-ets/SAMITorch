@@ -18,9 +18,8 @@ import os
 import unittest
 from hamcrest import *
 
-from samitorch.factories.factories import PatchDatasetFactory, SegmentationDatasetFactory
 from samitorch.inputs.datasets import PatchDataset, MultimodalPatchDataset, SegmentationDataset, \
-    MultimodalSegmentationDataset
+    MultimodalSegmentationDataset, PatchDatasetFactory, SegmentationDatasetFactory
 from samitorch.inputs.images import Modality
 
 

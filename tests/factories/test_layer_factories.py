@@ -21,9 +21,9 @@ from enum import Enum
 
 from hamcrest import *
 
-from samitorch.factories.factories import PaddingLayerFactory, ActivationLayerFactory, PoolingLayerFactory, \
+from samitorch.models.layers import PaddingLayerFactory, ActivationLayerFactory, PoolingLayerFactory, \
     NormalizationLayerFactory
-from samitorch.factories.enums import ActivationLayers, PoolingLayers, PaddingLayers, NormalizationLayers
+from samitorch.models.layers import ActivationLayers, PoolingLayers, PaddingLayers, NormalizationLayers
 
 
 class IncorrectLayers(Enum):

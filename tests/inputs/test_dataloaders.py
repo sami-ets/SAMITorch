@@ -23,7 +23,7 @@ from hamcrest import *
 from samitorch.inputs.batch import ImageBatch, PatchBatch
 from samitorch.inputs.images import Modality
 from samitorch.inputs.utils import sample_collate, patch_collate
-from samitorch.factories.factories import PatchDatasetFactory, SegmentationDatasetFactory
+from samitorch.inputs.datasets import PatchDatasetFactory, SegmentationDatasetFactory
 
 
 class SegmentationDataLoaderTest(unittest.TestCase):

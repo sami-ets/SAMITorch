@@ -15,16 +15,15 @@
 # ==============================================================================
 
 import unittest
-
 from enum import Enum
 
 from hamcrest import *
 
-from samitorch.factories.factories import ModelFactory
-
-from samitorch.factories.parsers import ModelConfigurationParserFactory
-
-from samitorch.factories.enums import UNetModels, ResNetModels
+from samitorch.models.unet3d import UNet3DModelFactory
+from samitorch.models.resnet3d import ResNet3DModelFactory
+from samitorch.parsers.parsers import ModelConfigurationParserFactory
+from samitorch.models.resnet3d import ResNetModels
+from samitorch.models.unet3d import UNetModels
 
 
 class IncorrectModels(Enum):
@@ -40,20 +39,22 @@ class ModelFactoryTest(unittest.TestCase):
     INVALID_CONFIG_PATH = "samitorch/configs/invalid.yaml"
 
     def setUp(self):
-        self.model_factory = ModelFactory()
+        self.unet_model_factory = UNet3DModelFactory()
+        self.resnet_model_factory = ResNet3DModelFactory()
         self.configurationParserFactory = ModelConfigurationParserFactory()
         self.resnet_config = self.configurationParserFactory.parse(self.RESNET_CONFIGURATION_PATH)
         self.unet_config = self.configurationParserFactory.parse(self.UNET_CONFIGURATION_PATH)
 
     def test_should_instantiate_restnet_model(self):
-        model = self.model_factory.create_model(self.RESNET_MODEL, self.resnet_config)
+        model = self.resnet_model_factory.create_model(self.RESNET_MODEL, self.resnet_config)
         assert_that(model, is_not(None))
 
     def test_should_instantiate_unet_model(self):
-        model = self.model_factory.create_model(self.UNET_MODEL, self.unet_config)
+        model = self.unet_model_factory.create_model(self.UNET_MODEL, self.unet_config)
         assert_that(model, is_not(None))
 
     def test_should_fail_with_unknown_model(self):
-        model_factory = ModelFactory()
-        assert_that(calling(model_factory.create_model).with_args(self.UNKNOWN_MODEL, self.resnet_config),
+        assert_that(calling(self.unet_model_factory.create_model).with_args(self.UNKNOWN_MODEL, self.resnet_config),
+                    raises(ValueError))
+        assert_that(calling(self.resnet_model_factory.create_model).with_args(self.UNKNOWN_MODEL, self.resnet_config),
                     raises(ValueError))
