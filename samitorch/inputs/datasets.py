@@ -257,7 +257,8 @@ class PatchDatasetFactory(AbstractDatasetFactory):
 
     @staticmethod
     def create_train_test(source_dir: str, target_dir: str, modality: Modality, patch_size: Tuple[int, int, int, int],
-                          step: Tuple[int, int, int, int], dataset_id: int, test_size: float):
+                          step: Tuple[int, int, int, int], dataset_id: int, test_size: float,
+                          keep_centered_on_foreground: bool = True):
         """
         Create a PatchDataset object for both training and validation.
 
@@ -268,7 +269,8 @@ class PatchDatasetFactory(AbstractDatasetFactory):
             patch_size (Tuple of int): A tuple representing the desired patch size.
             step (Tuple of int): A tuple representing the desired step between two patches.
             dataset_id (int): An integer representing the ID of the data set.
-            test_size (float):
+            test_size (float): The size in percentage of the validation set over total number of samples.
+            keep_centered_on_foreground (bool): Keep only patches which center coordinates belongs to a foreground class.
 
         Returns:
             Tuple of :obj:`torch.utils.data.dataset`: A tuple containing both training and validation dataset.
@@ -279,7 +281,8 @@ class PatchDatasetFactory(AbstractDatasetFactory):
 
         transforms = Compose([ToNumpyArray(), PadToPatchShape(patch_size=patch_size, step=step)])
 
-        patches = PatchDatasetFactory.get_patches(source_paths, target_paths, patch_size, step, transforms)
+        patches = PatchDatasetFactory.get_patches(source_paths, target_paths, patch_size, step, transforms,
+                                                  keep_centered_on_foreground)
         label_patches = copy.deepcopy(patches)
 
         train_ids, test_ids = next(
@@ -304,7 +307,7 @@ class PatchDatasetFactory(AbstractDatasetFactory):
     @staticmethod
     def create_multimodal_train_test(source_dir: str, target_dir: str, modality_1: Modality, modality_2: Modality,
                                      patch_size: Tuple[int, int, int, int], step: Tuple[int, int, int, int],
-                                     dataset_id: int, test_size: float):
+                                     dataset_id: int, test_size: float, keep_centered_on_foreground: bool = False):
         """
         Create a MultimodalPatchDataset object for both training and validation.
 
@@ -316,7 +319,8 @@ class PatchDatasetFactory(AbstractDatasetFactory):
             patch_size (Tuple of int): A tuple representing the desired patch size.
             step (Tuple of int): A tuple representing the desired step between two patches.
             dataset_id (int): An integer representing the ID of the data set.
-            test_size (float):
+            test_size (float): The size in percentage of the validation set over total number of samples.
+            keep_centered_on_foreground (bool): Keep only patches which center coordinates belongs to a foreground class.
 
         Returns:
             Tuple of :obj:`torch.utils.data.dataset`: A tuple containing both training and validation dataset.
@@ -333,7 +337,8 @@ class PatchDatasetFactory(AbstractDatasetFactory):
 
         transforms = Compose([ToNumpyArray(), PadToPatchShape(patch_size=patch_size, step=step)])
 
-        patches = PatchDatasetFactory.get_patches(source_paths, target_paths, patch_size, step, transforms)
+        patches = PatchDatasetFactory.get_patches(source_paths, target_paths, patch_size, step, transforms,
+                                                  keep_centered_on_foreground)
         label_patches = copy.deepcopy(patches)
 
         train_ids, test_ids = next(
@@ -359,7 +364,7 @@ class PatchDatasetFactory(AbstractDatasetFactory):
 
     @staticmethod
     def get_patches(source_paths: np.ndarray, target_paths: np.ndarray, patch_size: Tuple[int, int, int, int],
-                    step: Tuple[int, int, int, int], transforms: Callable):
+                    step: Tuple[int, int, int, int], transforms: Callable, keep_centered_on_foreground: bool = False):
 
         patches = list()
 
@@ -376,6 +381,9 @@ class PatchDatasetFactory(AbstractDatasetFactory):
                 else:
                     pass
 
+        if keep_centered_on_foreground:
+            patches = list(filter(lambda patch: patch.center_coordinate.is_foreground, patches))
+
         return np.array(patches)
 
 
@@ -391,7 +399,7 @@ class SegmentationDatasetFactory(AbstractDatasetFactory):
            target_dir (str): Path to target directory.
            modality (:obj:`samitorch.inputs.images.Modalities`): The first modality of the data set.
            dataset_id (int): An integer representing the ID of the data set.
-           test_size (float):
+           test_size (float): The size in percentage of the validation set over total number of samples.
 
         Returns:
            Tuple of :obj:`torch.utils.data.dataset`: A tuple containing both training and validation dataset.
@@ -429,7 +437,7 @@ class SegmentationDatasetFactory(AbstractDatasetFactory):
            modality_1 (:obj:`samitorch.inputs.images.Modalities`): The first modality of the data set.
            modality_2 (:obj:`samitorch.inputs.images.Modalities`): The second modality of the data set.
            dataset_id (int): An integer representing the ID of the data set.
-           test_size (float):
+           test_size (float): The size in percentage of the validation set over total number of samples.
 
         Returns:
            Tuple of :obj:`torch.utils.data.dataset`: A tuple containing both training and validation dataset.
