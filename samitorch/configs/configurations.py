@@ -144,7 +144,7 @@ class ModelTrainerConfiguration(TrainingConfiguration):
     @property
     def variables(self) -> Configuration:
         """
-        The variable configuration.
+        The variable configuration
 
         Returns:
             :obj:`samitorch.configs.configurations.Configuration`: A Variable Configuration.

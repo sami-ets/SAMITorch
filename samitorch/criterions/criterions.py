@@ -22,8 +22,8 @@ from ignite.metrics import MetricsLambda
 import torch
 import torch.nn
 
-from metrics.metric import validate_ignore_index
-from utils.utils import flatten
+from samitorch.metrics.metric import validate_ignore_index
+from samitorch.utils.utils import flatten
 
 SUPPORTED_REDUCTIONS = [None, "mean"]
 EPSILON = 1e-15

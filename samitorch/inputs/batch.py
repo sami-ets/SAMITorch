@@ -138,7 +138,7 @@ class Batch(object):
         return cls(batch.samples)
 
 
-class ImageBatch(Batch):
+class ImageAbstractBatch(Batch):
     """
     Represent a Batch during a training process.
     """
@@ -150,7 +150,7 @@ class ImageBatch(Batch):
         Args:
             samples: A list of SAMITorch samples.
         """
-        super(ImageBatch, self).__init__(samples)
+        super(ImageAbstractBatch, self).__init__(samples)
         self._x = torch.stack([sample.x for sample in samples])
         self._y = torch.stack([sample.y for sample in samples])
         self._dataset_id = torch.cat(
@@ -159,7 +159,7 @@ class ImageBatch(Batch):
         self._device = self._x.device
 
 
-class PatchBatch(Batch):
+class PatchAbstractBatch(Batch):
     """
     Represent a Batch of Patches during a training process.
     """
@@ -171,7 +171,7 @@ class PatchBatch(Batch):
         Args:
             samples: A list of SAMITorch samples.
         """
-        super(PatchBatch, self).__init__(samples)
+        super(PatchAbstractBatch, self).__init__(samples)
         self._x = torch.stack([sample.x.slice for sample in samples])
         self._y = torch.stack([sample.y.slice for sample in samples])
         self._dataset_id = torch.cat(

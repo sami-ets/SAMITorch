@@ -31,6 +31,14 @@ from utils.slice_builder import SliceBuilder
 from utils.utils import extract_file_paths
 
 
+class AbstractDatasetFactory(metaclass=abc.ABCMeta):
+
+    @staticmethod
+    @abc.abstractmethod
+    def create_train_test(*args, **kwargs):
+        raise NotImplementedError
+
+
 class SegmentationDataset(Dataset):
     """
     Create a dataset class in PyTorch for reading NIfTI files.
@@ -243,14 +251,6 @@ class MultimodalPatchDataset(MultimodalSegmentationDataset):
         if self._transform is not None:
             sample = self._transform(sample)
         return sample
-
-
-class AbstractDatasetFactory(metaclass=abc.ABCMeta):
-
-    @staticmethod
-    @abc.abstractmethod
-    def create_train_test(*args, **kwargs):
-        raise NotImplementedError
 
 
 class PatchDatasetFactory(AbstractDatasetFactory):

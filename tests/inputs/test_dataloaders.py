@@ -20,7 +20,7 @@ import os
 import torch
 from hamcrest import *
 
-from samitorch.inputs.batch import ImageBatch, PatchBatch
+from samitorch.inputs.batch import ImageAbstractBatch, PatchAbstractBatch
 from samitorch.inputs.images import Modality
 from samitorch.inputs.utils import sample_collate, patch_collate
 from samitorch.inputs.datasets import PatchDatasetFactory, SegmentationDatasetFactory
@@ -61,7 +61,7 @@ class SegmentationDataLoaderTest(unittest.TestCase):
 
         batch = next(iter(dataloader))
 
-        assert_that(batch, instance_of(ImageBatch))
+        assert_that(batch, instance_of(ImageAbstractBatch))
 
 
 class PatchDataLoaderTest(unittest.TestCase):
@@ -101,7 +101,7 @@ class PatchDataLoaderTest(unittest.TestCase):
 
         batch = next(iter(dataloader))
 
-        assert_that(batch, instance_of(PatchBatch))
+        assert_that(batch, instance_of(PatchAbstractBatch))
         assert_that(batch.x, instance_of(torch.Tensor))
         assert_that(batch.x.size(0), is_(32))
 
@@ -142,7 +142,7 @@ class MultimodalSegmentationDataLoaderTest(unittest.TestCase):
 
         batch = next(iter(dataloader))
 
-        assert_that(batch, instance_of(ImageBatch))
+        assert_that(batch, instance_of(ImageAbstractBatch))
         assert_that(batch.x, instance_of(torch.Tensor))
         assert_that(batch.x.size(0), is_(2))
 
@@ -185,6 +185,6 @@ class MultimodalPatchDataLoaderTest(unittest.TestCase):
 
         batch = next(iter(dataloader))
 
-        assert_that(batch, instance_of(PatchBatch))
+        assert_that(batch, instance_of(PatchAbstractBatch))
         assert_that(batch.x, instance_of(torch.Tensor))
         assert_that(batch.x.size(0), is_(32))
