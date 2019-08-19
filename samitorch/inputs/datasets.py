@@ -27,8 +27,8 @@ from samitorch.inputs.transformers import ToNumpyArray, PadToPatchShape, ToNDTen
 from samitorch.inputs.sample import Sample
 from samitorch.inputs.patch import Patch, CenterCoordinate
 from samitorch.inputs.images import Modality
-from utils.slice_builder import SliceBuilder
-from utils.utils import extract_file_paths
+from samitorch.utils.slice_builder import SliceBuilder
+from samitorch.utils.utils import extract_file_paths
 
 
 class AbstractDatasetFactory(metaclass=abc.ABCMeta):
