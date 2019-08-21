@@ -18,7 +18,7 @@ import unittest
 
 from hamcrest import *
 
-from parsers.parsers import ModelConfigurationParserFactory
+from parsers.parsers import ModelConfigurationParser
 
 from samitorch.configs.configurations import UNetModelConfiguration
 
@@ -30,7 +30,7 @@ class ConfigurationParserFactoryTest(unittest.TestCase):
     INCORRECT_MODEL_PROPERTY_CONFIGURATION_PATH = "invalid_model_property_configuration.yaml"
 
     def setUp(self):
-        self.configuration_parser_factory = ModelConfigurationParserFactory()
+        self.configuration_parser_factory = ModelConfigurationParser()
 
     def test_instantiating_model_configuration_should_success_with_valid_path(self):
         model_configuration = self.configuration_parser_factory.parse(self.VALID_CONFIGURATION_PATH)

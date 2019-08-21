@@ -18,7 +18,7 @@ import unittest
 
 import torch
 
-from parsers.parsers import ModelConfigurationParserFactory
+from parsers.parsers import ModelConfigurationParser
 from samitorch.models.resnet3d import ResNet3D, ResNet3DModelFactory, ResNetModel
 from tests.models.model_helper_test import TestModelHelper
 
@@ -27,7 +27,7 @@ class ResNet3DTest(unittest.TestCase):
     CONFIGURATION_PATH = "samitorch/configs/resnet3d.yaml"
 
     def setUp(self):
-        self.configurationParserFactory = ModelConfigurationParserFactory()
+        self.configurationParserFactory = ModelConfigurationParser()
         self.model_factory = ResNet3DModelFactory()
         self.config = self.configurationParserFactory.parse(self.CONFIGURATION_PATH)
         self.input = torch.rand((2, 1, 32, 32, 32))

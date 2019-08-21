@@ -21,8 +21,7 @@ import re
 import torch
 from hamcrest import *
 
-from samitorch.parsers.parsers import ModelConfigurationParserFactory
-from samitorch.optimizers.optimizers import OptimizerFactory, Optimizer
+from samitorch.parsers.parsers import ModelConfigurationParser
 from samitorch.models.resnet3d import ResNet3DModelFactory, ResNetModel
 from samitorch.criterions.criterions import Criterion, CriterionFactory
 from samitorch.configs.configurations import ModelTrainerConfiguration
@@ -56,7 +55,7 @@ class LossCheckpointStrategyTest(unittest.TestCase, Trainer):
         assert_that(os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH), is_(True))
 
     def setUp(self):
-        self.configurationParserFactory = ModelConfigurationParserFactory()
+        self.configurationParserFactory = ModelConfigurationParser()
         self.model_factory = ResNet3DModelFactory()
         self.criterion_factory = CriterionFactory()
         self.optimizer_factory = OptimizerFactory()
@@ -105,7 +104,7 @@ class MetricCheckpointStrategyTest(unittest.TestCase, Trainer):
         assert_that(os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH), is_(True))
 
     def setUp(self):
-        self.configurationParserFactory = ModelConfigurationParserFactory()
+        self.configurationParserFactory = ModelConfigurationParser()
         self.model_factory = ResNet3DModelFactory()
         self.criterion_factory = CriterionFactory()
         self.optimizer_factory = OptimizerFactory()

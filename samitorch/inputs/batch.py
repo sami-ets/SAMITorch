@@ -24,6 +24,10 @@ class Batch(object):
 
     def __init__(self, samples: List[Sample]):
         self._samples = samples
+        self._x = None
+        self._y = None
+        self._dataset_id = None
+        self._device = None
 
     @property
     def device(self):
@@ -138,7 +142,7 @@ class Batch(object):
         return cls(batch.samples)
 
 
-class ImageAbstractBatch(Batch):
+class ImageBatch(Batch):
     """
     Represent a Batch during a training process.
     """
@@ -150,16 +154,16 @@ class ImageAbstractBatch(Batch):
         Args:
             samples: A list of SAMITorch samples.
         """
-        super(ImageAbstractBatch, self).__init__(samples)
+        super(ImageBatch, self).__init__(samples)
         self._x = torch.stack([sample.x for sample in samples])
         self._y = torch.stack([sample.y for sample in samples])
         self._dataset_id = torch.cat(
-            [torch.tensor([sample.dataset_id], dtype=torch.int8) if sample.dataset_id is not None
-             else torch.tensor([0], dtype=torch.long) for sample in samples])
+            [torch.Tensor().new_tensor([sample.dataset_id], dtype=torch.long) if sample.dataset_id is not None
+             else torch.Tensor().new_tensor([0], dtype=torch.long) for sample in samples])
         self._device = self._x.device
 
 
-class PatchAbstractBatch(Batch):
+class PatchBatch(Batch):
     """
     Represent a Batch of Patches during a training process.
     """
@@ -171,10 +175,10 @@ class PatchAbstractBatch(Batch):
         Args:
             samples: A list of SAMITorch samples.
         """
-        super(PatchAbstractBatch, self).__init__(samples)
+        super(PatchBatch, self).__init__(samples)
         self._x = torch.stack([sample.x.slice for sample in samples])
         self._y = torch.stack([sample.y.slice for sample in samples])
         self._dataset_id = torch.cat(
-            [torch.tensor([sample.dataset_id], dtype=torch.int8) if sample.dataset_id is not None
-             else torch.tensor([0], dtype=torch.long) for sample in samples])
+            [torch.Tensor().new_tensor([sample.dataset_id], dtype=torch.long) if sample.dataset_id is not None
+             else torch.Tensor().new_tensor([0], dtype=torch.long) for sample in samples])
         self._device = self._x.device

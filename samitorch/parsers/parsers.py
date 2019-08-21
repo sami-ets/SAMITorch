@@ -15,14 +15,14 @@
 # ==============================================================================
 
 import abc
-import yaml
 import logging
 
-from samitorch.utils.utils import extract_file_paths
+import yaml
+
 from samitorch.configs.configurations import UNetModelConfiguration, ResNetModelConfiguration, ModelConfiguration
 
 
-class AbstractConfigurationParserFactory(metaclass=abc.ABCMeta):
+class AbstractConfigurationParser(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def parse(self, path: str):
@@ -33,14 +33,8 @@ class AbstractConfigurationParserFactory(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
-class AbstractSubjectLabelsParser(metaclass=abc.ABCMeta):
-
-    @abc.abstractmethod
-    def parse(self, source_path: str, target_path: str):
-        raise NotImplementedError
-
-
-class ModelConfigurationParserFactory(AbstractConfigurationParserFactory):
+class ModelConfigurationParser(AbstractConfigurationParser):
+    LOGGER = logging.getLogger("ModelConfigurationParser")
 
     def __init__(self) -> None:
         self._supported_model_configuration = {
@@ -66,10 +60,10 @@ class ModelConfigurationParserFactory(AbstractConfigurationParserFactory):
                 model_configuration = self._supported_model_configuration.get(model_type)
                 return model_configuration(config["model"])
             except ValueError as e:
-                logging.error("Model type {} not supported.".format(model_type, e))
+                ModelConfigurationParser.LOGGER.warning("Model type {} not supported.".format(model_type, e))
             except yaml.YAMLError as e:
-                logging.error(
-                    "Unable to read the training config file: {} with error {}".format(path, e))
+                ModelConfigurationParser.LOGGER.warning(
+                    "Unable to read the configuration file: {} with error {}".format(path, e))
 
     def register(self, model_type: str, model_configuration_class: ModelConfiguration) -> None:
         """
@@ -81,13 +75,3 @@ class ModelConfigurationParserFactory(AbstractConfigurationParserFactory):
                 properties.
         """
         self._supported_model_configuration[model_type] = model_configuration_class
-
-
-class DefaultSegmentationSubjectsLabelsParser(object):
-    """
-    Common parser where subject images are in a source directory while segmentation images are in another one.
-    """
-
-    @staticmethod
-    def parse(source_dir: str, target_dir: str):
-        return extract_file_paths(source_dir), extract_file_paths(target_dir)
