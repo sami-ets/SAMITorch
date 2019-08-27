@@ -155,10 +155,10 @@ If you find a bug or have an idea for an improvement, please first have a look a
 ## To build documentation
 
 SAMITorch uses Sphinx Documentation. To build doc, simply execute the following: 
-```shell script
-cd docs
-sphinx-build -b html source build
-```
+
+> cd docs
+> sphinx-build -b html source build
+
 
 ## Acknowledgment
 Thanks to [École de technologie supérieure](https://www.etsmtl.ca/), [Hervé Lombaert](https://profs.etsmtl.ca/hlombaert/) and [Christian Desrosiers](https://www.etsmtl.ca/Professeurs/cdesrosiers/Accueil) for providing us a lab and helping us in our research activities.
