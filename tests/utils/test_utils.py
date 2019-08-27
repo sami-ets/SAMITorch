@@ -20,7 +20,8 @@ import os
 
 from hamcrest import *
 
-from samitorch.utils.utils import to_onehot, flatten, extract_file_paths
+from samitorch.utils.files import extract_file_paths
+from samitorch.utils.tensors import to_onehot, flatten
 
 
 class UtilsTest(unittest.TestCase):

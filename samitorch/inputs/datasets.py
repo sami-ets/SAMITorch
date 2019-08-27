@@ -28,7 +28,7 @@ from samitorch.inputs.sample import Sample
 from samitorch.inputs.patch import Patch, CenterCoordinate
 from samitorch.inputs.images import Modality
 from samitorch.utils.slice_builder import SliceBuilder
-from samitorch.utils.utils import extract_file_paths
+from samitorch.utils.files import extract_file_paths, split_filename
 
 
 class AbstractDatasetFactory(metaclass=abc.ABCMeta):

@@ -128,6 +128,7 @@ class BasicBlock(torch.nn.Module):
                  activation="ReLU", norm_num_groups=8):
         """
         Basic block initializer.
+
         Args:
             in_planes (int): The number of input channels.
             out_planes (int): The number of output channels.

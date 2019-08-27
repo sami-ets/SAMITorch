@@ -6,22 +6,18 @@ Subpackages
 
 .. toctree::
 
-    samitorch.callbacks
-    samitorch.configs
-    samitorch.factories
-    samitorch.losses
-    samitorch.initializers
-    samitorch.inputs
-    samitorch.metrics
-    samitorch.models
-    samitorch.preprocessing
-    samitorch.training
-    samitorch.utils
+   samitorch.configs
+   samitorch.initializers
+   samitorch.inputs
+   samitorch.models
+   samitorch.parsers
+   samitorch.preprocessing
+   samitorch.utils
 
 Module contents
 ---------------
 
 .. automodule:: samitorch
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
