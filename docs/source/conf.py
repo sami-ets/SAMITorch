@@ -22,7 +22,7 @@ copyright = '2019, Benoit Anctil-Robitaille and Pierre-Luc Delisle'
 author = 'Benoit Anctil-Robitaille and Pierre-Luc Delisle'
 
 # The full version, including alpha/beta/rc tags
-release = '0.2.0'
+release = '0.2.1'
 
 # -- General configuration ---------------------------------------------------
 

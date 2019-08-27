@@ -58,7 +58,7 @@ class ModelConfigurationParser(AbstractConfigurationParser):
                 config = yaml.load(config_file, Loader=yaml.FullLoader)
                 model_type = config["model"]["type"]
                 model_configuration = self._supported_model_configuration.get(model_type)
-                return model_configuration(config["model"])
+                return model_configuration(config["model"]["params"])
             except ValueError as e:
                 ModelConfigurationParser.LOGGER.warning("Model type {} not supported.".format(model_type, e))
             except yaml.YAMLError as e:
