@@ -18,7 +18,7 @@ import unittest
 
 from hamcrest import *
 
-from parsers.parsers import ModelConfigurationParser
+from samitorch.parsers.parsers import ModelConfigurationParser
 
 from samitorch.configs.configurations import UNetModelConfiguration
 

@@ -18,7 +18,7 @@ import unittest
 
 import torch
 
-from parsers.parsers import ModelConfigurationParser
+from samitorch.parsers.parsers import ModelConfigurationParser
 from samitorch.models.resnet3d import ResNet3D, ResNet3DModelFactory, ResNetModel
 from tests.models.model_helper_test import TestModelHelper
 
