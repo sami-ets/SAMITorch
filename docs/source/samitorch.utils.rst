@@ -4,27 +4,35 @@ samitorch.utils package
 Submodules
 ----------
 
-samitorch.utils.model\_io module
---------------------------------
-
-.. automodule:: samitorch.utils.model_io
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-samitorch.utils.utils module
+samitorch.utils.files module
 ----------------------------
 
-.. automodule:: samitorch.utils.utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. automodule:: samitorch.utils.files
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+samitorch.utils.slice\_builder module
+-------------------------------------
+
+.. automodule:: samitorch.utils.slice_builder
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+samitorch.utils.tensors module
+------------------------------
+
+.. automodule:: samitorch.utils.tensors
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 
 Module contents
 ---------------
 
 .. automodule:: samitorch.utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:

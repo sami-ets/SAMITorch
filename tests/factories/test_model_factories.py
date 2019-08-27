@@ -21,7 +21,7 @@ from hamcrest import *
 
 from samitorch.models.unet3d import UNet3DModelFactory
 from samitorch.models.resnet3d import ResNet3DModelFactory
-from samitorch.parsers.parsers import ModelConfigurationParserFactory
+from samitorch.parsers.parsers import ModelConfigurationParser
 from samitorch.models.resnet3d import ResNetModel
 from samitorch.models.unet3d import UNetModel
 
@@ -41,7 +41,7 @@ class ModelFactoryTest(unittest.TestCase):
     def setUp(self):
         self.unet_model_factory = UNet3DModelFactory()
         self.resnet_model_factory = ResNet3DModelFactory()
-        self.configurationParserFactory = ModelConfigurationParserFactory()
+        self.configurationParserFactory = ModelConfigurationParser()
         self.resnet_config = self.configurationParserFactory.parse(self.RESNET_CONFIGURATION_PATH)
         self.unet_config = self.configurationParserFactory.parse(self.UNET_CONFIGURATION_PATH)
 

@@ -21,9 +21,7 @@ Our objective is to build a tested, standard framework for quickly producing res
     -  [Folder structure](#folder-structure)
     -  [Main Components](#main-components)
         -  [Models](#models)
-        -  [Trainers](#trainers)
         -  [Transformers](#transformers)
-        -  [Logger](#logger)
         -  [Configuration](#configs)
         -  [Main](#main)
  -  [Contributing](#contributing)
@@ -79,50 +77,46 @@ Our objective is to build a tested, standard framework for quickly producing res
 ### Folder structure
 
 ```
-├── configs                 - This folder contains the YAML configuration files.
-│   ├── train.yaml                  - This file contains your training configuration. MUST be a YAML file.
-│   └── test.yaml                   - OPTIONAL. This file contains the testing configuration. MUST be a YAML file.
-|
-├── docker                  - Contains Dockerfile needed to provide a functional Docker environment for your publication.
-|   └── dockerfile
-|
-├── icons                   - Contains project's artwork.
-|
-├── initializers            - This folder contains custom layer/op initializers.  
-|   └── base_initializer.py
-│
-├── inputs                  - This folder contains anything relative to inputs to a network.
-|   └── transformers.py  
-|
-├── metrics                  - This folder contains various metrics used to measure a training session of a model.
-|   ├── gauges.py 
-|   └── metrics.py
-|   
-├── models                  - This folder contains any standard and tested deep learning models.
-│   └── base_model.py                      
-|
-├── preprocessing           - This folder contains anything relative to input preprocessing, and scripts that must be executed prior training.
-|
-├── tests                   - Folder containing unit tests of the standard framework api and functions.
-|   
-├── training                - This folder contains trainers.
-│   ├── base_trainer.py 
-|   ├── losses.py  
-|   └── trainer.py
-│  
-└── utils                   - This folder contains any utils you need.
-     └── utils.py
+── samitorch
+|    ├── configs                 - This folder contains the YAML configuration files.
+|    │   ├── configurations.py       - This file contains the definitions of different configuration classes.
+|    │   |── resnet3d.yaml           - Standard ResNet 3D configuration file and model definition.
+|    │   └── unet3d.yaml             - Standard UNet 3D configuration file and model definition.
+|    |
+|    ├── initializers            - This folder contains custom layer/op initializers.  
+|    |   └── initializers.py
+|    │
+|    ├── inputs                  - This folder contains anything relative to inputs to a network.
+|    |   |── batch.py                - Contains Batch definition object used in training. 
+|    |   |── datasets.py             - Contains basic dataset definition for classification and segmentation.
+|    |   |── images.py               - Contains Enums for various methods.
+|    |   |── patch.py                - Contains Patch definition used in segmentation problems.
+|    |   |── sample.py               - Contains a Sample object.
+|    |   |── transformers.py         - Contains a series of common transformations.
+|    |   └── utils.py                - Contains various utilitary methods.
+|    |   
+|    ├── models                  - This folder contains any standard and tested deep learning models.
+|    │   |── layers.py               - Contains layer definitions. 
+|    |   |── resnet3d.py             - Contains a standard ResNet 3D model.
+|    |   └── unet3d.py               - Contains a standard UNet 3D model.                   
+|    |
+|    |── parsers                 - This folder contains parsers definition used in SAMITorch.
+|    |
+|    ├── preprocessing           - This folder contains anything relative to input preprocessing, and scripts that must be executed prior training.
+|    |
+|    └── utils                   - This folder contains any utils you may need.
+|         |── files.py              - Contains file related utils methods.
+|         |── slice_builder.py      - Contains an object to build slices out of a data sets (for image segmentation).
+|         └── tensors.py            - Contains tensor related utils methods.            
+── tests                   - Folder containing unit tests of the standard framework api and functions.
+
 ```
 
 ### Main components
 (To be documented shortly...)
 #### Models
 
-#### Trainers
-
 #### Transformers
-
-#### Logger
 
 #### Configs
 
@@ -157,6 +151,14 @@ If you find a bug or have an idea for an improvement, please first have a look a
 
 ##### Merging branches:
 > Y Merged [Short Description]
+
+## To build documentation
+
+SAMITorch uses Sphinx Documentation. To build doc, simply execute the following: 
+```shell script
+cd docs
+sphinx-build -b html source build
+```
 
 ## Acknowledgment
 Thanks to [École de technologie supérieure](https://www.etsmtl.ca/), [Hervé Lombaert](https://profs.etsmtl.ca/hlombaert/) and [Christian Desrosiers](https://www.etsmtl.ca/Professeurs/cdesrosiers/Accueil) for providing us a lab and helping us in our research activities.

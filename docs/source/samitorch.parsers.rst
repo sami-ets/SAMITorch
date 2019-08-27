@@ -1,13 +1,13 @@
-samitorch.configs package
+samitorch.parsers package
 =========================
 
 Submodules
 ----------
 
-samitorch.configs.configurations module
----------------------------------------
+samitorch.parsers.parsers module
+--------------------------------
 
-.. automodule:: samitorch.configs.configurations
+.. automodule:: samitorch.parsers.parsers
    :members:
    :undoc-members:
    :show-inheritance:
@@ -16,7 +16,7 @@ samitorch.configs.configurations module
 Module contents
 ---------------
 
-.. automodule:: samitorch.configs
+.. automodule:: samitorch.parsers
    :members:
    :undoc-members:
    :show-inheritance:
