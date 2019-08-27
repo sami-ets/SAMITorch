@@ -156,8 +156,8 @@ If you find a bug or have an idea for an improvement, please first have a look a
 
 SAMITorch uses Sphinx Documentation. To build doc, simply execute the following: 
 
-> cd docs
-> sphinx-build -b html source build
+> cd docs  
+> sphinx-build -b html source build  
 
 
 ## Acknowledgment
