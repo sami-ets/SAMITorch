@@ -1,5 +1,5 @@
 # Use official python runtime as a parent image
-FROM python:3.7.3-stretch
+FROM python:3.7.4-stretch
 MAINTAINER Pierre-Luc Delisle, github@pierre-luc-delisle.com
 
 # Set the working directory to /app.
