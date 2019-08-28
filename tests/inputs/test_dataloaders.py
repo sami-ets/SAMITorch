@@ -61,7 +61,7 @@ class SegmentationDataLoaderTest(unittest.TestCase):
 
         batch = next(iter(dataloader))
 
-        assert_that(batch, instance_of(ImageBatch))
+        assert_that(batch[0], instance_of(torch.Tensor))
 
 
 class PatchDataLoaderTest(unittest.TestCase):
@@ -101,9 +101,8 @@ class PatchDataLoaderTest(unittest.TestCase):
 
         batch = next(iter(dataloader))
 
-        assert_that(batch, instance_of(PatchBatch))
-        assert_that(batch.x, instance_of(torch.Tensor))
-        assert_that(batch.x.size(0), is_(32))
+        assert_that(batch[0], instance_of(torch.Tensor))
+        assert_that(batch[0].size(0), is_(32))
 
 
 class MultimodalSegmentationDataLoaderTest(unittest.TestCase):
@@ -142,9 +141,8 @@ class MultimodalSegmentationDataLoaderTest(unittest.TestCase):
 
         batch = next(iter(dataloader))
 
-        assert_that(batch, instance_of(ImageBatch))
-        assert_that(batch.x, instance_of(torch.Tensor))
-        assert_that(batch.x.size(0), is_(2))
+        assert_that(batch[0], instance_of(torch.Tensor))
+        assert_that(batch[0].size(0), is_(2))
 
 
 class MultimodalPatchDataLoaderTest(unittest.TestCase):
@@ -185,6 +183,5 @@ class MultimodalPatchDataLoaderTest(unittest.TestCase):
 
         batch = next(iter(dataloader))
 
-        assert_that(batch, instance_of(PatchBatch))
-        assert_that(batch.x, instance_of(torch.Tensor))
-        assert_that(batch.x.size(0), is_(32))
+        assert_that(batch[0], instance_of(torch.Tensor))
+        assert_that(batch[0].size(0), is_(32))

@@ -19,7 +19,7 @@ from samitorch.inputs.batch import ImageBatch, PatchBatch
 
 def sample_collate(batch: list):
     batch = ImageBatch(samples=batch)
-    return batch.x, batch.y
+    return batch.x, (batch.y, batch.dataset_id)
 
 
 def patch_collate(batch: list):

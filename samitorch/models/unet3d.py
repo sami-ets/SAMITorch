@@ -29,19 +29,11 @@ from samitorch.models.layers import ActivationLayers, PaddingLayers, Normalizati
 class UNetModel(Enum):
     UNet3D = "UNet3D"
 
-
-class AbstractModelFactory(metaclass=abc.ABCMeta):
-
-    @abc.abstractmethod
-    def create_model(self, name: Union[str, UNetModel], config: ModelConfiguration):
-        pass
-
-    @abc.abstractmethod
-    def register(self, model: str, creator):
-        raise NotImplementedError
+    def __str__(self):
+        return self.value
 
 
-class UNet3DModelFactory(AbstractModelFactory):
+class UNet3DModelFactory(object):
     """
     Object to instantiate a model.
     """
@@ -62,7 +54,7 @@ class UNet3DModelFactory(AbstractModelFactory):
         Returns:
             :obj:`torch.nn.Module`: A PyTorch model.
         """
-        model = self._models.get(model_name.name if isinstance(model_name, Enum) else model_name)
+        model = self._models.get(str(model_name) if isinstance(model_name, Enum) else model_name)
         if not model:
             raise ValueError("Model {} is not supported.".format(model_name))
         return model(config)
