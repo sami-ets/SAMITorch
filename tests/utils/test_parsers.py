@@ -35,7 +35,7 @@ class ConfigurationParserFactoryTest(unittest.TestCase):
     def test_instantiating_model_configuration_should_success_with_valid_path(self):
         model_configuration = self.configuration_parser_factory.parse(self.VALID_CONFIGURATION_PATH)
         assert_that(model_configuration, is_not(None))
-        assert_that(model_configuration, instance_of(UNetModelConfiguration))
+        assert_that(model_configuration, instance_of(dict))
 
     def test_instantiating_model_configuration_should_fail_with_invalid_path(self):
         assert_that(calling(self.configuration_parser_factory.parse).with_args(self.INVALID_CONFIGURATION_PATH),

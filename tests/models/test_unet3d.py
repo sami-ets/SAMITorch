@@ -19,10 +19,9 @@ import unittest
 import numpy as np
 
 from samitorch.parsers.parsers import ModelConfigurationParser
-from samitorch.models.unet3d import UNet3D, SingleConv, DoubleConv, Encoder, Decoder
+from samitorch.models.unet3d import UNetModel, UNet3D, SingleConv, DoubleConv, Encoder, Decoder
 from tests.models.model_helper_test import TestModelHelper
-from samitorch.models.unet3d import UNetModel, UNet3DModelFactory
-from samitorch.models.layers import ActivationLayers
+from samitorch.models.layers import ActivationLayers, PoolingLayers
 
 
 class Unet3DTest(unittest.TestCase):
@@ -31,26 +30,25 @@ class Unet3DTest(unittest.TestCase):
     def setUp(self):
         self.configurationParserFactory = ModelConfigurationParser()
         self.config = self.configurationParserFactory.parse(self.CONFIGURATION_PATH)
-        self.factory = UNet3DModelFactory()
         self.input = torch.rand((2, 1, 32, 32, 32))
         self.y = torch.randint(low=0, high=2, size=(2, 1, 32, 32, 32)).float()
 
     def test_model_should_be_created_with_config(self):
-        model = UNet3D(self.config)
+        model = UNet3D(**self.config)
         assert isinstance(model, UNet3D)
 
     def test_model_should_update_vars(self):
-        model = self.factory.create_model(UNetModel.UNet3D, self.config)
+        model = UNet3D(**self.config)
         helper = TestModelHelper(model, torch.nn.BCEWithLogitsLoss(),
                                  torch.optim.SGD(model.parameters(), lr=0.01))
         helper.assert_vars_change((self.input, self.y))
-        output = model.forward(self.input)
+        output = model(self.input)
         assert isinstance(output, torch.Tensor)
 
     def test_model_output_should_have_same_dimensions_than_input(self):
         input_dim = np.array(list(self.input.size()))
-        model = self.factory.create_model(UNetModel.UNet3D, self.config)
-        output = model.forward(self.input)
+        model = UNet3D(**self.config)
+        output = model(self.input)
         output_dim = np.array(list(output.size()))
         np.testing.assert_array_equal(input_dim, output_dim)
 
@@ -111,16 +109,28 @@ class UNet3DModulesTest(unittest.TestCase):
         assert output.size() == torch.Size([2, 64, 32, 32, 32])
 
     def test_encoder_should_give_correct_pooling(self):
-        encoder = Encoder(self.in_channels, self.out_channels, DoubleConv, self.config)
+        encoder = Encoder(int(self.config["in_channels"]), self.out_channels, DoubleConv,
+                          PoolingLayers.MaxPool3d, int(self.config["conv_kernel_size"]),
+                          int(self.config["pool_kernel_size"]), int(self.config["num_groups"]),
+                          tuple(self.config["padding"]), self.relu_activation,
+                          apply_pooling=True)
+
         assert hasattr(encoder, "_pooling")
         assert isinstance(encoder._pooling, torch.nn.MaxPool3d)
 
     def test_encoder_should_give_correct_dimension(self):
-        encoder = Encoder(self.in_channels, self.out_channels, DoubleConv, self.config)
+        encoder = Encoder(int(self.config["in_channels"]), self.out_channels, DoubleConv,
+                          PoolingLayers.MaxPool3d, int(self.config["conv_kernel_size"]),
+                          int(self.config["pool_kernel_size"]), int(self.config["num_groups"]),
+                          tuple(self.config["padding"]), self.relu_activation,
+                          apply_pooling=True)
         output = encoder(self.input)
         assert output.size() == torch.Size([2, 64, 16, 16, 16])
 
     def test_decoder_should_use_upsampling(self):
-        decoder = Decoder(self.out_channels, self.in_channels, DoubleConv, self.config)
+        decoder = Decoder(int(self.config["in_channels"]), self.out_channels, DoubleConv,
+                          bool(self.config["interpolation"]), int(self.config["conv_kernel_size"]),
+                          tuple(self.config["scale_factor"]), tuple(self.config["padding"]),
+                          int(self.config["num_groups"]), self.relu_activation)
         assert hasattr(decoder, "_upsample")
         assert decoder._upsample is None

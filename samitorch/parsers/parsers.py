@@ -22,25 +22,11 @@ import yaml
 from samitorch.configs.configurations import UNetModelConfiguration, ResNetModelConfiguration, ModelConfiguration
 
 
-class AbstractConfigurationParser(metaclass=abc.ABCMeta):
-
-    @abc.abstractmethod
-    def parse(self, path: str):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def register(self, model_type: str, configuration_class):
-        raise NotImplementedError
-
-
-class ModelConfigurationParser(AbstractConfigurationParser):
+class ModelConfigurationParser(object):
     LOGGER = logging.getLogger("ModelConfigurationParser")
 
     def __init__(self) -> None:
-        self._supported_model_configuration = {
-            "UNet3D": UNetModelConfiguration,
-            "ResNet3D": ResNetModelConfiguration
-        }
+        pass
 
     def parse(self, path: str) -> ModelConfiguration:
         """
@@ -56,22 +42,7 @@ class ModelConfigurationParser(AbstractConfigurationParser):
         with open(path, 'r') as config_file:
             try:
                 config = yaml.load(config_file, Loader=yaml.FullLoader)
-                model_type = config["model"]["type"]
-                model_configuration = self._supported_model_configuration.get(model_type)
-                return model_configuration(config["model"]["params"])
-            except ValueError as e:
-                ModelConfigurationParser.LOGGER.warning("Model type {} not supported.".format(model_type, e))
+                return config["model"]["params"]
             except yaml.YAMLError as e:
                 ModelConfigurationParser.LOGGER.warning(
                     "Unable to read the configuration file: {} with error {}".format(path, e))
-
-    def register(self, model_type: str, model_configuration_class: ModelConfiguration) -> None:
-        """
-        Register a new type of model.
-
-        Args:
-            model_type (str): The generic model type (e.g. 'unet3d' or 'resnet3d').
-            model_configuration_class (:obj:`samitorch.config.model.ModelConfiguration`): The class defining model's
-                properties.
-        """
-        self._supported_model_configuration[model_type] = model_configuration_class

@@ -26,9 +26,15 @@ class ActivationLayers(Enum):
     LeakyReLU = "LeakyReLU"
     PReLU = "PReLU"
 
+    def __str__(self):
+        return self.value
+
 
 class PaddingLayers(Enum):
     ReplicationPad3d = "ReplicationPad3d"
+
+    def __str__(self):
+        return self.value
 
 
 class PoolingLayers(Enum):
@@ -36,10 +42,16 @@ class PoolingLayers(Enum):
     AvgPool3d = "AvgPool3d"
     Conv3d = "Conv3d"
 
+    def __str__(self):
+        return self.value
+
 
 class NormalizationLayers(Enum):
     GroupNorm = "GroupNorm"
     BatchNorm3d = "BatchNorm3d"
+
+    def __str__(self):
+        return self.value
 
 
 class AbstractLayerFactory(metaclass=abc.ABCMeta):
@@ -82,7 +94,7 @@ class ActivationLayerFactory(AbstractLayerFactory):
             KeyError: Raises KeyError Exception if Activation Function is not found.
         """
         activation_function = self._activation_functions[
-            function.name if isinstance(function, ActivationLayers) else function]
+            str(function) if isinstance(function, ActivationLayers) else function]
         return activation_function(*args, **kwargs)
 
     def register(self, function: str, creator: torch.nn.Module):
@@ -122,7 +134,7 @@ class PaddingLayerFactory(AbstractLayerFactory):
         Raises:
             KeyError: Raises KeyError Exception if Padding Function is not found.
         """
-        padding = self._padding_strategies[strategy.name if isinstance(strategy, PaddingLayers) else strategy]
+        padding = self._padding_strategies[str(strategy) if isinstance(strategy, PaddingLayers) else strategy]
         return padding(dims, *args, **kwargs)
 
     def register(self, strategy: str, creator: torch.nn.Module):
@@ -166,9 +178,9 @@ class PoolingLayerFactory(AbstractLayerFactory):
         Raises:
             KeyError: Raises KeyError Exception if Pooling Function is not found.
         """
-        pooling = self._pooling_strategies[strategy.name if isinstance(strategy, PoolingLayers) else strategy]
+        pooling = self._pooling_strategies[str(strategy) if isinstance(strategy, PoolingLayers) else strategy]
 
-        if not "Conv3d" in strategy.name:
+        if not "Conv3d" in str(strategy):
             return pooling(kernel_size, stride, *args, **kwargs)
 
         else:

@@ -13,15 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import abc
-from typing import Union
 from enum import Enum
 
 import torch
 
-from samitorch.models.layers import ActivationLayerFactory, NormalizationLayerFactory
-from samitorch.configs.configurations import ModelConfiguration, ResNetModelConfiguration
-from samitorch.models.layers import NormalizationLayers, ActivationLayers
+from samitorch.models.layers import ActivationLayerFactory, NormalizationLayerFactory, PaddingLayerFactory
+from samitorch.models.layers import NormalizationLayers, ActivationLayers, PaddingLayers
 
 
 class ResNetModel(Enum):
@@ -33,47 +30,6 @@ class ResNetModel(Enum):
 
     def __str__(self):
         return self.value
-
-
-class ResNet3DModelFactory(object):
-    """
-    Object to instantiate a model.
-    """
-
-    def __init__(self):
-        self._models = {
-            'ResNet18': ResNet18,
-            'ResNet34': ResNet34,
-            'ResNet50': ResNet50,
-            'ResNet101': ResNet101,
-            'ResNet152': ResNet152,
-        }
-
-    def create_model(self, model_name: Union[str, Enum], config: ModelConfiguration) -> torch.nn.Module:
-        """
-        Instantiate a new support model.
-
-        Args:
-            model_name (str): The model's name (e.g. 'UNet3D').
-            config (:obj:`samitorch.configs.model_configuration.ModelConfiguration`): An object containing model's parameters.
-
-        Returns:
-            :obj:`torch.nn.Module`: A PyTorch model.
-        """
-        model = self._models.get(str(model_name) if isinstance(model_name, Enum) else model_name)
-        if not model:
-            raise ValueError("Model {} is not supported.".format(model_name))
-        return model(config)
-
-    def register(self, model: str, creator):
-        """
-        Add a new model.
-
-        Args:
-          model (str): Model's name.
-          creator: A torch module object wrapping the new custom model.
-        """
-        self._models[model] = creator
 
 
 def conv3x3(in_planes: int, out_planes: int, stride: int = 1, groups: int = 1, dilation: int = 1):
@@ -273,28 +229,30 @@ class ResNet3D(torch.nn.Module):
     :cited:
     """
 
-    def __init__(self, block: torch.nn.Module, n_blocks_per_layer: list, config: ResNetModelConfiguration):
+    def __init__(self, block: torch.nn.Module, n_blocks_per_layer: list, in_channels: int, out_channels: int,
+                 num_groups: int, conv_groups: int, width_per_group: int, padding: tuple, activation: ActivationLayers,
+                 zero_init_residual: bool, replace_stride_with_dilation: bool):
         """
         ResNet 3D model initializer.
         Args:
             block (:obj:`torch.nn.Module`): The desired block type (Basic or Bottleneck).
             n_blocks_per_layer (list):
-            config (:obj:`samitorch.configs.model_configuration.ModelConfiguration`): An object containing model's parameters.
         """
         super(ResNet3D, self).__init__()
         self._activation_layer_factory = ActivationLayerFactory()
+        self._padding_factory = PaddingLayerFactory()
 
-        if config.num_groups is not None:
+        if num_groups is not None:
             norm_layer = torch.nn.GroupNorm
         else:
             norm_layer = torch.nn.BatchNorm3d
 
         self._norm_layer = norm_layer
-        self._num_groups = config.num_groups
-        self._activation_fn = config.activation
-        self._groups = config.conv_groups
-        self._base_width = config.width_per_group
-        self._replace_stride_with_dilation = config.replace_stride_with_dilation
+        self._num_groups = num_groups
+        self._activation_fn = activation
+        self._groups = conv_groups
+        self._base_width = width_per_group
+        self._replace_stride_with_dilation = replace_stride_with_dilation
         self._inplanes = 64
         self._dilation = 1
 
@@ -303,16 +261,22 @@ class ResNet3D(torch.nn.Module):
             # the 2x2 stride with a dilated convolution instead
             replace_stride_with_dilation = [False, False, False]
         else:
-            replace_stride_with_dilation = config.replace_stride_with_dilation
+            replace_stride_with_dilation = replace_stride_with_dilation
 
         if len(replace_stride_with_dilation) != 3:
             raise ValueError("replace_stride_with_dilation should be None "
-                             "or a 3-element tuple, got {}".format(config.replace_stride_with_dilation))
+                             "or a 3-element tuple, got {}".format(replace_stride_with_dilation))
 
-        self._conv1 = torch.nn.Conv3d(config.in_channels, self._inplanes, kernel_size=7, stride=2, padding=3,
-                                      bias=False)
+        if padding is not None:
+            self._padding = self._padding_factory.create(PaddingLayers.ReplicationPad3d, padding)
+            self._conv1 = torch.nn.Conv3d(in_channels, self._inplanes, kernel_size=7, stride=2, padding=0,
+                                          bias=False)
+        else:
+            self._padding = None
+            self._conv1 = torch.nn.Conv3d(in_channels, self._inplanes, kernel_size=7, stride=2, padding=3,
+                                          bias=False)
 
-        if config.num_groups is not None:
+        if num_groups is not None:
             self._norm1 = norm_layer(self._num_groups, self._inplanes)
         else:
             self._norm1 = norm_layer(self._inplanes)
@@ -331,7 +295,7 @@ class ResNet3D(torch.nn.Module):
         self._layer4 = self._make_layer(block, 512, n_blocks_per_layer[3], stride=2,
                                         dilate=replace_stride_with_dilation[2])
         self._avgpool = torch.nn.AdaptiveAvgPool3d((1, 1, 1))
-        self._fc = torch.nn.Linear(512 * block.expansion, config.out_channels)
+        self._fc = torch.nn.Linear(512 * block.expansion, out_channels)
 
         for m in self.modules():
             if isinstance(m, torch.nn.Conv3d):
@@ -343,7 +307,7 @@ class ResNet3D(torch.nn.Module):
         # Zero-initialize the last BN in each residual branch,
         # so that the residual branch starts with zeros, and each residual block behaves like an identity.
         # This improves the model by 0.2~0.3% according to https://arxiv.org/abs/1706.02677
-        if config.zero_init_residual:
+        if zero_init_residual:
             for m in self.modules():
                 if isinstance(m, Bottleneck):
                     torch.nn.init.constant_(m._norm3.weight, 0)
@@ -382,6 +346,9 @@ class ResNet3D(torch.nn.Module):
         return torch.nn.Sequential(*layers)
 
     def forward(self, x):
+        if self._padding is not None:
+            x = self._padding(x)
+
         x = self._conv1(x)
         x = self._norm1(x)
         x = self._activation(x)
@@ -399,63 +366,63 @@ class ResNet3D(torch.nn.Module):
         return x
 
 
-def _ResNet(block, layers, config):
+def _ResNet(block, layers, params):
     """
     Construct the ResNet 3D network.
 
     Args:
         block (:obj:`torch.nn.Module`): The kind of ResNet block to build the ResNet with.
         layers (list): A list of number of blocks per layer.
-        config (:obj:`samitorch.config.model.ModelConfiguration`): The network configuration.
+        params (:obj:`samitorch.config.model.ModelConfiguration`): The network configuration.
 
     Returns:
         torch.nn.Module: The ResNet 3D Network.
     """
-    model = ResNet3D(block, layers, config)
+    model = ResNet3D(block, layers, **params)
 
     return model
 
 
-def ResNet18(config):
+def ResNet18(params):
     """Constructs a ResNet-18 model.
 
     Args:
-        config (:obj:`samitorch.config.model.ModelConfiguration`): The network configuration.
+        params (dict): The network configuration.
     """
-    return _ResNet(BasicBlock, [2, 2, 2, 2], config)
+    return _ResNet(BasicBlock, [2, 2, 2, 2], params)
 
 
-def ResNet34(config):
+def ResNet34(params):
     """Constructs a ResNet-34 model.
 
     Args:
-        config (:obj:`samitorch.config.model.ModelConfiguration`): The network configuration.
+        params (dict): The network configuration.
     """
-    return _ResNet(BasicBlock, [3, 4, 6, 3], config)
+    return _ResNet(BasicBlock, [3, 4, 6, 3], params)
 
 
-def ResNet50(config):
+def ResNet50(params):
     """Constructs a ResNet-50 model.
 
     Args:
-        config (:obj:`samitorch.config.model.ModelConfiguration`): The network configuration.
+        params (dict): The network configuration.
     """
-    return _ResNet(Bottleneck, [3, 4, 6, 3], config)
+    return _ResNet(Bottleneck, [3, 4, 6, 3], params)
 
 
-def ResNet101(config):
+def ResNet101(params):
     """Constructs a ResNet-101 model.
 
     Args:
-        config (:obj:`samitorch.config.model.ModelConfiguration`): The network configuration.
+        params (dict): The network configuration.
     """
-    return _ResNet(Bottleneck, [3, 4, 23, 3], config)
+    return _ResNet(Bottleneck, [3, 4, 23, 3], params)
 
 
-def ResNet152(config):
+def ResNet152(params):
     """Constructs a ResNet-152 model.
 
     Args:
-        config (:obj:`samitorch.config.model.ModelConfiguration`): The network configuration.
+        params (dict): The network configuration.
     """
-    return _ResNet(Bottleneck, [3, 8, 36, 3], config)
+    return _ResNet(Bottleneck, [3, 8, 36, 3], params)

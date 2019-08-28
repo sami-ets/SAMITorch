@@ -14,15 +14,13 @@
 # limitations under the License.
 # ==============================================================================
 
-import abc
-import torch
-from typing import Union
 from enum import Enum
 
-from samitorch.configs.configurations import ModelConfiguration, UNetModelConfiguration
-from samitorch.models.layers import ActivationLayerFactory, PaddingLayerFactory, PoolingLayerFactory, \
-    NormalizationLayerFactory
+import torch
 
+from samitorch.configs.configurations import ModelConfiguration
+from samitorch.models.layers import ActivationLayerFactory, PaddingLayerFactory, PoolingLayerFactory, \
+    NormalizationLayerFactory, PoolingLayers
 from samitorch.models.layers import ActivationLayers, PaddingLayers, NormalizationLayers
 
 
@@ -31,43 +29,6 @@ class UNetModel(Enum):
 
     def __str__(self):
         return self.value
-
-
-class UNet3DModelFactory(object):
-    """
-    Object to instantiate a model.
-    """
-
-    def __init__(self):
-        self._models = {
-            'UNet3D': UNet3D
-        }
-
-    def create_model(self, model_name: Union[str, Enum], config: ModelConfiguration) -> torch.nn.Module:
-        """
-        Instantiate a new support model.
-
-        Args:
-            model_name (str): The model's name (e.g. 'UNet3D').
-            config (:obj:`samitorch.configs.model_configuration.ModelConfiguration`): An object containing model's parameters.
-
-        Returns:
-            :obj:`torch.nn.Module`: A PyTorch model.
-        """
-        model = self._models.get(str(model_name) if isinstance(model_name, Enum) else model_name)
-        if not model:
-            raise ValueError("Model {} is not supported.".format(model_name))
-        return model(config)
-
-    def register(self, model: str, creator):
-        """
-        Add a new model.
-
-        Args:
-          model (str): Model's name.
-          creator: A torch module object wrapping the new custom model.
-        """
-        self._models[model] = creator
 
 
 class UNet3D(torch.nn.Module):
@@ -84,42 +45,53 @@ class UNet3D(torch.nn.Module):
 
     """
 
-    def __init__(self, config: UNetModelConfiguration):
+    def __init__(self, feature_maps: int, in_channels: int, out_channels: int, num_levels: int, conv_kernel_size: int,
+                 pool_kernel_size: int, pooling_type: PoolingLayers, num_groups: int, padding: tuple,
+                 activation: ActivationLayers, interpolation: bool, scale_factor: tuple):
+
         super(UNet3D, self).__init__()
 
-        feature_maps = self._get_feature_maps(config.feature_maps, config.num_levels)
+        feature_maps = self._get_feature_maps(feature_maps, num_levels)
 
-        self._encoders = torch.nn.ModuleList(self._build_encoder(feature_maps, config))
+        self._encoders = torch.nn.ModuleList(
+            self._build_encoder(in_channels, feature_maps, pooling_type, conv_kernel_size, pool_kernel_size,
+                                num_groups, padding, activation))
 
-        self._decoders = torch.nn.ModuleList(self._build_decoder(feature_maps, config))
+        self._decoders = torch.nn.ModuleList(
+            self._build_decoder(feature_maps, interpolation, conv_kernel_size, scale_factor, padding, num_groups,
+                                activation))
 
-        self._final_conv = torch.nn.Conv3d(feature_maps[0], config.out_channels, 1)
+        self._final_conv = torch.nn.Conv3d(feature_maps[0], out_channels, 1)
 
     @staticmethod
     def _get_feature_maps(starting_feature_maps, num_levels):
         return [starting_feature_maps * 2 ** k for k in range(num_levels)]
 
     @staticmethod
-    def _build_encoder(feature_maps: list, config: ModelConfiguration):
+    def _build_encoder(in_channels: int, feature_maps: list, pooling_type, conv_kernel_size, pool_kernel_size,
+                       num_groups, padding, activation):
         encoders = []
         for i, num_out_features in enumerate(feature_maps):
             if i == 0:
-                encoder = Encoder(config.in_channels, num_out_features, DoubleConv, config,
+                encoder = Encoder(in_channels, num_out_features, DoubleConv, pooling_type,
+                                  conv_kernel_size, pool_kernel_size, num_groups, padding, activation,
                                   apply_pooling=False)
+
             else:
-                encoder = Encoder(feature_maps[i - 1], num_out_features, DoubleConv, config,
-                                  apply_pooling=True)
+                encoder = Encoder(feature_maps[i - 1], num_out_features, DoubleConv, pooling_type, conv_kernel_size,
+                                  pool_kernel_size, num_groups, padding, activation, apply_pooling=True)
             encoders.append(encoder)
         return encoders
 
     @staticmethod
-    def _build_decoder(feature_maps, config_decoder):
+    def _build_decoder(feature_maps, interpolation, conv_kernel_size, scale_factor, padding, num_groups, activation):
         decoders = []
         reversed_feature_maps = list(reversed(feature_maps))
         for i in range(len(reversed_feature_maps) - 1):
             in_feature_num = reversed_feature_maps[i] + reversed_feature_maps[i + 1]
             out_feature_num = reversed_feature_maps[i + 1]
-            decoder = Decoder(in_feature_num, out_feature_num, DoubleConv, config_decoder)
+            decoder = Decoder(in_feature_num, out_feature_num, DoubleConv, interpolation, conv_kernel_size,
+                              scale_factor, padding, num_groups, activation)
             decoders.append(decoder)
         return decoders
 
@@ -251,8 +223,8 @@ class DoubleConv(torch.nn.Module):
         Returns:
             :obj:`torch.Tensor`: The transformed tensor.
         """
-        x = self._conv1.forward(x)
-        x = self._conv2.forward(x)
+        x = self._conv1(x)
+        x = self._conv2(x)
         return x
 
 
@@ -268,22 +240,23 @@ class Encoder(torch.nn.Module):
         apply_pooling (bool): If True use MaxPool3d before DoubleConv
     """
 
-    def __init__(self, in_channels: int, out_channels: int, basic_module: torch.nn.Module,
-                 config: ModelConfiguration, apply_pooling: bool = True):
+    def __init__(self, in_channels: int, out_channels: int, basic_module: torch.nn.Module, pooling_type: PoolingLayers,
+                 conv_kernel_size: int, pool_kernel_size: int, num_groups: int, padding: tuple,
+                 activation: ActivationLayers, apply_pooling: bool = True):
         super(Encoder, self).__init__()
         self._pooling_factory = PoolingLayerFactory()
 
         if apply_pooling:
-            self._pooling = self._pooling_factory.create(config.pooling_type, config.pool_kernel_size)
+            self._pooling = self._pooling_factory.create(pooling_type, pool_kernel_size)
         else:
             self._pooling = None
 
         self._basic_module = basic_module(in_channels, out_channels,
                                           is_in_encoder=True,
-                                          kernel_size=config.conv_kernel_size,
-                                          num_groups=config.num_groups,
-                                          padding=config.padding,
-                                          activation=config.activation)
+                                          kernel_size=conv_kernel_size,
+                                          num_groups=num_groups,
+                                          padding=padding,
+                                          activation=activation)
 
     def forward(self, x):
         """
@@ -295,8 +268,8 @@ class Encoder(torch.nn.Module):
              :obj:`torch.Tensor`: The transformed tensor.
          """
         if self._pooling is not None:
-            x = self._pooling.forward(x)
-        x = self._basic_module.forward(x)
+            x = self._pooling(x)
+        x = self._basic_module(x)
         return x
 
 
@@ -312,11 +285,12 @@ class Decoder(torch.nn.Module):
         config (dict): The rest of the configuration for the decoder part of the network.
     """
 
-    def __init__(self, in_channels: int, out_channels: int, basic_module: torch.nn.Module,
-                 config: UNetModelConfiguration):
+    def __init__(self, in_channels: int, out_channels: int, basic_module: torch.nn.Module, interpolation: bool,
+                 conv_kernel_size: int, scale_factor: tuple, padding: tuple, num_groups: int,
+                 activation: ActivationLayers):
         super(Decoder, self).__init__()
 
-        if config.interpolation:
+        if interpolation:
             self._upsample = None
         else:
             # Otherwise use ConvTranspose3d (bear in mind your GPU memory)
@@ -326,18 +300,18 @@ class Decoder(torch.nn.Module):
             # works correctly
             self._upsample = torch.nn.ConvTranspose3d(in_channels,
                                                       out_channels,
-                                                      kernel_size=config.conv_kernel_size,
-                                                      stride=config.scale_factor,
-                                                      padding=torch.nn.ReplicationPad3d(config.padding),
+                                                      kernel_size=conv_kernel_size,
+                                                      stride=scale_factor,
+                                                      padding=torch.nn.ReplicationPad3d(padding),
                                                       output_padding=1)
             # adapt the number of in_channels for the ExtResNetBlock
             in_channels = out_channels
         self._basic_module = basic_module(in_channels, out_channels,
                                           is_in_encoder=False,
-                                          kernel_size=config.conv_kernel_size,
-                                          num_groups=config.num_groups,
-                                          padding=config.padding,
-                                          activation=config.activation)
+                                          kernel_size=conv_kernel_size,
+                                          num_groups=num_groups,
+                                          padding=padding,
+                                          activation=activation)
 
     def forward(self, encoder_features, x):
         """
@@ -360,5 +334,5 @@ class Decoder(torch.nn.Module):
             x = self._upsample(x)
             x += encoder_features
 
-        x = self._basic_module.forward(x)
+        x = self._basic_module(x)
         return x
