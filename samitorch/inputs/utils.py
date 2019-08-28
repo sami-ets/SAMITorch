@@ -13,15 +13,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #  ==============================================================================
+import torch
 
 from samitorch.inputs.batch import ImageBatch, PatchBatch
 
 
 def sample_collate(batch: list):
     batch = ImageBatch(samples=batch)
-    return batch.x, (batch.y, batch.dataset_id)
+    return batch.x, torch.Tensor().new_tensor([batch.y, batch.dataset_id])
 
 
 def patch_collate(batch: list):
     batch = PatchBatch(samples=batch)
-    return batch.x, (batch.y, batch.dataset_id)
+    return batch.x, torch.Tensor().new_tensor([batch.y, batch.dataset_id])
