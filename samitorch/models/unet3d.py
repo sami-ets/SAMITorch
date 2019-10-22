@@ -63,6 +63,13 @@ class UNet3D(torch.nn.Module):
 
         self._final_conv = torch.nn.Conv3d(feature_maps[0], out_channels, 1)
 
+        for m in self.modules():
+            if isinstance(m, torch.nn.Conv3d):
+                torch.nn.init.kaiming_uniform_(m.weight, mode='fan_out', nonlinearity=str(activation).lower())
+            elif isinstance(m, (torch.nn.BatchNorm3d, torch.nn.GroupNorm)):
+                torch.nn.init.constant_(m.weight, 1)
+                torch.nn.init.constant_(m.bias, 0)
+
     @staticmethod
     def _get_feature_maps(starting_feature_maps, num_levels):
         return [starting_feature_maps * 2 ** k for k in range(num_levels)]

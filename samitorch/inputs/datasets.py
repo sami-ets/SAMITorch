@@ -38,6 +38,11 @@ class AbstractDatasetFactory(metaclass=abc.ABCMeta):
     def create_train_test(*args, **kwargs):
         raise NotImplementedError
 
+    @staticmethod
+    @abc.abstractmethod
+    def create_train_valid_test(*args, **kwargs):
+        raise NotImplementedError
+
 
 class SegmentationDataset(Dataset):
     """

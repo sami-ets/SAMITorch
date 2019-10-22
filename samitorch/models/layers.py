@@ -23,7 +23,7 @@ import torch
 
 class ActivationLayers(Enum):
     ReLU = "ReLU"
-    LeakyReLU = "LeakyReLU"
+    LeakyReLU = "Leaky_ReLU"
     PReLU = "PReLU"
 
     def __str__(self):
@@ -75,7 +75,7 @@ class ActivationLayerFactory(AbstractLayerFactory):
 
         self._activation_functions = {
             "ReLU": torch.nn.ReLU,
-            "LeakyReLU": torch.nn.LeakyReLU,
+            "Leaky_ReLU": torch.nn.LeakyReLU,
             'PReLU': torch.nn.PReLU
         }
 
