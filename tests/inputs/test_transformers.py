@@ -29,7 +29,8 @@ from samitorch.inputs.sample import Sample
 
 from samitorch.inputs.transformers import LoadNifti, ToNifti1Image, RemapClassIDs, ApplyMask, \
     ToNumpyArray, RandomCrop, NiftiToDisk, To2DNifti1Image, ToPNGFile, RandomCrop3D, \
-    NiftiImageToNumpy, ResampleNiftiImageToTemplate, CropToContent, ToTensorPatches, ToNDTensor, ToNDArrayPatches
+    NiftiImageToNumpy, ResampleNiftiImageToTemplate, CropToContent, ToTensorPatches, ToNDTensor, ToNDArrayPatches, \
+    PadToPatchShape
 
 
 class ToNumpyArrayTest(unittest.TestCase):
@@ -1178,3 +1179,19 @@ class ToNDArrayPatchesTest(unittest.TestCase):
         for i in range(transformed_sample.x.shape[0]):
             img = nib.Nifti1Image(transformed_sample.x[i, 0], None)
             nib.save(img, os.path.join(self.OUTPUT_DATA_FOLDER_PATH, "patch_{}".format(i)))
+
+
+class PadToPatchShapeTest(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self._transform = transforms.Compose([PadToPatchShape([1, 32, 32, 32], [1, 8, 8, 8])])
+
+    def test_should_return_correctly_padded_ndarray(self):
+        padded_ndarray = self._transform(np.ones((1, 127, 143, 159)))
+        assert_that(padded_ndarray.shape, is_((1, 128, 160, 160)))
+
+    def test_should_return_correctly_padded_sample(self):
+        sample = Sample(x=np.ones((1, 127, 143, 159)), y=np.ones((1, 127, 143, 159)), is_labeled=True)
+        padded_sample = self._transform(sample)
+        assert_that(padded_sample.x.shape, is_((1, 128, 160, 160)))
+        assert_that(padded_sample.y.shape, is_((1, 128, 160, 160)))
