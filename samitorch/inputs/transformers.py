@@ -289,15 +289,18 @@ class PadToPatchShape(object):
             pad_d, pad_h, pad_w = 0, 0, 0
 
             if d % self._patch_size[1] != 0:
-                pad_d = int((self._patch_size[1] - d % self._patch_size[1]) / 2)
+                pad_d = ((self._patch_size[1] - d % self._patch_size[1]) / 2)
             if h % self._patch_size[2] != 0:
-                pad_h = int((self._patch_size[2] - h % self._patch_size[2]) / 2)
+                pad_h = ((self._patch_size[2] - h % self._patch_size[2]) / 2)
             if w % self._patch_size[3] != 0:
-                pad_w = int((self._patch_size[3] - w % self._patch_size[3]) / 2)
+                pad_w = ((self._patch_size[3] - w % self._patch_size[3]) / 2)
 
             if pad_d != 0 or pad_h != 0 or pad_w != 0:
-                input = np.pad(input, ((0, 0), (pad_d, pad_d), (pad_h, pad_h), (pad_w, pad_w)), mode="constant",
-                               constant_values=0)
+                input = np.pad(input, ((0, 0),
+                                       (int(np.ceil(pad_d)), int(np.floor(pad_d))),
+                                       (int(np.ceil(pad_h)), int(np.floor(pad_h))),
+                                       (int(np.ceil(pad_w)), int(np.floor(pad_w)))),
+                               mode="constant", constant_values=0)
 
             return input
 
@@ -310,22 +313,28 @@ class PadToPatchShape(object):
             pad_d, pad_h, pad_w = 0, 0, 0
 
             if d % self._patch_size[1] != 0:
-                pad_d = int((self._patch_size[1] - d % self._patch_size[1]) / 2)
+                pad_d = ((self._patch_size[1] - d % self._patch_size[1]) / 2)
             if h % self._patch_size[2] != 0:
-                pad_h = int((self._patch_size[2] - h % self._patch_size[2]) / 2)
+                pad_h = ((self._patch_size[2] - h % self._patch_size[2]) / 2)
             if w % self._patch_size[3] != 0:
-                pad_w = int((self._patch_size[3] - w % self._patch_size[3]) / 2)
+                pad_w = ((self._patch_size[3] - w % self._patch_size[3]) / 2)
 
             if pad_d != 0 or pad_h != 0 or pad_w != 0:
                 transformed_sample.x = np.pad(transformed_sample.x,
-                                              ((0, 0), (pad_d, pad_d), (pad_h, pad_h), (pad_w, pad_w)),
+                                              ((0, 0),
+                                               (int(np.ceil(pad_d)), int(np.floor(pad_d))),
+                                               (int(np.ceil(pad_h)), int(np.floor(pad_h))),
+                                               (int(np.ceil(pad_w)), int(np.floor(pad_w)))),
                                               mode="constant",
                                               constant_values=0)
 
             if sample.is_labeled:
                 if pad_d != 0 or pad_h != 0 or pad_w != 0:
                     transformed_sample.y = np.pad(transformed_sample.y,
-                                                  ((0, 0), (pad_d, pad_d), (pad_h, pad_h), (pad_w, pad_w)),
+                                                  ((0, 0),
+                                                   (int(np.ceil(pad_d)), int(np.floor(pad_d))),
+                                                   (int(np.ceil(pad_h)), int(np.floor(pad_h))),
+                                                   (int(np.ceil(pad_w)), int(np.floor(pad_w)))),
                                                   mode="constant",
                                                   constant_values=0)
 
