@@ -15,19 +15,20 @@
 # ==============================================================================
 import random
 import numpy as np
+from samitorch.inputs.sample import Sample
 
 
-class NoiseAdder(object):
+class AddNoise(object):
 
     def __init__(self, exec_probability):
         self._exec_probability = exec_probability
 
-    def __call__(self, ndarray, snr, S0, noise_type='rician'):
+    def __call__(self, input, snr, S0, noise_type='rician'):
         """
         Add noise to a signal.
 
         Args:
-            ndarray  (:obj:`Numpy.ndarray`): 1-d ndarray of the signal in the voxel.
+            input  (:obj:`Numpy.ndarray`): 1-d ndarray of the signal in the voxel.
             snr (float) : The desired signal-to-noise ratio. (See notes below.) If `snr` is None, return the signal
                 as-is.
             S0 (float): Reference signal for specifying `snr`.
@@ -49,20 +50,41 @@ class NoiseAdder(object):
             Source:
                 https://github.com/nipy/dipy/blob/108cd1137386462cda08438cddee15285131af08/dipy/sims/voxel.py#L82
         """
-        if random.uniform(0, 1) <= self._exec_probability:
-            orig_shape = ndarray.shape
-            vol_flat = np.reshape(ndarray.copy(), (-1, ndarray.shape[-1]))
+        if isinstance(input, np.ndarray):
+
+            if random.uniform(0, 1) <= self._exec_probability:
+                orig_shape = input.shape
+                vol_flat = np.reshape(input.copy(), (-1, input.shape[-1]))
+
+                if S0 is None:
+                    S0 = np.max(input)
+
+                for vox_idx, signal in enumerate(vol_flat):
+                    vol_flat[vox_idx] = self._apply(signal, snr=snr, S0=S0,
+                                                    noise_type=noise_type)
+
+                return np.reshape(vol_flat, orig_shape)
+
+            else:
+                return input
+
+        elif isinstance(input, Sample):
+            sample = input
+            transformed_sample = Sample.from_sample(sample)
+
+            orig_shape = transformed_sample.x.shape
+            vol_flat = np.reshape(sample.x.copy(), (-1, sample.x.shape[-1]))
 
             if S0 is None:
-                S0 = np.max(ndarray)
+                S0 = np.max(sample.x)
 
             for vox_idx, signal in enumerate(vol_flat):
                 vol_flat[vox_idx] = self._apply(signal, snr=snr, S0=S0,
                                                 noise_type=noise_type)
 
-            return np.reshape(vol_flat, orig_shape)
-        else:
-            return ndarray
+            transformed_sample.x = np.reshape(vol_flat, orig_shape)
+
+            return transformed_sample.x
 
     def _apply(self, ndarray, snr, S0, noise_type):
         if snr is None:

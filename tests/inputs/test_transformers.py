@@ -31,8 +31,8 @@ from samitorch.inputs.sample import Sample
 from samitorch.inputs.transformers import LoadNifti, ToNifti1Image, RemapClassIDs, ApplyMask, \
     ToNumpyArray, RandomCrop, NiftiToDisk, To2DNifti1Image, ToPNGFile, RandomCrop3D, \
     NiftiImageToNumpy, ResampleNiftiImageToTemplate, CropToContent, ToTensorPatches, ToNDTensor, ToNDArrayPatches, \
-    PadToPatchShape, NoiseAdder
-
+    PadToPatchShape
+from samitorch.inputs.augmentation.transformers import AddNoise
 
 class ToNumpyArrayTest(unittest.TestCase):
     TEST_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data")
@@ -1211,7 +1211,7 @@ class NoiseAdderTest(unittest.TestCase):
         assert_that(os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH), is_(True))
 
     def setUp(self) -> None:
-        self._transformer = NoiseAdder(exec_probability=1)
+        self._transformer = AddNoise(exec_probability=1)
         self._transforms = Compose([ToNumpyArray()])
         self._save_transforms = Compose(
             [ToNifti1Image(), NiftiToDisk(self.OUTPUT_DATA_FOLDER_PATH + self.NOISY_IMAGE_FILE_NAME)])
