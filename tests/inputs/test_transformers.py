@@ -13,15 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
+import random
 import unittest
 import os
 import nibabel as nib
 import numpy as np
 import collections
 import torch
+import matplotlib.pyplot as plt
 
-from torchvision.transforms import transforms
+from torchvision.transforms import transforms, Compose
 
 from hamcrest import *
 
@@ -30,7 +31,7 @@ from samitorch.inputs.sample import Sample
 from samitorch.inputs.transformers import LoadNifti, ToNifti1Image, RemapClassIDs, ApplyMask, \
     ToNumpyArray, RandomCrop, NiftiToDisk, To2DNifti1Image, ToPNGFile, RandomCrop3D, \
     NiftiImageToNumpy, ResampleNiftiImageToTemplate, CropToContent, ToTensorPatches, ToNDTensor, ToNDArrayPatches, \
-    PadToPatchShape
+    PadToPatchShape, NoiseAdder
 
 
 class ToNumpyArrayTest(unittest.TestCase):
@@ -1195,3 +1196,29 @@ class PadToPatchShapeTest(unittest.TestCase):
         padded_sample = self._transform(sample)
         assert_that(padded_sample.x.shape, is_((1, 128, 160, 160)))
         assert_that(padded_sample.y.shape, is_((1, 128, 160, 160)))
+
+
+class NoiseAdderTest(unittest.TestCase):
+    TEST_IMAGE_PATH = "../data/T1_1mm.nii"
+    OUTPUT_DATA_FOLDER_PATH = "../data/generated/Noise/"
+    NOISY_IMAGE_FILE_NAME = "Noisy_T1_1mm.nii"
+
+    @classmethod
+    def setUpClass(cls):
+        if not os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH):
+            os.makedirs(cls.OUTPUT_DATA_FOLDER_PATH)
+
+        assert_that(os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH), is_(True))
+
+    def setUp(self) -> None:
+        self._transformer = NoiseAdder(exec_probability=1)
+        self._transforms = Compose([ToNumpyArray()])
+        self._save_transforms = Compose(
+            [ToNifti1Image(), NiftiToDisk(self.OUTPUT_DATA_FOLDER_PATH + self.NOISY_IMAGE_FILE_NAME)])
+        self._image = self._transforms(self.TEST_IMAGE_PATH)
+        self._image_shape = self._image.shape
+
+    def test_should_add_rician_noise_to_image_and_save_it_for_inspection(self):
+        output = self._transformer(self._image, random.uniform(0, 3), random.uniform(0, 20), "rician")
+        self._save_transforms(output)
+        assert_that(os.path.exists(os.path.join(self.OUTPUT_DATA_FOLDER_PATH, self.NOISY_IMAGE_FILE_NAME)))
