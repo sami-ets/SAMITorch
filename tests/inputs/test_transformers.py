@@ -34,6 +34,7 @@ from samitorch.inputs.transformers import LoadNifti, ToNifti1Image, RemapClassID
     PadToPatchShape
 from samitorch.inputs.augmentation.transformers import AddNoise
 
+
 class ToNumpyArrayTest(unittest.TestCase):
     TEST_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data")
     VALID_3D_NIFTI_FILE = os.path.join(TEST_DATA_FOLDER_PATH, "T1.nii")
@@ -1211,7 +1212,7 @@ class NoiseAdderTest(unittest.TestCase):
         assert_that(os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH), is_(True))
 
     def setUp(self) -> None:
-        self._transformer = AddNoise(exec_probability=1)
+        self._transformer = AddNoise(1, snr=None, S0=None, noise_type="rician")
         self._transforms = Compose([ToNumpyArray()])
         self._save_transforms = Compose(
             [ToNifti1Image(), NiftiToDisk(self.OUTPUT_DATA_FOLDER_PATH + self.NOISY_IMAGE_FILE_NAME)])
@@ -1219,6 +1220,6 @@ class NoiseAdderTest(unittest.TestCase):
         self._image_shape = self._image.shape
 
     def test_should_add_rician_noise_to_image_and_save_it_for_inspection(self):
-        output = self._transformer(self._image, random.uniform(0, 3), random.uniform(0, 20), "rician")
+        output = self._transformer(self._image)
         self._save_transforms(output)
         assert_that(os.path.exists(os.path.join(self.OUTPUT_DATA_FOLDER_PATH, self.NOISY_IMAGE_FILE_NAME)))

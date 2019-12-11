@@ -73,9 +73,6 @@ class SegmentationDataset(Dataset):
         self._transform = transforms
         self._augment = augment
 
-        if len(self._source_paths) != len(self._target_paths) or len(self._source_paths) == 0:
-            raise ValueError("Number of source and target images must be equal and non-zero.")
-
     def __len__(self):
         return len(self._samples)
 
@@ -120,9 +117,6 @@ class MultimodalSegmentationDataset(Dataset):
         self._dataset_id = dataset_id
         self._transform = transforms
         self._augment = augment
-
-        if len(self._source_paths) != len(self._target_paths) or len(self._source_paths) == 0:
-            raise ValueError("Number of source and target images must be equal and non-zero.")
 
     def __len__(self):
         return len(self._samples)

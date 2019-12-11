@@ -15,6 +15,21 @@ class DataAugmentationStrategy(object):
         raise NotImplementedError
 
 
+class AugmentInput(DataAugmentationStrategy):
+
+    def __init__(self, transform: Compose):
+        super().__init__(transform)
+
+    def __call__(self, X):
+        return self.apply(X)
+
+    def apply(self, X):
+        return self._transform(X)
+
+    def reset(self):
+        pass
+
+
 class AugmentDuplicatedInput(DataAugmentationStrategy):
     """
     Apply a transformation to duplicate data with high probability and apply a transformation with low probability to

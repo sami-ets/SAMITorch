@@ -13,22 +13,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import random
 import numpy as np
+import random
+import torch
+
 from samitorch.inputs.sample import Sample
 
 
 class AddNoise(object):
 
-    def __init__(self, exec_probability):
+    def __init__(self, exec_probability: float, snr: float = None, S0: float = None, noise_type: str = "rician"):
         self._exec_probability = exec_probability
+        self._snr = snr
+        self._S0 = S0
+        self._noise_type = noise_type
 
-    def __call__(self, input, snr, S0, noise_type='rician'):
+    def __call__(self, inputs):
         """
         Add noise to a signal.
 
         Args:
-            input  (:obj:`Numpy.ndarray`): 1-d ndarray of the signal in the voxel.
+            inputs  (:obj:`Numpy.ndarray`): 1-d ndarray of the signal in the voxel.
             snr (float) : The desired signal-to-noise ratio. (See notes below.) If `snr` is None, return the signal
                 as-is.
             S0 (float): Reference signal for specifying `snr`.
@@ -50,41 +55,45 @@ class AddNoise(object):
         Source:
             https://github.com/nipy/dipy/blob/108cd1137386462cda08438cddee15285131af08/dipy/sims/voxel.py#L82
         """
-        if isinstance(input, np.ndarray):
+        if isinstance(inputs, np.ndarray):
 
             if random.uniform(0, 1) <= self._exec_probability:
-                orig_shape = input.shape
-                vol_flat = np.reshape(input.copy(), (-1, input.shape[-1]))
+                orig_shape = inputs.shape
+                vol_flat = np.reshape(inputs.copy(), (-1, inputs.shape[-1]))
 
-                if S0 is None:
-                    S0 = np.max(input)
+                if self._S0 is None:
+                    self._S0 = np.max(inputs)
+
+                if self._snr is None:
+                    self._snr = random.uniform(20, 150)
 
                 for vox_idx, signal in enumerate(vol_flat):
-                    vol_flat[vox_idx] = self._apply(signal, snr=snr, S0=S0,
-                                                    noise_type=noise_type)
+                    vol_flat[vox_idx] = self._apply(signal, snr=self._snr, S0=self._S0, noise_type=self._noise_type)
 
                 return np.reshape(vol_flat, orig_shape)
 
             else:
-                return input
+                return inputs
 
-        elif isinstance(input, Sample):
-            sample = input
+        elif isinstance(inputs, Sample):
+            sample = inputs
             transformed_sample = Sample.from_sample(sample)
 
-            orig_shape = transformed_sample.x.shape
-            vol_flat = np.reshape(sample.x.copy(), (-1, sample.x.shape[-1]))
+            orig_shape = transformed_sample.x.numpy().shape
+            vol_flat = np.reshape(sample.x.numpy().copy(), (-1, sample.x.numpy().shape[-1]))
 
-            if S0 is None:
-                S0 = np.max(sample.x)
+            if self._S0 is None:
+                self._S0 = np.max(transformed_sample.x.numpy())
+
+            if self._snr is None:
+                self._snr = random.uniform(20, 150)
 
             for vox_idx, signal in enumerate(vol_flat):
-                vol_flat[vox_idx] = self._apply(signal, snr=snr, S0=S0,
-                                                noise_type=noise_type)
+                vol_flat[vox_idx] = self._apply(signal, snr=self._snr, S0=self._S0, noise_type=self._noise_type)
 
-            transformed_sample.x = np.reshape(vol_flat, orig_shape)
+            transformed_sample.x = torch.tensor(np.reshape(vol_flat, orig_shape))
 
-            return transformed_sample.x
+            return transformed_sample
 
     def _apply(self, ndarray, snr, S0, noise_type):
         if snr is None:
