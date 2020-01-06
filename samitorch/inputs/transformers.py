@@ -1219,7 +1219,7 @@ class ToNifti1Image(object):
             if not (isinstance(sample.x, np.ndarray) and (sample.x.ndim in [3, 4])):
                 raise TypeError("Only 3D (DxHxW) or 4D (CxDxHxW) ndarrays are supported")
 
-            if not isinstance(self._header, list):
+            if self._header is not None and not isinstance(self._header, list):
                 raise TypeError("A sample requires a list of headers.")
 
             transformed_sample.x = nib.Nifti1Image(sample.x.transpose((3, 2, 1, 0)),

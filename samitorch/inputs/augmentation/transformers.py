@@ -134,3 +134,46 @@ class AddNoise(object):
         The Rayleigh distribution is $\sqrt\{Gauss_1^2 + Gauss_2^2}$.
         """
         return sig + np.sqrt(noise1 ** 2 + noise2 ** 2)
+
+
+class AddBiasField(object):
+
+    def __init__(self, exec_probability: float):
+        self._exec_probability = exec_probability
+
+    def __call__(self, inputs):
+        if isinstance(inputs, np.ndarray):
+            if random.uniform(0, 1) <= self._exec_probability:
+                alpha = np.random.normal(0, 25)
+                x = np.linspace(1 - alpha, 1 + alpha, inputs.shape[1])
+                y = np.linspace(1 - alpha, 1 + alpha, inputs.shape[2])
+                z = np.linspace(1 - alpha, 1 + alpha, inputs.shape[3])
+                [X, Y, Z] = np.meshgrid(x, y, z)
+                bias = np.multiply(X, Y, Z).transpose(1, 0, 2)
+                bias = np.expand_dims(bias, 0)
+
+                return inputs + bias
+
+        elif isinstance(inputs, Sample):
+            if random.uniform(0, 1) <= self._exec_probability:
+                sample = inputs
+                transformed_sample = Sample.from_sample(sample)
+                alpha = np.random.normal(0, 25)
+
+                x = np.linspace(1 - alpha, 1 + alpha, transformed_sample.x.shape[1])
+                y = np.linspace(1 - alpha, 1 + alpha, transformed_sample.x.shape[2])
+                z = np.linspace(1 - alpha, 1 + alpha, transformed_sample.x.shape[3])
+                [X, Y, Z] = np.meshgrid(x, y, z)
+                bias = np.multiply(X, Y, Z).transpose(1, 0, 2)
+
+                if transformed_sample.y is not None:
+                    roi = transformed_sample.y > 0.0
+                    bias = np.multiply(bias, roi)
+
+                if bias.size < 4:
+                    np.expand_dims(bias, 0)
+
+                transformed_sample.x += bias
+
+                return transformed_sample
+

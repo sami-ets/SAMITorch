@@ -32,7 +32,7 @@ from samitorch.inputs.transformers import LoadNifti, ToNifti1Image, RemapClassID
     ToNumpyArray, RandomCrop, NiftiToDisk, To2DNifti1Image, ToPNGFile, RandomCrop3D, \
     NiftiImageToNumpy, ResampleNiftiImageToTemplate, CropToContent, ToTensorPatches, ToNDTensor, ToNDArrayPatches, \
     PadToPatchShape
-from samitorch.inputs.augmentation.transformers import AddNoise
+from samitorch.inputs.augmentation.transformers import AddNoise, AddBiasField
 
 
 class ToNumpyArrayTest(unittest.TestCase):
@@ -1200,8 +1200,8 @@ class PadToPatchShapeTest(unittest.TestCase):
 
 
 class NoiseAdderTest(unittest.TestCase):
-    TEST_IMAGE_PATH = "../data/T1_1mm.nii"
-    OUTPUT_DATA_FOLDER_PATH = "../data/generated/Noise/"
+    TEST_IMAGE_PATH = os.path.join(os.path.dirname(__file__), "../data/T1_1mm.nii")
+    OUTPUT_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data/generated/Noise/")
     NOISY_IMAGE_FILE_NAME = "Noisy_T1_1mm.nii"
 
     @classmethod
@@ -1223,3 +1223,39 @@ class NoiseAdderTest(unittest.TestCase):
         output = self._transformer(self._image)
         self._save_transforms(output)
         assert_that(os.path.exists(os.path.join(self.OUTPUT_DATA_FOLDER_PATH, self.NOISY_IMAGE_FILE_NAME)))
+
+
+class BiasFieldAdder(unittest.TestCase):
+    TEST_IMAGE_PATH = os.path.join(os.path.dirname(__file__), "../data/T1.nii")
+    TEST_LABEL_PATH = os.path.join(os.path.dirname(__file__), "../data/Labels.nii")
+    OUTPUT_DATA_FOLDER_PATH = os.path.join(os.path.dirname(__file__), "../data/generated/Bias/")
+    BIAS_IMAGE_FILE_NAME = "Bias_T1_1mm.nii"
+    BIAS_FROM_SAMPLE_IMAGE_FILE_NAME = "Bias_from_sample_T1_1mm.nii"
+
+    @classmethod
+    def setUpClass(cls):
+        if not os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH):
+            os.makedirs(cls.OUTPUT_DATA_FOLDER_PATH)
+
+        assert_that(os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH), is_(True))
+
+    def setUp(self) -> None:
+        self._transformer = AddBiasField(1)
+        self._transforms = Compose([ToNumpyArray()])
+        self._save_transforms = Compose(
+            [ToNifti1Image(), NiftiToDisk(self.OUTPUT_DATA_FOLDER_PATH + self.BIAS_IMAGE_FILE_NAME)])
+        self._image = self._transforms(self.TEST_IMAGE_PATH)
+        self._label = self._transforms(self.TEST_LABEL_PATH)
+        self._image_shape = self._image.shape
+
+    def test_should_add_bias_field_to_image_and_save_it_for_inspection(self):
+        output = self._transformer(self._image)
+        self._save_transforms(output)
+        assert_that(os.path.exists(os.path.join(self.OUTPUT_DATA_FOLDER_PATH, self.BIAS_IMAGE_FILE_NAME)))
+
+    def test_should_add_bias_field_to_sample_and_save_it_for_inspection(self):
+        output = self._transformer(Sample(self._image, self._label, is_labeled=False))
+        self._save_transforms = Compose(
+            [ToNifti1Image(), NiftiToDisk(self.OUTPUT_DATA_FOLDER_PATH + self.BIAS_FROM_SAMPLE_IMAGE_FILE_NAME)])
+        self._save_transforms(output)
+        assert_that(os.path.exists(os.path.join(self.OUTPUT_DATA_FOLDER_PATH, self.BIAS_FROM_SAMPLE_IMAGE_FILE_NAME)))
