@@ -35,6 +35,9 @@ class ImageType(Enum):
 class Extension(Enum):
     NIFTI = ".nii"
     NRRD = ".nrrd"
+    MGZ = ".mgz"
+    MGH = ".mgh"
+    ALL = [NIFTI, NRRD, MGZ, MGH]
 
     @classmethod
     def from_string(cls, name: str):
@@ -49,10 +52,12 @@ class Extension(Enum):
 class Modality(Enum):
     DTI = 'DTI'
     T1 = 'T1'
+    T1_1MM = 'T1_1mm'
     T2 = 'T2'
+    T2_FLAIR = 'T2_FLAIR'
     MD = 'MD'
     FA = 'FA'
-    ALL = [DTI, T1, T2, MD, FA]
+    ALL = [DTI, T1, T1_1MM, T2, T2_FLAIR, MD, FA]
 
     @classmethod
     def from_string(cls, name: str):
@@ -101,6 +106,14 @@ class Image(object):
     @staticmethod
     def is_nrrd(file):
         return Extension.NRRD.value in file
+
+    @staticmethod
+    def is_mgh(file):
+        return Extension.MGH.value in file
+
+    @staticmethod
+    def is_mgz(file):
+        return Extension.MGZ.value in file
 
     @staticmethod
     def is_t1(file):

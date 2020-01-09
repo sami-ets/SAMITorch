@@ -16,7 +16,7 @@
 import abc
 import copy
 import os
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple, Union
 
 import numpy as np
 from sklearn.model_selection import ShuffleSplit, StratifiedShuffleSplit
@@ -50,8 +50,9 @@ class SegmentationDataset(Dataset):
     Create a dataset class in PyTorch for reading NIfTI files.
     """
 
-    def __init__(self, source_paths: List[str], target_paths: List[str], samples: List[Sample], modality: Modality,
-                 dataset_id: int = None, transforms: Optional[Callable] = None,
+    def __init__(self, source_paths: List[str], target_paths: List[str], samples: List[Sample],
+                 modalities: Union[Modality, List[Modality]], dataset_id: int = None,
+                 transforms: Optional[Callable] = None,
                  augment: DataAugmentationStrategy = None) -> None:
         """
         Dataset initializer.
@@ -68,7 +69,7 @@ class SegmentationDataset(Dataset):
         self._source_paths = source_paths
         self._target_paths = target_paths
         self._samples = samples
-        self._modality = modality
+        self._modalities = modalities
         self._dataset_id = dataset_id
         self._transform = transforms
         self._augment = augment
@@ -93,8 +94,8 @@ class MultimodalSegmentationDataset(Dataset):
     Create a dataset class in PyTorch for reading NIfTI files.
     """
 
-    def __init__(self, source_paths: List[str], target_paths: List[str], samples: List[Sample], modality_1: Modality,
-                 modality_2: Modality, dataset_id: int = None, transforms: Optional[Callable] = None,
+    def __init__(self, source_paths: List[str], target_paths: List[str], samples: List[Sample],
+                 modalities: List[Modality], dataset_id: int = None, transforms: Optional[Callable] = None,
                  augment: DataAugmentationStrategy = None) -> None:
         """
         Dataset initializer.
@@ -103,8 +104,7 @@ class MultimodalSegmentationDataset(Dataset):
             source_paths (List of str): Path to source images.
             target_paths (List of str): Path to target (labels) images.
             samples (list of :obj:`samitorch.inputs.sample.Sample`): A list of Sample objects.
-            modality_1 (:obj:`samitorch.inputs.images.Modalities`): The first modality of the data set.
-            modality_2 (:obj:`samitorch.inputs.images.Modalities`): The second modality of the data set.
+            modalities (List of :obj:`samitorch.inputs.images.Modalities`): The list of modalities of the data set.
             dataset_id (int): An integer representing the ID of the data set.
             transforms (Callable): transform to apply to both source and target images.
             augment (Callable): transform to apply as data augmentation on source image.
@@ -112,8 +112,7 @@ class MultimodalSegmentationDataset(Dataset):
         self._source_paths = source_paths
         self._target_paths = target_paths
         self._samples = samples
-        self._modality_1 = modality_1
-        self._modality_2 = modality_2
+        self._modalities = modalities
         self._dataset_id = dataset_id
         self._transform = transforms
         self._augment = augment
@@ -171,7 +170,7 @@ class PatchDataset(SegmentationDataset):
 
     @property
     def modality(self):
-        return self._modality
+        return self._modalities
 
     def __len__(self):
         return len(self._samples)
@@ -215,8 +214,8 @@ class MultimodalPatchDataset(MultimodalSegmentationDataset):
     """
 
     def __init__(self, source_paths: List[str], target_paths: List[str], samples: List[Sample],
-                 patch_size: Tuple[int, int, int, int], step: Tuple[int, int, int, int], modality_1: Modality,
-                 modality_2: Modality, dataset_id: int = None, transforms: Optional[Callable] = None,
+                 patch_size: Tuple[int, int, int, int], step: Tuple[int, int, int, int], modalities: List[Modality],
+                 dataset_id: int = None, transforms: Optional[Callable] = None,
                  augment: DataAugmentationStrategy = None) -> None:
         """
         Dataset initializer.
@@ -231,8 +230,8 @@ class MultimodalPatchDataset(MultimodalSegmentationDataset):
             transforms (Callable): transform to apply to both source and target images.
             augment (Callable): transform to apply as data augmentation on source image.
         """
-        super(MultimodalPatchDataset, self).__init__(source_paths, target_paths, samples, modality_1, modality_2,
-                                                     dataset_id, transforms, augment)
+        super(MultimodalPatchDataset, self).__init__(source_paths, target_paths, samples, modalities, dataset_id,
+                                                     transforms, augment)
         self._pre_transform = Compose([ToNumpyArray(), PadToPatchShape(patch_size=patch_size, step=step)])
 
     def __len__(self):
@@ -282,10 +281,41 @@ class MultimodalPatchDataset(MultimodalSegmentationDataset):
 class PatchDatasetFactory(AbstractDatasetFactory):
 
     @staticmethod
-    def create_train_test(source_dir: str, target_dir: str, modality: Modality, patch_size: Tuple[int, int, int, int],
+    def create_train_test(source_dir: str, target_dir: str, modalities: Union[Modality, List[Modality]],
+                          patch_size: Tuple[int, int, int, int],
                           step: Tuple[int, int, int, int], dataset_id: int, test_size: float,
                           keep_centered_on_foreground: bool = True,
                           augmentation_strategy: DataAugmentationStrategy = None):
+        """
+            Create a SegmentationDataset object for both training and validation.
+
+            Args:
+               source_dir (str): Path to source directory.
+               target_dir (str): Path to target directory.
+               modalities (List of :obj:`samitorch.inputs.images.Modalities`): The first modality of the data set.
+               dataset_id (int): An integer representing the ID of the data set.
+               test_size (float): The size in percentage of the validation set over total number of samples.
+
+            Returns:
+               Tuple of :obj:`torch.utils.data.dataset`: A tuple containing both training and validation dataset.
+        """
+        if isinstance(modalities, list):
+            return PatchDatasetFactory._create_multimodal_train_test(source_dir, target_dir, modalities,
+                                                                     patch_size, step, dataset_id, test_size,
+                                                                     keep_centered_on_foreground,
+                                                                     augmentation_strategy)
+        else:
+            return PatchDatasetFactory._create_single_modality_train_test(source_dir, target_dir, modalities,
+                                                                          patch_size, step, dataset_id, test_size,
+                                                                          keep_centered_on_foreground,
+                                                                          augmentation_strategy)
+
+    @staticmethod
+    def _create_single_modality_train_test(source_dir: str, target_dir: str, modality: Modality,
+                                           patch_size: Tuple[int, int, int, int],
+                                           step: Tuple[int, int, int, int], dataset_id: int, test_size: float,
+                                           keep_centered_on_foreground: bool = True,
+                                           augmentation_strategy: DataAugmentationStrategy = None):
         """
         Create a PatchDataset object for both training and validation.
 
@@ -334,10 +364,10 @@ class PatchDatasetFactory(AbstractDatasetFactory):
         return training_dataset, test_dataset
 
     @staticmethod
-    def create_multimodal_train_test(source_dir: str, target_dir: str, modality_1: Modality, modality_2: Modality,
-                                     patch_size: Tuple[int, int, int, int], step: Tuple[int, int, int, int],
-                                     dataset_id: int, test_size: float, keep_centered_on_foreground: bool = False,
-                                     augmentation_strategy: DataAugmentationStrategy = None):
+    def _create_multimodal_train_test(source_dir: str, target_dir: str, modalities: List[Modality],
+                                      patch_size: Tuple[int, int, int, int], step: Tuple[int, int, int, int],
+                                      dataset_id: int, test_size: float, keep_centered_on_foreground: bool = False,
+                                      augmentation_strategy: DataAugmentationStrategy = None):
         """
         Create a MultimodalPatchDataset object for both training and validation.
 
@@ -357,15 +387,11 @@ class PatchDatasetFactory(AbstractDatasetFactory):
         Returns:
             Tuple of :obj:`torch.utils.data.dataset`: A tuple containing both training and validation dataset.
         """
-        source_dir_modality_1 = os.path.join(source_dir, str(modality_1))
-        source_dir_modality_2 = os.path.join(source_dir, str(modality_2))
+        source_dirs = list(map(lambda modality: os.path.join(source_dir, str(modality)), modalities))
+        source_paths = list(map(lambda source_dir: np.array(extract_file_paths(source_dir)), source_dirs))
+        target_paths = np.array(extract_file_paths(target_dir))
 
-        source_paths_modality_1, target_paths = np.array(extract_file_paths(source_dir_modality_1)), np.array(
-            extract_file_paths(target_dir))
-        source_paths_modality_2, target_paths = np.array(extract_file_paths(source_dir_modality_2)), np.array(
-            extract_file_paths(target_dir))
-
-        source_paths = np.stack((source_paths_modality_1, source_paths_modality_2), axis=1)
+        source_paths = np.stack((modality for modality in source_paths), axis=1)
 
         transforms = Compose([ToNumpyArray(), PadToPatchShape(patch_size=patch_size, step=step)])
 
@@ -387,11 +413,11 @@ class PatchDatasetFactory(AbstractDatasetFactory):
                 label_patches[test_ids]))
 
         training_dataset = MultimodalPatchDataset(list(source_paths), list(target_paths), train_samples, patch_size,
-                                                  step, modality_1, modality_2, dataset_id, Compose([ToNDTensor()]),
+                                                  step, modalities, dataset_id, Compose([ToNDTensor()]),
                                                   augmentation_strategy)
 
         test_dataset = MultimodalPatchDataset(list(source_paths), list(target_paths), test_samples, patch_size, step,
-                                              modality_1, modality_2, dataset_id, Compose([ToNDTensor()]),
+                                              modalities, dataset_id, Compose([ToNDTensor()]),
                                               augmentation_strategy)
 
         return training_dataset, test_dataset
@@ -424,8 +450,35 @@ class PatchDatasetFactory(AbstractDatasetFactory):
 class SegmentationDatasetFactory(AbstractDatasetFactory):
 
     @staticmethod
-    def create_train_test(source_dir: str, target_dir: str, modality: Modality, dataset_id: int, test_size: float,
-                          augmentation_strategy: DataAugmentationStrategy = None):
+    def create_train_test(source_dir: str, target_dir: str, modalities: Union[Modality, List[Modality]],
+                          dataset_id: int,
+                          test_size: float, augmentation_strategy: DataAugmentationStrategy = None):
+        """
+            Create a SegmentationDataset object for both training and validation.
+
+            Args:
+               source_dir (str): Path to source directory.
+               target_dir (str): Path to target directory.
+               modalities (List of :obj:`samitorch.inputs.images.Modalities`): The first modality of the data set.
+               dataset_id (int): An integer representing the ID of the data set.
+               test_size (float): The size in percentage of the validation set over total number of samples.
+
+            Returns:
+               Tuple of :obj:`torch.utils.data.dataset`: A tuple containing both training and validation dataset.
+        """
+        if isinstance(modalities, list):
+            return SegmentationDatasetFactory._create_multimodal_train_test(source_dir, target_dir, modalities,
+                                                                            dataset_id, test_size,
+                                                                            augmentation_strategy)
+        else:
+            return SegmentationDatasetFactory._create_single_modality_train_test(source_dir, target_dir, modalities,
+                                                                                 dataset_id, test_size,
+                                                                                 augmentation_strategy)
+
+    @staticmethod
+    def _create_single_modality_train_test(source_dir: str, target_dir: str, modality: Modality, dataset_id: int,
+                                           test_size: float,
+                                           augmentation_strategy: DataAugmentationStrategy = None):
         """
         Create a SegmentationDataset object for both training and validation.
 
@@ -464,9 +517,9 @@ class SegmentationDatasetFactory(AbstractDatasetFactory):
         return training_dataset, test_dataset
 
     @staticmethod
-    def create_multimodal_train_test(source_dir: str, target_dir: str, modality_1: Modality, modality_2: Modality,
-                                     dataset_id: int, test_size: float,
-                                     augmentation_strategy: DataAugmentationStrategy = None):
+    def _create_multimodal_train_test(source_dir: str, target_dir: str, modalities: List[Modality],
+                                      dataset_id: int, test_size: float,
+                                      augmentation_strategy: DataAugmentationStrategy = None):
         """
         Create a MultimodalDataset object for both training and validation.
 
@@ -483,15 +536,11 @@ class SegmentationDatasetFactory(AbstractDatasetFactory):
         Returns:
            Tuple of :obj:`torch.utils.data.dataset`: A tuple containing both training and validation dataset.
         """
-        source_dir_modality_1 = os.path.join(source_dir, str(modality_1))
-        source_dir_modality_2 = os.path.join(source_dir, str(modality_2))
+        source_dirs = list(map(lambda modality: os.path.join(source_dir, str(modality)), modalities))
+        source_paths = list(map(lambda source_dir: np.array(extract_file_paths(source_dir)), source_dirs))
+        target_paths = np.array(extract_file_paths(target_dir))
 
-        source_paths_modality_1, target_paths = np.array(extract_file_paths(source_dir_modality_1)), np.array(
-            extract_file_paths(target_dir))
-        source_paths_modality_2, target_paths = np.array(extract_file_paths(source_dir_modality_2)), np.array(
-            extract_file_paths(target_dir))
-
-        source_paths = np.stack((source_paths_modality_1, source_paths_modality_2), axis=1)
+        source_paths = np.stack((modality for modality in source_paths), axis=1)
 
         train_ids, test_ids = next(ShuffleSplit(n_splits=1, test_size=test_size).split(source_paths, target_paths))
 
@@ -503,11 +552,11 @@ class SegmentationDatasetFactory(AbstractDatasetFactory):
                 target_paths[test_ids]))
 
         training_dataset = MultimodalSegmentationDataset(list(source_paths), list(target_paths), train_samples,
-                                                         modality_1.value, modality_2.value, dataset_id,
+                                                         modalities, dataset_id,
                                                          Compose([ToNumpyArray(), ToNDTensor()]), augmentation_strategy)
 
         test_dataset = MultimodalSegmentationDataset(list(source_paths), list(target_paths), test_samples,
-                                                     modality_1.value, modality_2.value, dataset_id,
-                                                     Compose([ToNumpyArray(), ToNDTensor()]), augmentation_strategy)
+                                                     modalities, dataset_id, Compose([ToNumpyArray(), ToNDTensor()]),
+                                                     augmentation_strategy)
 
         return training_dataset, test_dataset

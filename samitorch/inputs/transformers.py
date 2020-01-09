@@ -122,7 +122,7 @@ class ToNumpyArray(object):
             return nd_array
 
         elif isinstance(input, str):
-            if Image.is_nifti(input):
+            if Image.is_nifti(input) or Image.is_mgh(input) or Image.is_mgz(input):
                 nd_array = nib.load(input).get_fdata().__array__()
             elif Image.is_nrrd(input):
                 nd_array, header = nrrd.read(input)

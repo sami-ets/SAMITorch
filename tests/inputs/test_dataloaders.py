@@ -31,7 +31,7 @@ class SegmentationDataLoaderTest(unittest.TestCase):
     PATH_TO_TARGET = os.path.join(TEST_DATA_FOLDER_PATH, "label")
 
     def setUp(self):
-        self._training_patch_dataset, self._validation_patch_dataset = SegmentationDatasetFactory.create_train_test(
+        self._training_patch_dataset, self._validation_patch_dataset = SegmentationDatasetFactory._create_single_modality_train_test(
             self.TEST_DATA_FOLDER_PATH,
             self.PATH_TO_TARGET,
             Modality.T1,
@@ -72,7 +72,7 @@ class PatchDataLoaderTest(unittest.TestCase):
         self._training_patch_dataset, self._validation_patch_dataset = PatchDatasetFactory.create_train_test(
             self.TEST_DATA_FOLDER_PATH,
             self.PATH_TO_TARGET,
-            Modality.T1,
+            modalities=Modality.T1,
             patch_size=(1, 32, 32, 32),
             step=(1, 32, 32, 32),
             dataset_id=0,
@@ -110,11 +110,10 @@ class MultimodalSegmentationDataLoaderTest(unittest.TestCase):
     PATH_TO_TARGET = os.path.join(TEST_DATA_FOLDER_PATH, "label")
 
     def setUp(self):
-        self._training_patch_dataset, self._validation_patch_dataset = SegmentationDatasetFactory.create_multimodal_train_test(
+        self._training_patch_dataset, self._validation_patch_dataset = SegmentationDatasetFactory.create_train_test(
             self.TEST_DATA_FOLDER_PATH,
             self.PATH_TO_TARGET,
-            Modality.T1,
-            Modality.T2,
+            modalities=[Modality.T1, Modality.T2],
             dataset_id=0,
             test_size=0.2
         )
@@ -150,11 +149,10 @@ class MultimodalPatchDataLoaderTest(unittest.TestCase):
     PATH_TO_TARGET = os.path.join(TEST_DATA_FOLDER_PATH, "label")
 
     def setUp(self):
-        self._training_patch_dataset, self._validation_patch_dataset = PatchDatasetFactory.create_multimodal_train_test(
+        self._training_patch_dataset, self._validation_patch_dataset = PatchDatasetFactory.create_train_test(
             self.TEST_DATA_FOLDER_PATH,
             self.PATH_TO_TARGET,
-            Modality.T1,
-            Modality.T2,
+            modalities=[Modality.T1, Modality.T2],
             patch_size=(1, 32, 32, 32),
             step=(1, 32, 32, 32),
             dataset_id=0,
