@@ -55,9 +55,8 @@ class AddNoise(object):
         Source:
             https://github.com/nipy/dipy/blob/108cd1137386462cda08438cddee15285131af08/dipy/sims/voxel.py#L82
         """
-        if isinstance(inputs, np.ndarray):
-
-            if random.uniform(0, 1) <= self._exec_probability:
+        if random.uniform(0, 1) <= self._exec_probability:
+            if isinstance(inputs, np.ndarray):
                 orig_shape = inputs.shape
                 vol_flat = np.reshape(inputs.copy(), (-1, inputs.shape[-1]))
 
@@ -72,32 +71,40 @@ class AddNoise(object):
 
                 return np.reshape(vol_flat, orig_shape)
 
-            else:
-                return inputs
+            elif isinstance(inputs, Sample):
+                sample = inputs
+                transformed_sample = Sample.from_sample(sample)
+                orig_shape = transformed_sample.x.shape
 
-        elif isinstance(inputs, Sample):
-            sample = inputs
-            transformed_sample = Sample.from_sample(sample)
+                if isinstance(transformed_sample.x, np.ndarray):
+                    vol_flat = np.reshape(sample.x.copy(), (-1, sample.x.shape[-1]))
+                elif isinstance(transformed_sample.x, torch.Tensor):
+                    vol_flat = torch.reshape(sample.x, (-1, sample.x.shape[-1]))
 
-            orig_shape = transformed_sample.x.numpy().shape
-            vol_flat = np.reshape(sample.x.numpy().copy(), (-1, sample.x.numpy().shape[-1]))
+                if self._S0 is None:
+                    if isinstance(transformed_sample.x, np.ndarray):
+                        self._S0 = np.max(transformed_sample.x)
+                    elif isinstance(transformed_sample.x, torch.Tensor):
+                        self._S0 = torch.max(transformed_sample.x)
 
-            if self._S0 is None:
-                self._S0 = np.max(transformed_sample.x.numpy())
+                if self._snr is None:
+                    self._snr = random.uniform(20, 150)
 
-            if self._snr is None:
-                self._snr = random.uniform(20, 150)
+                for vox_idx, signal in enumerate(vol_flat):
+                    vol_flat[vox_idx] = self._apply(signal, snr=self._snr, S0=self._S0, noise_type=self._noise_type)
 
-            for vox_idx, signal in enumerate(vol_flat):
-                vol_flat[vox_idx] = self._apply(signal, snr=self._snr, S0=self._S0, noise_type=self._noise_type)
+                if isinstance(sample.x, np.ndarray):
+                    transformed_sample.x = np.reshape(vol_flat, orig_shape)
+                elif isinstance(sample.x, torch.Tensor):
+                    transformed_sample.x = torch.reshape(vol_flat, orig_shape)
 
-            transformed_sample.x = torch.tensor(np.reshape(vol_flat, orig_shape))
+                return transformed_sample
+        else:
+            return inputs
 
-            return transformed_sample
-
-    def _apply(self, ndarray, snr, S0, noise_type):
+    def _apply(self, inputs, snr, S0, noise_type):
         if snr is None:
-            return ndarray
+            return inputs
 
         sigma = S0 / snr
 
@@ -105,14 +112,23 @@ class AddNoise(object):
                        'rician': self._add_rician,
                        'rayleigh': self._add_rayleigh}
 
-        noise1 = np.random.normal(0, sigma, size=ndarray.shape)
+        if isinstance(inputs, np.ndarray):
+            noise1 = np.random.normal(0, sigma, size=inputs.shape)
 
-        if noise_type == 'gaussian':
-            noise2 = None
-        else:
-            noise2 = np.random.normal(0, sigma, size=ndarray.shape)
+            if noise_type == 'gaussian':
+                noise2 = None
+            else:
+                noise2 = np.random.normal(0, sigma, size=inputs.shape)
 
-        return noise_adder[noise_type](ndarray, noise1, noise2)
+        if isinstance(inputs, torch.Tensor):
+            noise1 = torch.Tensor().new_empty(size=inputs.size()).normal_(0, sigma)
+
+            if noise_type == 'gaussian':
+                noise2 = None
+            else:
+                noise2 = torch.Tensor().new_empty(size=inputs.size()).normal_(0, sigma)
+
+        return noise_adder[noise_type](inputs, noise1, noise2)
 
     @staticmethod
     def _add_gaussian(sig, noise1, noise2):
@@ -126,14 +142,20 @@ class AddNoise(object):
         """
         This does the same as abs(sig + complex(noise1, noise2))
         """
-        return np.sqrt((sig + noise1) ** 2 + noise2 ** 2)
+        if isinstance(sig, np.ndarray):
+            return np.sqrt((sig + noise1) ** 2 + noise2 ** 2)
+        elif isinstance(sig, torch.Tensor):
+            return torch.sqrt((sig + noise1) ** 2 + noise2 ** 2)
 
     @staticmethod
     def _add_rayleigh(sig, noise1, noise2):
         """
         The Rayleigh distribution is $\sqrt\{Gauss_1^2 + Gauss_2^2}$.
         """
-        return sig + np.sqrt(noise1 ** 2 + noise2 ** 2)
+        if isinstance(sig, np.ndarray):
+            return sig + np.sqrt(noise1 ** 2 + noise2 ** 2)
+        elif isinstance(sig, torch.Tensor):
+            return sig + torch.sqrt(noise1 ** 2 + noise2 ** 2)
 
 
 class AddBiasField(object):
@@ -142,8 +164,8 @@ class AddBiasField(object):
         self._exec_probability = exec_probability
 
     def __call__(self, inputs):
-        if isinstance(inputs, np.ndarray):
-            if random.uniform(0, 1) <= self._exec_probability:
+        if random.uniform(0, 1) <= self._exec_probability:
+            if isinstance(inputs, np.ndarray):
                 alpha = np.random.normal(0, 1)
                 x = np.linspace(1 - alpha, 1 + alpha, inputs.shape[1])
                 y = np.linspace(1 - alpha, 1 + alpha, inputs.shape[2])
@@ -152,21 +174,29 @@ class AddBiasField(object):
                 bias = np.multiply(X, Y, Z).transpose(1, 0, 2)
                 bias = np.expand_dims(bias, 0)
 
-                return inputs * bias
+                inputs = inputs * bias
 
-        elif isinstance(inputs, Sample):
-            if random.uniform(0, 1) <= self._exec_probability:
+                return inputs
+
+            elif isinstance(inputs, Sample):
                 sample = inputs
                 transformed_sample = Sample.from_sample(sample)
-                alpha = np.random.normal(0, 1)
+                alpha = random.uniform(0, 1)
 
                 x = np.linspace(1 - alpha, 1 + alpha, transformed_sample.x.shape[1])
                 y = np.linspace(1 - alpha, 1 + alpha, transformed_sample.x.shape[2])
                 z = np.linspace(1 - alpha, 1 + alpha, transformed_sample.x.shape[3])
                 [X, Y, Z] = np.meshgrid(x, y, z)
                 bias = np.multiply(X, Y, Z).transpose(1, 0, 2)
-                bias = np.expand_dims(bias, 0)
+                bias = np.expand_dims(bias, 0).astype(np.float32)
 
-                transformed_sample.x *= bias
+                if isinstance(sample.x, np.ndarray):
+                    transformed_sample.x *= bias
+                elif isinstance(sample.x, torch.Tensor):
+                    transformed_sample.x *= torch.tensor(bias)
 
-                return transformed_sample
+                inputs = transformed_sample
+
+            return inputs
+        else:
+            return inputs

@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
+import torch
 
 """
 Class to describe a Sample object, which contains a source element associated to a ground truth.

@@ -143,7 +143,7 @@ class ToNumpyArray(object):
                     if not os.path.exists(path):
                         raise FileNotFoundError("Provided image path is not valid.")
 
-                    if Image.is_nifti(path):
+                    if Image.is_nifti(path) or Image.is_mgh(path) or Image.is_mgz(path):
                         nd_array = nib.load(path).get_fdata().__array__()
                     elif Image.is_nrrd(path):
                         nd_array, header = nrrd.read(path)
@@ -159,7 +159,7 @@ class ToNumpyArray(object):
                 transformed_sample.x = np.concatenate(x, axis=0)
 
             elif isinstance(sample.x, str):
-                if Image.is_nifti(sample.x):
+                if Image.is_nifti(sample.x) or Image.is_mgh(sample.x) or Image.is_mgz(sample.x):
                     x = nib.load(sample.x).get_fdata().__array__()
                 elif Image.is_nrrd(sample.x):
                     x, header = nrrd.read(sample.x)
@@ -183,7 +183,7 @@ class ToNumpyArray(object):
                         if not os.path.exists(path):
                             raise FileNotFoundError("Provided image path is not valid.")
 
-                        if Image.is_nifti(path):
+                        if Image.is_nifti(path) or Image.is_mgh(path) or Image.is_mgz(path):
                             nd_array = nib.load(path).get_fdata().__array__()
 
                         elif Image.is_nrrd(path):
@@ -203,7 +203,7 @@ class ToNumpyArray(object):
                 elif isinstance(sample.y, str):
                     if not os.path.exists(sample.y):
                         raise FileNotFoundError("Provided image path is not valid.")
-                    if Image.is_nifti(sample.y):
+                    if Image.is_nifti(sample.y) or Image.is_mgh(sample.y) or Image.is_mgz(sample.y):
                         nd_array = nib.load(sample.y).get_fdata().__array__()
 
                     elif Image.is_nrrd(sample.y):
@@ -1210,7 +1210,10 @@ class ToNifti1Image(object):
             if not isinstance(input, np.ndarray) or (input.ndim not in [3, 4]):
                 raise TypeError("Only 3D (DxHxW) or 4D (CxDxHxW) ndarrays are supported")
 
-            return nib.Nifti1Image(input.transpose((3, 2, 1, 0)), self._affine, self._header)
+            if input.ndim == 4:
+                return nib.Nifti1Image(input.transpose((3, 2, 1, 0)), self._affine, self._header)
+            elif input.ndim == 3:
+                return nib.Nifti1Image(input.transpose((2, 1, 0)), self._affine, self._header)
 
         elif isinstance(input, Sample):
             sample = input
@@ -1222,15 +1225,24 @@ class ToNifti1Image(object):
             if self._header is not None and not isinstance(self._header, list):
                 raise TypeError("A sample requires a list of headers.")
 
-            transformed_sample.x = nib.Nifti1Image(sample.x.transpose((3, 2, 1, 0)),
-                                                   self._affine[0] if self._affine is not None else None,
-                                                   self._header[0] if self._header is not None else None)
+            if sample.x.ndim == 4:
+                transformed_sample.x = nib.Nifti1Image(sample.x.transpose((3, 2, 1, 0)),
+                                                       self._affine[0] if self._affine is not None else None,
+                                                       self._header[0] if self._header is not None else None)
 
-            if sample.is_labeled:
-                transformed_sample.y = nib.Nifti1Image(sample.y.transpose((3, 2, 1, 0)),
-                                                       self._affine[1] if self._affine is not None else None,
-                                                       self._header[1] if self._header is not None else None)
+                if sample.is_labeled:
+                    transformed_sample.y = nib.Nifti1Image(sample.y.transpose((3, 2, 1, 0)),
+                                                           self._affine[1] if self._affine is not None else None,
+                                                           self._header[1] if self._header is not None else None)
+            elif sample.x.ndim == 3:
+                transformed_sample.x = nib.Nifti1Image(sample.x.transpose((2, 1, 0)),
+                                                       self._affine[0] if self._affine is not None else None,
+                                                       self._header[0] if self._header is not None else None)
 
+                if sample.is_labeled:
+                    transformed_sample.y = nib.Nifti1Image(sample.y.transpose((2, 1, 0)),
+                                                           self._affine[1] if self._affine is not None else None,
+                                                           self._header[1] if self._header is not None else None)
             return sample.update(transformed_sample)
 
         else:
@@ -1307,15 +1319,19 @@ class PadToShape(object):
         self._padding_value = padding_value
 
     def __call__(self, input: Union[np.ndarray, Sample]) -> Union[np.ndarray, Sample]:
-        if not isinstance(input, np.ndarray) or (input.ndim not in [3, 4]):
-            raise ValueError("Only 3D (DxHxW) or 4D (CxDxHxW) ndarrays are supported")
 
         if isinstance(input, np.ndarray):
+            if input.ndim not in [3, 4]:
+                raise ValueError("Only 3D (DxHxW) or 4D (CxDxHxW) ndarrays are supported")
+
             return self._apply(input, self._target_shape, self._padding_value)
 
         elif isinstance(input, Sample):
             sample = input
             transformed_sample = Sample.from_sample(sample)
+
+            if input.x.ndim not in [3, 4] or input.y.ndim not in [3, 4]:
+                raise ValueError("Only 3D (DxHxW) or 4D (CxDxHxW) ndarrays are supported")
 
             transformed_sample.x = self._apply(sample.x, self._target_shape, self._padding_value)
             transformed_sample.y = self._apply(sample.y, self._target_shape, self._padding_value)
@@ -1720,4 +1736,25 @@ class IntensityScaler(object):
 
             transformed_sample = Sample.from_sample(sample)
             transformed_sample.x = self._scale * ((sample.x - sample.x.min()) / (sample.x.max() - sample.x.min()))
+            return sample.update(transformed_sample)
+
+
+class Squeeze(object):
+    def __init__(self, dim: int = 0):
+        self._dim = dim
+
+    def __call__(self, input: Union[np.ndarray, Sample]) -> Union[np.ndarray, Sample]:
+        if isinstance(input, np.ndarray):
+            return np.squeeze(input, axis=self._dim)
+
+        elif isinstance(input, Sample):
+            sample = input
+
+            if not isinstance(sample.x, np.ndarray):
+                raise TypeError("Only Numpy arrays are supported.")
+
+            transformed_sample = Sample.from_sample(sample)
+            transformed_sample.x = np.squeeze(sample.x, axis=self._dim)
+            transformed_sample.y = np.squeeze(sample.y, axis=self._dim)
+
             return sample.update(transformed_sample)

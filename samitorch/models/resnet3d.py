@@ -98,9 +98,9 @@ class BasicBlock(torch.nn.Module):
             self._norm2 = self._normalization_layer_factory.create(NormalizationLayers.GroupNorm,
                                                                    norm_num_groups, out_planes)
         else:
-            self._norm1 = self._normalization_layer_factory.create(NormalizationLayers.BatchNormd3d,
+            self._norm1 = self._normalization_layer_factory.create(NormalizationLayers.BatchNorm3d,
                                                                    out_planes)
-            self._norm2 = self._normalization_layer_factory.create(NormalizationLayers.BatchNormd3d,
+            self._norm2 = self._normalization_layer_factory.create(NormalizationLayers.BatchNorm3d,
                                                                    out_planes)
 
         if groups != 1 or base_width != 64:
@@ -177,9 +177,9 @@ class Bottleneck(torch.nn.Module):
             self._norm3 = self._normalization_layer_factory.create(NormalizationLayers.GroupNorm, norm_num_groups,
                                                                    out_planes * self.expansion)
         else:
-            self._norm1 = self._normalization_layer_factory.create(NormalizationLayers.BatchNormd3d, width)
-            self._norm2 = self._normalization_layer_factory.create(NormalizationLayers.BatchNormd3d, width)
-            self._norm3 = self._normalization_layer_factory.create(NormalizationLayers.BatchNormd3d,
+            self._norm1 = self._normalization_layer_factory.create(NormalizationLayers.BatchNorm3d, width)
+            self._norm2 = self._normalization_layer_factory.create(NormalizationLayers.BatchNorm3d, width)
+            self._norm3 = self._normalization_layer_factory.create(NormalizationLayers.BatchNorm3d,
                                                                    out_planes * self.expansion)
 
         self._conv1 = conv1x1(in_planes, width)

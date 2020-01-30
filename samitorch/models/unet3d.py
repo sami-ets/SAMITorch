@@ -95,7 +95,10 @@ class UNet3D(torch.nn.Module):
         decoders = []
         reversed_feature_maps = list(reversed(feature_maps))
         for i in range(len(reversed_feature_maps) - 1):
-            in_feature_num = reversed_feature_maps[i] + reversed_feature_maps[i + 1]
+            if not interpolation:
+                in_feature_num = reversed_feature_maps[i]
+            else:
+                in_feature_num = reversed_feature_maps[i] + reversed_feature_maps[i + 1]
             out_feature_num = reversed_feature_maps[i + 1]
             decoder = Decoder(in_feature_num, out_feature_num, DoubleConv, interpolation, conv_kernel_size,
                               scale_factor, padding, num_groups, activation)
@@ -305,12 +308,20 @@ class Decoder(torch.nn.Module):
             # (D_out = (D_in − 1) ×  stride[0] − 2 ×  padding[0] +  kernel_size[0] +  output_padding[0])
             # also scale the number of channels from in_channels to out_channels so that summation joining
             # works correctly
-            self._upsample = torch.nn.ConvTranspose3d(in_channels,
-                                                      out_channels,
-                                                      kernel_size=conv_kernel_size,
-                                                      stride=scale_factor,
-                                                      padding=torch.nn.ReplicationPad3d(padding),
-                                                      output_padding=1)
+            if padding is not None:
+                self._upsample = torch.nn.ConvTranspose3d(in_channels,
+                                                          out_channels,
+                                                          kernel_size=conv_kernel_size,
+                                                          stride=scale_factor,
+                                                          padding=padding[-3:],
+                                                          output_padding=1)
+            else:
+                self._upsample = torch.nn.ConvTranspose3d(in_channels,
+                                                          out_channels,
+                                                          kernel_size=conv_kernel_size,
+                                                          stride=scale_factor,
+                                                          padding=1,
+                                                          output_padding=1)
             # adapt the number of in_channels for the ExtResNetBlock
             in_channels = out_channels
         self._basic_module = basic_module(in_channels, out_channels,
