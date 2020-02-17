@@ -23,6 +23,11 @@ def sample_collate(batch: list):
     return batch.x, [batch.y, batch.dataset_id]
 
 
+def augmented_sample_collate(batch: list):
+    batch = ImageBatch(samples=batch)
+    return [batch.x, batch.augmented_x], [batch.y, batch.dataset_id]
+
+
 def patch_collate(batch: list):
     batch = PatchBatch(samples=batch)
     return batch.x, [batch.y, batch.dataset_id]

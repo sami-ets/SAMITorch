@@ -84,7 +84,9 @@ class SegmentationDataset(Dataset):
             sample = self._transform(sample)
 
         if self._augment is not None:
-            sample = self._augment(sample)
+            sample.augmented_x = self._augment(sample.x)
+        else:
+            sample.augmented_x = sample.x
 
         return sample
 
@@ -127,7 +129,9 @@ class MultimodalSegmentationDataset(Dataset):
             sample = self._transform(sample)
 
         if self._augment is not None:
-            sample = self._augment(sample)
+            sample.augmented_x = self._augment(sample.x)
+        else:
+            sample.augmented_x = sample.x
 
         return sample
 

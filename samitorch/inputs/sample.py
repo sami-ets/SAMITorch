@@ -22,7 +22,8 @@ Class to describe a Sample object, which contains a source element associated to
 
 class Sample(object):
 
-    def __init__(self, x=None, y=None, template=None, dataset_id: int = None, is_labeled: bool = False):
+    def __init__(self, x=None, y=None, template=None, dataset_id: int = None, is_labeled: bool = False,
+                 augmented_x=None):
         """
         Sample initializer.
 
@@ -32,8 +33,10 @@ class Sample(object):
             template (any): A template image (for resampling purpose).
             dataset_id (int): The data set identification number (in case of multi-dataset learning). Default: 0
             is_labeled (bool): Whether or not the sample has a label image (y).
+            :param augmented_x:
         """
         self._x = x
+        self._augmented_x = augmented_x
         self._y = y
         self._template = template
         self._dataset_id = dataset_id
@@ -48,6 +51,16 @@ class Sample(object):
             The `x` property.
         """
         return self._x
+
+    @property
+    def augmented_x(self):
+        """
+        The augmented `x` property of the Sample (generally an image).
+
+        Returns:
+            The `augmneted_x` property.
+        """
+        return self._augmented_x
 
     @property
     def y(self):
@@ -91,6 +104,10 @@ class Sample(object):
     @x.setter
     def x(self, x):
         self._x = x
+
+    @augmented_x.setter
+    def augmented_x(self, augmented_x):
+        self._augmented_x = augmented_x
 
     @y.setter
     def y(self, y):

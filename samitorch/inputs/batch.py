@@ -25,6 +25,7 @@ class Batch(object):
     def __init__(self, samples: List[Sample]):
         self._samples = samples
         self._x = None
+        self._augmented_x = None
         self._y = None
         self._dataset_id = None
         self._device = None
@@ -44,6 +45,7 @@ class Batch(object):
             :obj:`samitorch.inputs.batch.Batch`: The updated Batch.
         """
         self._x = self._x.to(device)
+        self._augmented_x = self._augmented_x.to(device)
         self._y = self._y.to(device)
         self._dataset_id = self._dataset_id.to(device)
         self._device = device
@@ -70,6 +72,16 @@ class Batch(object):
         return self._x
 
     @property
+    def augmented_x(self):
+        """
+        Tensor of augmented inputs.
+
+        Returns:
+            :obj:`torch.Tensor`: The list of inputs (X).
+        """
+        return self._augmented_x
+
+    @property
     def y(self):
         """
         Tensor of labels.
@@ -93,6 +105,10 @@ class Batch(object):
     def x(self, x):
         self._x = x
 
+    @augmented_x.setter
+    def augmented_x(self, augmented_x):
+        self._augmented_x = augmented_x
+
     @y.setter
     def y(self, y):
         self._y = y
@@ -113,6 +129,7 @@ class Batch(object):
             :obj:`samitorch.inputs.batch.Batch`: The updated Batch.
         """
         self._x = batch.x
+        self._augmented_x = batch.augmented_x
         self._y = batch.y
         self._dataset_id = batch.dataset_id
         self._device = batch.device
@@ -125,7 +142,7 @@ class Batch(object):
         Returns:
             tuple: A Tuple of elements representing the (X, y) properties of the Sample.
         """
-        return self._x, self._y, self._dataset_id
+        return self._x, self._augmented_x, self._y, self._dataset_id
 
     @classmethod
     def from_batch(cls, batch):
@@ -156,6 +173,7 @@ class ImageBatch(Batch):
         """
         super(ImageBatch, self).__init__(samples)
         self._x = torch.stack([sample.x for sample in samples])
+        self._augmented_x = torch.stack([sample.augmented_x for sample in samples])
         self._y = torch.stack([sample.y for sample in samples])
         self._dataset_id = torch.cat(
             [torch.Tensor().new_tensor([sample.dataset_id], dtype=torch.long) if sample.dataset_id is not None

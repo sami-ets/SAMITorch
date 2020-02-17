@@ -71,6 +71,21 @@ class AddNoise(object):
 
                 return np.reshape(vol_flat, orig_shape)
 
+            if isinstance(inputs, torch.Tensor):
+                orig_shape = inputs.shape
+                vol_flat = torch.reshape(inputs, (-1, inputs.shape[-1]))
+
+                if self._S0 is None:
+                    self._S0 = torch.max(inputs)
+
+                if self._snr is None:
+                    self._snr = random.uniform(20, 150)
+
+                for vox_idx, signal in enumerate(vol_flat):
+                    vol_flat[vox_idx] = self._apply(signal, snr=self._snr, S0=self._S0, noise_type=self._noise_type)
+
+                return torch.reshape(vol_flat, orig_shape)
+
             elif isinstance(inputs, Sample):
                 sample = inputs
                 transformed_sample = Sample.from_sample(sample)
@@ -178,6 +193,20 @@ class AddBiasField(object):
 
                 return inputs
 
+            elif isinstance(inputs, torch.Tensor):
+                alpha = random.uniform(0, 1)
+
+                x = np.linspace(1 - alpha, 1 + alpha, inputs.shape[1])
+                y = np.linspace(1 - alpha, 1 + alpha, inputs.shape[2])
+                z = np.linspace(1 - alpha, 1 + alpha, inputs.shape[3])
+                [X, Y, Z] = np.meshgrid(x, y, z)
+                bias = np.multiply(X, Y, Z).transpose(1, 0, 2)
+                bias = np.expand_dims(bias, 0).astype(np.float32)
+
+                inputs = inputs * torch.tensor(bias)
+
+                return inputs
+
             elif isinstance(inputs, Sample):
                 sample = inputs
                 transformed_sample = Sample.from_sample(sample)
@@ -197,6 +226,6 @@ class AddBiasField(object):
 
                 inputs = transformed_sample
 
-            return inputs
+                return inputs
         else:
             return inputs
