@@ -25,7 +25,7 @@ from samitorch.models.layers import ActivationLayers, PoolingLayers
 
 
 class Unet3DTest(unittest.TestCase):
-    CONFIGURATION_PATH = "../../samitorch/configs/unet3d.yaml"
+    CONFIGURATION_PATH = "samitorch/configs/unet3d.yaml"
 
     def setUp(self):
         self.configurationParserFactory = ModelConfigurationParser()

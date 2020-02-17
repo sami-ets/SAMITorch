@@ -1216,7 +1216,7 @@ class NoiseAdderTest(unittest.TestCase):
         self._transforms = Compose([ToNumpyArray()])
         self._transforms_tensor = Compose([ToNumpyArray(), ToNDTensor()])
         self._save_transforms = Compose(
-            [ToNifti1Image(header=[nib.load(self.TEST_IMAGE_PATH).header] * 2),
+            [ToNifti1Image(header=nib.load(self.TEST_IMAGE_PATH).header),
              NiftiToDisk(self.OUTPUT_DATA_FOLDER_PATH + self.NOISY_IMAGE_FILE_NAME)])
         self._image = self._transforms(self.TEST_IMAGE_PATH)
         self._image_tensor = self._transforms_tensor(Sample(x=self.TEST_IMAGE_PATH, y=None, is_labeled=False))
@@ -1230,6 +1230,9 @@ class NoiseAdderTest(unittest.TestCase):
     def test_should_add_rician_noise_to_image_in_tensor_and_save_it_for_inspection(self):
         output = self._transformer(self._image_tensor)
         sample = Sample(x=output.x.numpy())
+        self._save_transforms = Compose(
+            [ToNifti1Image(header=[nib.load(self.TEST_IMAGE_PATH).header]),
+             NiftiToDisk(self.OUTPUT_DATA_FOLDER_PATH + self.NOISY_IMAGE_FILE_NAME)])
         self._save_transforms(sample)
         assert_that(os.path.exists(os.path.join(self.OUTPUT_DATA_FOLDER_PATH, self.NOISY_IMAGE_FILE_NAME)))
 
