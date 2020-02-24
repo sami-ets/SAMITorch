@@ -175,16 +175,20 @@ class AddNoise(object):
 
 class AddBiasField(object):
 
-    def __init__(self, exec_probability: float):
+    def __init__(self, exec_probability: float, alpha: float = None):
         self._exec_probability = exec_probability
+        self._alpha = alpha
 
     def __call__(self, inputs):
         if random.uniform(0, 1) <= self._exec_probability:
             if isinstance(inputs, np.ndarray):
-                alpha = np.random.normal(0, 1)
-                x = np.linspace(1 - alpha, 1 + alpha, inputs.shape[1])
-                y = np.linspace(1 - alpha, 1 + alpha, inputs.shape[2])
-                z = np.linspace(1 - alpha, 1 + alpha, inputs.shape[3])
+
+                if self._alpha is None:
+                    self._alpha = np.random.normal(0, 1)
+
+                x = np.linspace(1 - self._alpha, 1 + self._alpha, inputs.shape[1])
+                y = np.linspace(1 - self._alpha, 1 + self._alpha, inputs.shape[2])
+                z = np.linspace(1 - self._alpha, 1 + self._alpha, inputs.shape[3])
                 [X, Y, Z] = np.meshgrid(x, y, z)
                 bias = np.multiply(X, Y, Z).transpose(1, 0, 2)
                 bias = np.expand_dims(bias, 0)
@@ -194,11 +198,13 @@ class AddBiasField(object):
                 return inputs
 
             elif isinstance(inputs, torch.Tensor):
-                alpha = random.uniform(0, 1)
 
-                x = np.linspace(1 - alpha, 1 + alpha, inputs.shape[1])
-                y = np.linspace(1 - alpha, 1 + alpha, inputs.shape[2])
-                z = np.linspace(1 - alpha, 1 + alpha, inputs.shape[3])
+                if self._alpha is None:
+                    self._alpha = np.random.normal(0, 1)
+
+                x = np.linspace(1 - self._alpha, 1 + self._alpha, inputs.shape[1])
+                y = np.linspace(1 - self._alpha, 1 + self._alpha, inputs.shape[2])
+                z = np.linspace(1 - self._alpha, 1 + self._alpha, inputs.shape[3])
                 [X, Y, Z] = np.meshgrid(x, y, z)
                 bias = np.multiply(X, Y, Z).transpose(1, 0, 2)
                 bias = np.expand_dims(bias, 0).astype(np.float32)
@@ -210,11 +216,13 @@ class AddBiasField(object):
             elif isinstance(inputs, Sample):
                 sample = inputs
                 transformed_sample = Sample.from_sample(sample)
-                alpha = random.uniform(0, 1)
 
-                x = np.linspace(1 - alpha, 1 + alpha, transformed_sample.x.shape[1])
-                y = np.linspace(1 - alpha, 1 + alpha, transformed_sample.x.shape[2])
-                z = np.linspace(1 - alpha, 1 + alpha, transformed_sample.x.shape[3])
+                if self._alpha is None:
+                    self._alpha = np.random.normal(0, 1)
+
+                x = np.linspace(1 - self._alpha, 1 + self._alpha, transformed_sample.x.shape[1])
+                y = np.linspace(1 - self._alpha, 1 + self._alpha, transformed_sample.x.shape[2])
+                z = np.linspace(1 - self._alpha, 1 + self._alpha, transformed_sample.x.shape[3])
                 [X, Y, Z] = np.meshgrid(x, y, z)
                 bias = np.multiply(X, Y, Z).transpose(1, 0, 2)
                 bias = np.expand_dims(bias, 0).astype(np.float32)

@@ -1252,7 +1252,7 @@ class BiasFieldAdder(unittest.TestCase):
         assert_that(os.path.exists(cls.OUTPUT_DATA_FOLDER_PATH), is_(True))
 
     def setUp(self) -> None:
-        self._transformer = AddBiasField(1)
+        self._transformer = AddBiasField(1, alpha=0.9)
         self._transforms = Compose([ToNumpyArray()])
         self._transforms_tensor = Compose([ToNumpyArray(), ToNDTensor()])
         self._save_transforms = Compose(
